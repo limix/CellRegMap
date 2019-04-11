@@ -50,7 +50,7 @@ K = X @ X.T
 # 𝐲 = W𝛂 + 𝐠𝛽 + 𝐠⊙𝛃 + 𝐞 + 𝛆,
 # 𝐞 ∼ 𝓝(𝟎, e²Σ)
 # Σ = EEᵀ
-QS = economic_qs(Sigma)
+# QS = economic_qs(Sigma)
 
 # 𝐲 = W𝛂 + 𝐞 + 𝛆
 # 𝓝(𝐲 | W𝛂, e²Σ + 𝜀²I)

@@ -29,3 +29,5 @@ def filter_kinship(K, df_y, sample_mapping = None):
     else: samples = df_y.index
     K_filtered = K[samples,:][:,samples]
     return K_filtered
+
+kinship_mat = kinship_df.loc[individual_ids,individual_ids].values if kinship_df is not None else None

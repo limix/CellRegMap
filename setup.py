@@ -8,5 +8,5 @@ setup(
     author="Anna",
     license="BSD",
     python_requires=">=3.6",
-    install_requires=["numpy>=1.6", "limix", "numpy-sugar"],
+    install_requires=["numpy>=1.6", "scipy", "glimix_core", "numpy-sugar", "chiscore"],
 )
