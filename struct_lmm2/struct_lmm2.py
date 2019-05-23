@@ -1,13 +1,11 @@
 import numpy as np
-import scipy as sp
 from numpy import concatenate, inf, newaxis
 from numpy.linalg import eigvalsh, inv, solve
 from numpy.random import RandomState
-from numpy_sugar import epsilon
 from numpy_sugar.linalg import ddot, economic_qs, economic_svd
 from scipy.linalg import sqrtm
 
-from chiscore import davies_pvalue, mod_liu, optimal_davies_pvalue
+from chiscore import davies_pvalue, optimal_davies_pvalue
 from glimix_core.lmm import LMM
 
 
@@ -22,10 +20,10 @@ class StructLMM2:
     where
 
         (𝐠⊙𝛃)ᵢ = 𝐠ᵢ𝛃ᵢ
-        𝛽 ∼ 𝓝(0, 𝓋₀⋅ρ),
-        𝛃 ∼ 𝓝(𝟎, 𝓋₀(1-ρ)𝙴𝙴ᵀ),
-        𝐞 ∼ 𝓝(𝟎, 𝓋₁𝚆𝚆ᵀ),
-        𝐮 ~ 𝓝(𝟎, g²𝙺), and
+        𝛽 ∼ 𝓝(0, 𝓋₀ρ₀),
+        𝛃 ∼ 𝓝(𝟎, 𝓋₀(1-ρ₀)𝙴𝙴ᵀ),
+        𝐞 ∼ 𝓝(𝟎, 𝓋₁ρ₁𝚆𝚆ᵀ),
+        𝐮 ~ 𝓝(𝟎, 𝓋₁(1-ρ₁)𝙺), and
         𝛆 ∼ 𝓝(𝟎, 𝓋₂𝙸).
 
     The matrices 𝙴 and 𝚆 are generally the same, and represent the environment
@@ -42,15 +40,15 @@ class StructLMM2:
 
     where
 
-        𝛃 ∼ 𝓝(𝟎, 𝓋₀(ρ𝟏𝟏ᵀ + (1-ρ)𝙴𝙴ᵀ)),
-        𝐞 ∼ 𝓝(𝟎, 𝓋₁𝚆𝚆ᵀ),
-        𝐮 ~ 𝓝(𝟎, g²𝙺), and
+        𝛃 ∼ 𝓝(𝟎, 𝓋₀(ρ₀𝟏𝟏ᵀ + (1-ρ₀)𝙴𝙴ᵀ)),
+        𝐞 ∼ 𝓝(𝟎, 𝓋₁ρ₁𝚆𝚆ᵀ),
+        𝐮 ~ 𝓝(𝟎, 𝓋₁(1-ρ₁)𝙺), and
         𝛆 ∼ 𝓝(𝟎, 𝓋₂𝙸).
 
     Notice that the 𝛃 in Eqs. (1) and (2) are not the same.
     Its marginalised form is given by
 
-        𝐲 ∼ 𝓝(𝙼𝛂, 𝓋₀𝙳(ρ𝟏𝟏ᵀ + (1-ρ)𝙴𝙴ᵀ)𝙳 + 𝓋₁𝚆𝚆ᵀ + g²𝙺 + 𝓋₂𝙸),
+        𝐲 ∼ 𝓝(𝙼𝛂, 𝓋₀𝙳(ρ₀𝟏𝟏ᵀ + (1-ρ₀)𝙴𝙴ᵀ)𝙳 + 𝓋₁(ρ₁𝚆𝚆ᵀ + (1-ρ₁)𝙺) + 𝓋₂𝙸),
 
     where 𝙳 = diag(𝐠).
 
@@ -72,25 +70,44 @@ class StructLMM2:
 
         𝓗₀: 𝓋₀ = 0 (given the interaction model)
         𝓗₁: 𝓋₀ > 0 (given the interaction model)
+
+    Implementation
+    --------------
+
+    Let Σ₀ = 𝙴𝙴ᵀ and Σ₁ = 𝚆𝚆ᵀ.
+    Therefore,
+
+        𝐲 ∼ 𝓝(𝙼𝛂, 𝓋₀𝙳(ρ₀𝟏𝟏ᵀ + (1-ρ₀)Σ₀)𝙳 + 𝓋₁(ρ₁Σ₁ᵀ + (1-ρ₁)𝙺) + 𝓋₂𝙸).
+
+    Let C(ρ₁) =
     """
 
-    def __init__(self, y, W, E, G=None, a_values=None, K=None):
+    def __init__(self, y, M, E, W=None, K=None):
 
-        self.y = y
-        self.E = E
-        self.G = G
-        self.W = W
+        #         The above model is equivalent to
 
-        self.Sigma = E @ E.T
+        #     𝐲 = 𝙼𝛂 + 𝐠⊙𝛃 + 𝐞 + 𝐮 + 𝛆,                        (2)
 
-        if self.G is None:
-            self.K = np.eye(self.y.shape[0])
-        else:
-            self.K = G @ G.T
+        # where
 
-        self.a_values = a_values
-        if self.a_values is None:
-            self.a_values = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+        #     𝛃 ∼ 𝓝(𝟎, 𝓋₀(ρ𝟏𝟏ᵀ + (1-ρ)𝙴𝙴ᵀ)),
+        #     𝐞 ∼ 𝓝(𝟎, 𝓋₁𝚆𝚆ᵀ),
+        #     𝐮 ~ 𝓝(𝟎, g²𝙺), and
+        #     𝛆 ∼ 𝓝(𝟎, 𝓋₂𝙸).
+        if W is None:
+            W = E
+
+        self._y = y
+        self._M = M
+        self._E = E
+        self._W = W
+        self._K = K
+        self._Sigma0 = E @ E.T
+        self._Sigma1 = W @ W.T
+
+        self._rho0 = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+        self._rho1 = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+
         self.Cov = {}
         self.QS_a = {}
         for a in self.a_values:
@@ -152,3 +169,10 @@ class StructLMM2:
         # print(Q)
         pval = davies_pvalue(Q, (sqrP0 @ dK @ sqrP0) / 2)
         return pval
+
+
+def _mod_liu(q, w):
+    from chiscore import liu_sf
+
+    (pv, dof_x, _, info) = liu_sf(q, w, [1] * len(w), [0] * len(w), True)
+    return (pv, info["mu_q"], info["sigma_q"], dof_x)
