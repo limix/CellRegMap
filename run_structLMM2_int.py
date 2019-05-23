@@ -20,7 +20,7 @@ import qtl_loader_utils
 # from bgen_reader import read_bgen
 # from numpy import linalg as LA
 # import scipy.linalg as la
-from tqdm import tqdm 
+from tqdm import tqdm
 
 from limix_core.covar import FreeFormCov
 from limix_core.gp import GP2KronSumLR
@@ -40,11 +40,11 @@ def get_genotype_data(geno_prefix):
     return bim,fam,bed
 
 def run_structLMM2_int_load_intersect_phenotype_environments_covariates_kinship_sample_mapping\
-        (pheno_filename, anno_filename, env_filename, geno_prefix, plinkGenotype,  
-            cis_mode = True, interaction_mode = True, 
-            relatedness_score = 0.95, snps_filename = None, feature_filename = None, 
-            snp_feature_filename = None, selection = 'all', covariates_filename = None, kinship_filename = None, 
-            sample_mapping_filename = None, feature_variant_covariate_filename = None):  
+        (pheno_filename, anno_filename, env_filename, geno_prefix, plinkGenotype,
+            cis_mode = True, interaction_mode = True,
+            relatedness_score = 0.95, snps_filename = None, feature_filename = None,
+            snp_feature_filename = None, selection = 'all', covariates_filename = None, kinship_filename = None,
+            sample_mapping_filename = None, feature_variant_covariate_filename = None):
     selectionStart = None
     selectionEnd = None
     if(":" in selection):
@@ -56,7 +56,7 @@ def run_structLMM2_int_load_intersect_phenotype_environments_covariates_kinship_
             sys.exit()
         chromosome = parts[0]
         if("-" in parts[1]):
-            parts2 = parts[1].split("-") 
+            parts2 = parts[1].split("-")
             selectionStart = int(parts2[0])
             selectionEnd = int(parts2[1])
     else :
@@ -87,7 +87,7 @@ def run_structLMM2_int_load_intersect_phenotype_environments_covariates_kinship_
         print(geno_prefix)
     print("Intersecting data.")
 
-    if(annotation_df.shape[0] != annotation_df.groupby(annotation_df.index).first().shape[0]): 
+    if(annotation_df.shape[0] != annotation_df.groupby(annotation_df.index).first().shape[0]):
         print("Only one location per feature supported. If multiple locations are needed please look at: --extended_anno_file")
         sys.exit()
 
@@ -104,7 +104,7 @@ def run_structLMM2_int_load_intersect_phenotype_environments_covariates_kinship_
     diff = orgSize - sample2individual_df.shape[0]
     orgSize = sample2individual_df.shape[0]
     print("Dropped: "+str(diff)+" samples because they are not present in the genotype file.")
-    
+
     #Subset linking to relevant phenotypes.
     sample2individual_df = sample2individual_df.loc[np.intersect1d(sample2individual_df.index,phenotype_df.columns),:]
     diff = orgSize- sample2individual_df.shape[0]
@@ -152,7 +152,7 @@ def run_structLMM2_int_load_intersect_phenotype_environments_covariates_kinship_
     #Filter covariate data based on the linking files.
     if covariate_df is not None:
         covariate_df = covariate_df.loc[np.intersect1d(covariate_df.index, sample2individual_df.index.values),:]
-    
+
     snp_feature_filter_df = qtl_loader_utils.get_snp_feature_df(snp_feature_filename)
     try:
         feature_filter_df = qtl_loader_utils.get_snp_df(feature_filename)
@@ -185,8 +185,8 @@ def run_structLMM2_int_load_intersect_phenotype_environments_covariates_kinship_
         toSelect = set(np.unique(snp_feature_filter_df['snp_id'])).intersection(set(bim['snp']))
         bim = bim.loc[bim['snp'].isin(toSelect)]
         ##Filtering on features  to test from the combined feature snp filter.
-    
-   
+
+
     #Determine features to be tested
     if chromosome=='all':
         feature_list = list(set(annotation_df.index) & set(phenotype_df.index))
@@ -202,40 +202,40 @@ def run_structLMM2_int_load_intersect_phenotype_environments_covariates_kinship_
 
     print("Number of features to be tested: " + str(len(feature_list)))
     print("Total number of variants to be considered, before variante QC and feature intersection: " + str(bim.shape[0]))
-    
 
-    feature_variant_covariate_df = qtl_loader_utils.get_snp_feature_df(feature_variant_covariate_filename) 
+
+    feature_variant_covariate_df = qtl_loader_utils.get_snp_feature_df(feature_variant_covariate_filename)
     return [phenotype_df, kinship_df, covariate_df, environment_df, sample2individual_df, complete_annotation_df, annotation_df, snp_filter_df, snp_feature_filter_df, genetically_unique_individuals, minimum_test_samples, feature_list,bim,fam,bed, chromosome, selectionStart, selectionEnd, feature_variant_covariate_df]
 
 
 import struct_lmm2 as StructLMM2
 
-def run_structLMM2_int(pheno_filename, anno_filename, env_filename, geno_prefix, output_dir,  plinkGenotype = True, 
-                        window_size = 250000, min_maf = 0.05, min_hwe_P = 0.001, min_call_rate = 0.95, 
-                        interaction_mode = True, cis_mode = True, gaussianize_method = None,  
-                        seed = np.random.randint(40000), relatedness_score = 0.95, 
-                        feature_variant_covariate_filename = None, snps_filename = None, feature_filename = None, 
-                        snp_feature_filename = None, genetic_range = 'all', covariates_filename = None, 
+def run_structLMM2_int(pheno_filename, anno_filename, env_filename, geno_prefix, output_dir,  plinkGenotype = True,
+                        window_size = 250000, min_maf = 0.05, min_hwe_P = 0.001, min_call_rate = 0.95,
+                        interaction_mode = True, cis_mode = True, gaussianize_method = None,
+                        seed = np.random.randint(40000), relatedness_score = 0.95,
+                        feature_variant_covariate_filename = None, snps_filename = None, feature_filename = None,
+                        snp_feature_filename = None, genetic_range = 'all', covariates_filename = None,
                         kinship_filename = None, sample_mapping_filename = None):
     fill_NaN = Imputer(missing_values = np.nan, strategy = 'mean', axis = 0)
-        
-    [phenotype_df, kinship_df, covariate_df, environment_df, sample2individual_df, annotation_df, snp_filter_df, 
-    snp_feature_filter_df, feature_list, bim, fam, bed, 
+
+    [phenotype_df, kinship_df, covariate_df, environment_df, sample2individual_df, annotation_df, snp_filter_df,
+    snp_feature_filter_df, feature_list, bim, fam, bed,
     chromosome, selectionStart, selectionEnd, feature_variant_covariate_df]=\
-    run_structLMM2_int_load_intersect_phenotype_environments_covariates_kinship_sample_mapping(pheno_filename = pheno_filename, 
-                anno_filename = anno_filename, env_filename = env_filename, geno_prefix = geno_prefix, 
-                plinkGenotype = plinkGenotype, cis_mode = cis_mode, interaction_mode = interaction_mode, 
-                relatedness_score = relatedness_score, snps_filename = snps_filename, 
-                feature_filename = feature_filename, snp_feature_filename = snp_feature_filename, 
-                selection = genetic_range, covariates_filename = covariates_filename, 
-                kinship_filename = kinship_filename, sample_mapping_filename = sample_mapping_filename,  
+    run_structLMM2_int_load_intersect_phenotype_environments_covariates_kinship_sample_mapping(pheno_filename = pheno_filename,
+                anno_filename = anno_filename, env_filename = env_filename, geno_prefix = geno_prefix,
+                plinkGenotype = plinkGenotype, cis_mode = cis_mode, interaction_mode = interaction_mode,
+                relatedness_score = relatedness_score, snps_filename = snps_filename,
+                feature_filename = feature_filename, snp_feature_filename = snp_feature_filename,
+                selection = genetic_range, covariates_filename = covariates_filename,
+                kinship_filename = kinship_filename, sample_mapping_filename = sample_mapping_filename,
                 feature_variant_covariate_filename = feature_variant_covariate_filename)
 
     #import pdb; pdb.set_trace()
     if(feature_list == None or len(feature_list) == 0):
         print ('No features to be tested.')
         sys.exit()
-    
+
     #Arrays to store number of samples and genetic effects
     n_samples = []
     n_e_samples = []
@@ -264,11 +264,11 @@ def run_structLMM2_int(pheno_filename, anno_filename, env_filename, geno_prefix,
             '''
             individual_ids = sample2individual_df.loc[phenotype_ds.index, 'iid'].values
             sample2individual_feature = sample2individual_df.loc[phenotype_ds.index]
-            
+
             if(contains_missing_samples):
                 tmp_unique_individuals = genetically_unique_individuals
                 genetically_unique_individuals = utils.get_unique_genetic_samples(kinship_df.loc[individual_ids, individual_ids], relatedness_score);
-            
+
             if phenotype_ds.empty or (len(genetically_unique_individuals) < minimum_test_samples) :
                 print("Feature: " + feature_id + " not tested: not enough samples do QTL test.")
                 # fail_qc_features.append(feature_id)
@@ -282,25 +282,25 @@ def run_structLMM2_int(pheno_filename, anno_filename, env_filename, geno_prefix,
                     genetically_unique_individuals = tmp_unique_individuals
                 continue
 
-            
+
             #import pdb; pdb.set_trace()
             n_sample_t = (phenotype_ds.size)
             n_e_samples_t = (len(genetically_unique_individuals))
             print ('For feature: ' + str(currentFeatureNumber) + '/' +str(len(feature_list)) + ' (' + feature_id + '): ' + str(snpQuery.shape[0]) + ' SNPs need to be tested.\n Please stand by.')
-            
+
             # import pdb; pdb.set_trace()
 
 
             for snpGroup in utils.chunker(snpQuery, blocksize):
                 snp_idxs = snpGroup['i'].values
                 snp_names = snpGroup['snp'].values
-        
+
 
                 #subset genotype matrix, we cannot subselect at the same time, do in two steps.
                 snp_df = pd.DataFrame(data = bed[snp_idxs,:].compute().transpose(), index = fam.index, columns = snp_names)
                 snp_df = snp_df.loc[individual_ids,:]
-                
-                
+
+
                 #We could make use of relatedness when imputing.
                 snp_matrix_DF = pd.DataFrame(fill_NaN.fit_transform(snp_df), index = snp_df.index, columns = snp_df.columns)
                 snp_df = None
@@ -312,7 +312,7 @@ def run_structLMM2_int(pheno_filename, anno_filename, env_filename, geno_prefix,
                      all(snp_matrix_DF.index == sample2individual_feature.loc[phenotype_ds.index]['iid'])):
                     '''
                     if all lines are in order put in arrays the correct genotype and phenotype
-                    x=a if cond1 else b <---> equivalent to if cond1: x=a else x=b;                 
+                    x=a if cond1 else b <---> equivalent to if cond1: x=a else x=b;
                     better readability of the code
                     '''
                     kinship_mat = kinship_df.loc[individual_ids,individual_ids].values if kinship_df is not None else None
@@ -326,7 +326,7 @@ def run_structLMM2_int(pheno_filename, anno_filename, env_filename, geno_prefix,
                 else:
                     print ('There is an issue in mapping phenotypes and genotypes')
                     sys.exit()
-                
+
 
                 n_indep_snps = sum(limix.qc.indep_pairwise(snp_matrix_DF.values, window_size, window_size, threshold, verbose = True))
                 print(n_indep_snps)
@@ -346,9 +346,9 @@ def run_structLMM2_int(pheno_filename, anno_filename, env_filename, geno_prefix,
                         # import pdb; pdb.set_trace()
                         pvs.append([snp, feature_id, _p, _p*n_indep_snps])
 
-    
+
     pvs_df = pd.DataFrame(pvs, columns = ["snp_id","feature_id","p_value","feature_corrected_p_value"])
-  
+
     if not selectionStart is None :
         # add if statements
         pvs_df.to_csv(output_dir + '/eqtl_gxe_pvalue_{}_{}_{}.txt'.format(chromosome, selectionStart, selectionEnd), sep = '\t', index = True)
@@ -372,9 +372,9 @@ if __name__=='__main__':
         featureVariantFilter = '/nfs/leia/research/stegle/acuomo/singlecell_endodiff/data/exploratory_analysis/input_files/full_sc_exprs_merged_leads_top10_perstage.tsv'
         blockSize = '500'
         output_dir = '/nfs/leia/research/stegle/acuomo/singlecell_endodiff/data/pipeline_snakemakes/output_structlmm_alldays_10PCs/'
-        
-        run_structLMM2_int(phenotypeFile, annotationFile, environmentFile, genotypeFile, 
-            output_dir, sample_mapping_filename = sampleMappingFile, snp_feature_filename = featureVariantFilter, 
+
+        run_structLMM2_int(phenotypeFile, annotationFile, environmentFile, genotypeFile,
+            output_dir, sample_mapping_filename = sampleMappingFile, snp_feature_filename = featureVariantFilter,
             kinship_filename = kinshipFile, covariates_filename = covariateFile)
 
 
