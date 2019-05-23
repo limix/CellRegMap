@@ -35,7 +35,7 @@ from  time import time
 start = time()
 
 random = RandomState(0)
-n = 1000
+n = 10
 c = 2
 y = random.randn(n)
 W = random.randn(n, c)
@@ -64,7 +64,7 @@ a_values = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
 for a in a_values:
     Cov[a] = a * Sigma + (1 - a) * K
     QS_a[a] = economic_qs(Cov[a])
-    print(QS_a[a][0][1].shape[1])
+    # print(QS_a[a][0][1].shape[1])
 
 
 print(time() - start)
@@ -100,7 +100,7 @@ for i in range(100):
     # lmm.fix("scale")
     # lmm.fix("delta")
 
-H0 optimal parameters
+# H0 optimal parameters
     alpha = lmm.beta[:-1]
     beta = lmm.beta[-1]
     # e²Σ + g²K = s²(aΣ + (1-a)K)
