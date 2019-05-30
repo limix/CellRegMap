@@ -13,11 +13,11 @@ def get_genotype_data(geno_prefix):
     return bim,fam,bed
 
 def run_structLMM_QTL_analysis_load_intersect_phenotype_environments_covariates_kinship_sample_mapping\
-        (pheno_filename, anno_filename, env_filename, geno_prefix, plinkGenotype,  
-            cis_mode = True, interaction_mode = True, 
-            relatedness_score = 0.95, snps_filename = None, feature_filename = None, 
-            snp_feature_filename = None, selection = 'all', covariates_filename = None, kinship_filename = None, 
-            sample_mapping_filename = None, feature_variant_covariate_filename = None):  
+        (pheno_filename, anno_filename, env_filename, geno_prefix, plinkGenotype,
+            cis_mode = True, interaction_mode = True,
+            relatedness_score = 0.95, snps_filename = None, feature_filename = None,
+            snp_feature_filename = None, selection = 'all', covariates_filename = None, kinship_filename = None,
+            sample_mapping_filename = None, feature_variant_covariate_filename = None):
     selectionStart = None
     selectionEnd = None
     if(":" in selection):
@@ -29,7 +29,7 @@ def run_structLMM_QTL_analysis_load_intersect_phenotype_environments_covariates_
             sys.exit()
         chromosome = parts[0]
         if("-" in parts[1]):
-            parts2 = parts[1].split("-") 
+            parts2 = parts[1].split("-")
             selectionStart = int(parts2[0])
             selectionEnd = int(parts2[1])
     else :
@@ -60,7 +60,7 @@ def run_structLMM_QTL_analysis_load_intersect_phenotype_environments_covariates_
         print(geno_prefix)
     print("Intersecting data.")
 
-    if(annotation_df.shape[0] != annotation_df.groupby(annotation_df.index).first().shape[0]): 
+    if(annotation_df.shape[0] != annotation_df.groupby(annotation_df.index).first().shape[0]):
         print("Only one location per feature supported. If multiple locations are needed please look at: --extended_anno_file")
         sys.exit()
 
@@ -77,7 +77,7 @@ def run_structLMM_QTL_analysis_load_intersect_phenotype_environments_covariates_
     diff = orgSize - sample2individual_df.shape[0]
     orgSize = sample2individual_df.shape[0]
     print("Dropped: "+str(diff)+" samples because they are not present in the genotype file.")
-    
+
     #Subset linking to relevant phenotypes.
     sample2individual_df = sample2individual_df.loc[np.intersect1d(sample2individual_df.index,phenotype_df.columns),:]
     diff = orgSize- sample2individual_df.shape[0]
@@ -127,7 +127,7 @@ def run_structLMM_QTL_analysis_load_intersect_phenotype_environments_covariates_
     #Filter covariate data based on the linking files.
     if covariate_df is not None:
         covariate_df = covariate_df.loc[np.intersect1d(covariate_df.index, sample2individual_df.index.values),:]
-    
+
     snp_feature_filter_df = qtl_loader_utils.get_snp_feature_df(snp_feature_filename)
     try:
         feature_filter_df = qtl_loader_utils.get_snp_df(feature_filename)
@@ -160,8 +160,8 @@ def run_structLMM_QTL_analysis_load_intersect_phenotype_environments_covariates_
         toSelect = set(np.unique(snp_feature_filter_df['snp_id'])).intersection(set(bim['snp']))
         bim = bim.loc[bim['snp'].isin(toSelect)]
         ##Filtering on features  to test from the combined feature snp filter.
-    
-   
+
+
     #Determine features to be tested
     if chromosome=='all':
         feature_list = list(set(annotation_df.index) & set(phenotype_df.index))
@@ -177,9 +177,9 @@ def run_structLMM_QTL_analysis_load_intersect_phenotype_environments_covariates_
 
     print("Number of features to be tested: " + str(len(feature_list)))
     print("Total number of variants to be considered, before variante QC and feature intersection: " + str(bim.shape[0]))
-    
 
-    feature_variant_covariate_df = qtl_loader_utils.get_snp_feature_df(feature_variant_covariate_filename) 
+
+    feature_variant_covariate_df = qtl_loader_utils.get_snp_feature_df(feature_variant_covariate_filename)
     return [phenotype_df, kinship_df, covariate_df, environment_df, sample2individual_df, complete_annotation_df, annotation_df, snp_filter_df, snp_feature_filter_df, genetically_unique_individuals, minimum_test_samples, feature_list,bim,fam,bed, chromosome, selectionStart, selectionEnd, feature_variant_covariate_df]
 
 

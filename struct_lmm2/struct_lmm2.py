@@ -1,84 +1,126 @@
-
 import numpy as np
-import scipy as sp
 from numpy import concatenate, inf, newaxis
 from numpy.linalg import eigvalsh, inv, solve
 from numpy.random import RandomState
-from numpy_sugar import epsilon
 from numpy_sugar.linalg import ddot, economic_qs, economic_svd
 from scipy.linalg import sqrtm
-from chiscore import davies_pvalue, mod_liu, optimal_davies_pvalue
 
+from chiscore import davies_pvalue, optimal_davies_pvalue
 from glimix_core.lmm import LMM
 
 
 class StructLMM2:
-    r'''
+    r"""
     Mixed-model with genetic effect heterogeneity.
 
-    The extended StructLMM model (two random effects) is ::
+    The extended StructLMM model (two random effects) is
 
-        𝐲 = W𝛂 + 𝐠𝛽 + 𝐠⊙𝛃 + 𝐞 + u + 𝛆,
+        𝐲 = 𝙼𝛂 + 𝐠𝛽 + 𝐠⊙𝛃 + 𝐞 + 𝐮 + 𝛆,                                          (1)
 
-    where ::
+    where
 
-        𝐠⊙𝛃 = ∑ᵢ𝐠ᵢ𝛽ᵢ
-        𝛃 ∼ 𝓝(𝟎, b²Σ)
-        𝐞 ∼ 𝓝(𝟎, e²Σ)
-        𝛆 ∼ 𝓝(𝟎, 𝜀²I)
-        Σ = EEᵀ
-        u ~ 𝓝(𝟎, g²K)
+        (𝐠⊙𝛃)ᵢ = 𝐠ᵢ𝛃ᵢ
+        𝛽 ∼ 𝓝(0, 𝓋₀ρ₀),
+        𝛃 ∼ 𝓝(𝟎, 𝓋₀(1-ρ₀)𝙴𝙴ᵀ),
+        𝐞 ∼ 𝓝(𝟎, 𝓋₁ρ₁𝚆𝚆ᵀ),
+        𝐮 ~ 𝓝(𝟎, 𝓋₁(1-ρ₁)𝙺), and
+        𝛆 ∼ 𝓝(𝟎, 𝓋₂𝙸).
 
-    If one considers 𝛽 ∼ 𝓝(0, p²), we can insert
-    𝛽 into 𝛃 ::
+    The matrices 𝙴 and 𝚆 are generally the same, and represent the environment
+    configuration for each sample.
+    The parameter ρ ∈ [𝟶, 𝟷] dictates the relevance of genotype-environment interaction
+    versus the genotype effect alone.
+    The term 𝐞 accounts for additive environment-only effects while 𝛆 accounts for
+    noise effects.
+    The term 𝐮 accounts for population structure.
 
-        𝛃_ ∼ 𝓝(𝟎, p²𝟏𝟏ᵀ + b²Σ)
-    '''
-    '''
-    test
-    random = RandomState(0)
-    n = 1000
-    c = 2
-    y = random.randn(n)
-    W = random.randn(n, c)
-    # g = random.randn(n)
-    E = random.randn(n, 4)
-    Sigma = E @ E.T
-    X = random.randn(n, 5)
-    K = X @ X.T
-    '''
+    The above model is equivalent to
 
-    def __init__(self, y, W, E, G = None, a_values = None, K = None):
+        𝐲 = 𝙼𝛂 + 𝐠⊙𝛃 + 𝐞 + 𝐮 + 𝛆,                                               (2)
 
-        self.y = y
-        self.E = E
-        self.G = G
-        self.W = W
+    where
 
-        self.Sigma = E @ E.T
+        𝛃 ∼ 𝓝(𝟎, 𝓋₀(ρ₀𝟏𝟏ᵀ + (1-ρ₀)𝙴𝙴ᵀ)),
+        𝐞 ∼ 𝓝(𝟎, 𝓋₁ρ₁𝚆𝚆ᵀ),
+        𝐮 ~ 𝓝(𝟎, 𝓋₁(1-ρ₁)𝙺), and
+        𝛆 ∼ 𝓝(𝟎, 𝓋₂𝙸).
 
-        if self.G is None:
-            self.K = np.eye(self.y.shape[0])
-        else:
-            self.K = G @ G.T
+    Notice that the 𝛃 in Eqs. (1) and (2) are not the same.
+    Its marginalised form is given by
 
-        self.a_values = a_values
-        if self.a_values is None:
-            self.a_values = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+        𝐲 ∼ 𝓝(𝙼𝛂, 𝓋₀𝙳(ρ₀𝟏𝟏ᵀ + (1-ρ₀)𝙴𝙴ᵀ)𝙳 + 𝓋₁(ρ₁𝚆𝚆ᵀ + (1-ρ₁)𝙺) + 𝓋₂𝙸),
+
+    where 𝙳 = diag(𝐠).
+
+    StructLMM method is used to perform two types of statistical tests.
+    The association one compares the following hypotheses:
+
+        𝓗₀: 𝓋₀ = 0
+        𝓗₁: 𝓋₀ > 0
+
+    𝓗₀ denotes no genetic association, while 𝓗₁ models any genetic association.
+    In particular, 𝓗₁ includes genotype-environment interaction as part of genetic
+    association.
+    The interaction test is slightly more complicated as the term 𝐠𝛽 in Eq. (1) is now
+    considered a fixed one.
+    In pratice, however, we instead include 𝐠 in the covariates matrix 𝙼 and set ρ = 0
+    in Eq. (2).
+    We refer to this modified model as the interaction model.
+    The compared hypotheses are:
+
+        𝓗₀: 𝓋₀ = 0 (given the interaction model)
+        𝓗₁: 𝓋₀ > 0 (given the interaction model)
+
+    Implementation
+    --------------
+
+    Let Σ₀ = 𝙴𝙴ᵀ and Σ₁ = 𝚆𝚆ᵀ.
+    Therefore,
+
+        𝐲 ∼ 𝓝(𝙼𝛂, 𝓋₀𝙳(ρ₀𝟏𝟏ᵀ + (1-ρ₀)Σ₀)𝙳 + 𝓋₁(ρ₁Σ₁ᵀ + (1-ρ₁)𝙺) + 𝓋₂𝙸).
+
+    Let C(ρ₁) =
+    """
+
+    def __init__(self, y, M, E, W=None, K=None):
+
+        #         The above model is equivalent to
+
+        #     𝐲 = 𝙼𝛂 + 𝐠⊙𝛃 + 𝐞 + 𝐮 + 𝛆,                        (2)
+
+        # where
+
+        #     𝛃 ∼ 𝓝(𝟎, 𝓋₀(ρ𝟏𝟏ᵀ + (1-ρ)𝙴𝙴ᵀ)),
+        #     𝐞 ∼ 𝓝(𝟎, 𝓋₁𝚆𝚆ᵀ),
+        #     𝐮 ~ 𝓝(𝟎, g²𝙺), and
+        #     𝛆 ∼ 𝓝(𝟎, 𝓋₂𝙸).
+        if W is None:
+            W = E
+
+        self._y = y
+        self._M = M
+        self._E = E
+        self._W = W
+        self._K = K
+        self._Sigma0 = E @ E.T
+        self._Sigma1 = W @ W.T
+
+        self._rho0 = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+        self._rho1 = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+
         self.Cov = {}
         self.QS_a = {}
         for a in self.a_values:
             self.Cov[a] = a * self.Sigma + (1 - a) * self.K
             self.QS_a[a] = economic_qs(self.Cov[a])
 
-
     def fit_null(self, g):
-        self.X = concatenate((self.W, g[:, newaxis]), axis = 1)
+        self.X = concatenate((self.W, g[:, newaxis]), axis=1)
         best = {"lml": -inf, "a": 0, "v0": 0, "v1": 0, "beta": 0}
         for a in self.a_values:
-        # cov(y) = v0*(aΣ + (1-a)K) + v1*I
-            lmm = LMM(self.y, self.X, self.QS_a[a], restricted = True)
-            lmm.fit(verbose = False)
+            # cov(y) = v0*(aΣ + (1-a)K) + v1*I
+            lmm = LMM(self.y, self.X, self.QS_a[a], restricted=True)
+            lmm.fit(verbose=False)
             if lmm.lml() > best["lml"]:
                 best["lml"] = lmm.lml()
                 best["a"] = a
@@ -88,14 +130,13 @@ class StructLMM2:
                 best["covariance"] = lmm.covariance()
         self.best = best
 
-
     def score_2_dof(self, g):
         alpha = self.best["alpha"][:-1]
         beta = self.best["alpha"][-1]
         # e²Σ + g²K = s²(aΣ + (1-a)K)
         # e² = s²*a
         # g² = s²*(1-a)
-        s2 = self.best["v0"] # s²
+        s2 = self.best["v0"]  # s²
         eps2 = self.best["v1"]  # 𝜀²
 
         # H1 via score test
@@ -127,9 +168,11 @@ class StructLMM2:
         # print(lambdas)
         # print(Q)
         pval = davies_pvalue(Q, (sqrP0 @ dK @ sqrP0) / 2)
-        return(pval)
+        return pval
 
 
+def _mod_liu(q, w):
+    from chiscore import liu_sf
 
-
-
+    (pv, dof_x, _, info) = liu_sf(q, w, [1] * len(w), [0] * len(w), True)
+    return (pv, info["mu_q"], info["sigma_q"], dof_x)
