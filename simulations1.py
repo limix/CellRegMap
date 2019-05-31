@@ -31,7 +31,7 @@ random = RandomState(seed)  # set a seed to replicate simulations
 # set sample size
 n_samples = 500
 # simulate MAF (minor allele frequency) distribution
-maf_min = 0.35
+maf_min = 0.05
 maf_max = 0.45
 n_snps = 20
 
@@ -230,7 +230,7 @@ for i in range(n_snps):
     M = np.ones(n_samples)
     M = np.stack([M, g], axis=1)
     slmm_int = StructLMM(y0, M=M, E=E, W=E)
-    null = slmm_int.fit(verbose=False)
+    slmm_int.fit(verbose=False)
     _p = slmm_int.score_2dof_inter(g)
     print("{}\t{}".format(i, _p))
     p_values1.append(_p)
@@ -249,8 +249,10 @@ y = y.reshape(y.shape[0], 1)
 
 Cov = {}
 QS_a = {}
+M = ones((n_samples, 1))
 
 a_values = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+a_values = [1]
 
 for a in a_values:
     Cov[a] = a * Sigma + (1 - a) * K
@@ -258,35 +260,35 @@ for a in a_values:
 
 "Association test"
 
-print(
-    "p-values of association test SNPs",
-    idxs_persistent,
-    idxs_gxe,
-    "should be causal (persistent + GxE)",
-)
+# print(
+#     "p-values of association test SNPs",
+#     idxs_persistent,
+#     idxs_gxe,
+#     "should be causal (persistent + GxE)",
+# )
 
-for i in range(n_snps):
-    g = G[:, i]
-    g = g.reshape(g.shape[0], 1)
-    best = {"lml": -inf, "a": 0, "v0": 0, "v1": 0, "beta": 0}
-    for a in a_values:
-        lmm = LMM(y, E, QS_a[a], restricted=True)  # cov(y) = v0*(aΣ + (1-a)K) + v1*Is
-        lmm.fit(verbose=False)
-        if lmm.lml() > best["lml"]:
-            best["lml"] = lmm.lml()
-            best["a"] = a
-            best["v0"] = lmm.v0
-            best["v1"] = lmm.v1
-            best["alpha"] = lmm.beta
+# for i in range(n_snps):
+#     g = G[:, i]
+#     g = g.reshape(g.shape[0], 1)
+#     best = {"lml": -inf, "a": 0, "v0": 0, "v1": 0, "beta": 0}
+#     for a in a_values:
+#         lmm = LMM(y0, M, QS_a[a], restricted=True)  # cov(y) = v0*(aΣ + (1-a)K) + v1*Is
+#         lmm.fit(verbose=False)
+#         if lmm.lml() > best["lml"]:
+#             best["lml"] = lmm.lml()
+#             best["a"] = a
+#             best["v0"] = lmm.v0
+#             best["v1"] = lmm.v1
+#             best["alpha"] = lmm.beta
 
-    "H0 optimal parameters"
-    alpha = lmm.beta[:-1]
-    beta = lmm.beta[-1]
-    s2 = lmm.v0  # s²
-    eps2 = lmm.v1  # 𝜀²
+#     "H0 optimal parameters"
+#     alpha = lmm.beta[:-1]
+#     beta = lmm.beta[-1]
+#     s2 = lmm.v0  # s²
+#     eps2 = lmm.v1  # 𝜀²
 
-    "H1 via score test"
-    K0 = lmm.covariance()
+#     "H1 via score test"
+#     K0 = lmm.covariance()
 
 "Interaction test"
 
@@ -295,13 +297,11 @@ print("p-values of interaction test SNPs", idxs_gxe, "should be causal (GxE)")
 
 for i in range(n_snps):
     g = G[:, i]
-    # import pdb; pdb.set_trace()
     g = g.reshape(g.shape[0], 1)
-    # X = np.stack([E,g], axis = 1)
-    X = concatenate((E, g), axis=1)
+    Mg = concatenate((M, g), axis=1)
     best = {"lml": -inf, "a": 0, "v0": 0, "v1": 0, "beta": 0}
     for a in a_values:
-        lmm = LMM(y, X, QS_a[a], restricted=True)  # cov(y) = v0*(aΣ + (1-a)K) + v1*Is
+        lmm = LMM(y0, Mg, QS_a[a], restricted=True)  # cov(y) = v0*(aΣ + (1-a)K) + v1*Is
         lmm.fit(verbose=False)
         if lmm.lml() > best["lml"]:
             best["lml"] = lmm.lml()
@@ -309,8 +309,6 @@ for i in range(n_snps):
             best["v0"] = lmm.v0
             best["v1"] = lmm.v1
             best["alpha"] = lmm.beta
-
-            # import pdb; pdb.set_trace()
 
     "H0 optimal parameters"
     alpha = lmm.beta[:-1]
@@ -325,13 +323,14 @@ for i in range(n_snps):
     # Let K₀ = g²K + e²Σ + 𝜀²I
     # with optimal values e² and 𝜀² found above.
     K0 = lmm.covariance()
+    X = concatenate((E, g), axis=1)
 
     # Let P₀ = K⁻¹ - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹.
     K0iX = solve(K0, X)
     P0 = inv(K0) - K0iX @ solve(X.T @ K0iX, K0iX.T)
 
     # P₀𝐲 = K⁻¹𝐲 - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹𝐲.
-    K0iy = solve(K0, y)
+    K0iy = solve(K0, y0)
     P0y = K0iy - solve(K0, X @ solve(X.T @ K0iX, X.T @ K0iy))
 
     # The covariance matrix of H1 is K = K₀ + b²diag(𝐠)⋅Σ⋅diag(𝐠)
