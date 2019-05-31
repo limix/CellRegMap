@@ -13,9 +13,9 @@ from struct_lmm import StructLMM
 
 """ sample phenotype from the model:
 
-	𝐲 = W𝛂 + 𝐠𝛽 + 𝐠⊙𝛃 + 𝐞 + u + 𝛆
+    𝐲 = W𝛂 + 𝐠𝛽 + 𝐠⊙𝛃 + 𝐞 + u + 𝛆
 
-	𝛃 ∼ 𝓝(𝟎, b²Σ)
+    𝛃 ∼ 𝓝(𝟎, b²Σ)
     𝐞 ∼ 𝓝(𝟎, e²Σ)
     𝛆 ∼ 𝓝(𝟎, 𝜀²I)
     Σ = EEᵀ
@@ -115,7 +115,7 @@ print("{}\t{}".format(idxs_gxe[1], mafs[idxs_gxe[1]]))
 "simulate sigma parameters"
 
 rho = 0.8  # contribution of interactions (proportion)
-var_tot_g_gxe = 0.9
+var_tot_g_gxe = 0.4
 
 print(rho, "rho (prop var explained by GxE)")
 print(var_tot_g_gxe, "tot variance G + GxE")
@@ -134,9 +134,9 @@ var_noise = v
 
 """ (persistent) genotype portion of phenotype:
 
-	𝐲_g = G 𝛃_g
+    𝐲_g = G 𝛃_g
 
-	𝐲_g = ∑ᵢ𝐠ᵢ𝛽_gᵢ,
+    𝐲_g = ∑ᵢ𝐠ᵢ𝛽_gᵢ,
 
  where 𝐠ᵢ is the i-th column of 𝙶.
 
@@ -156,7 +156,7 @@ y_g = G @ beta_g
 
 """ GxE portion of phenotype:
 
- 	𝐲_gxe = ∑ᵢ gᵢ x 𝛃ᵢ
+     𝐲_gxe = ∑ᵢ gᵢ x 𝛃ᵢ
 
 """
 # simulate (GxE) variance component to have causal SNPs as defined
@@ -164,7 +164,7 @@ sigma_gxe = zeros(n_snps)
 sigma_gxe[idxs_gxe] = var_gxe
 
 # for i in range(n_snps):
-# 	print('{}\t{}'.format(i,sigma_gxe[i]))
+#     print('{}\t{}'.format(i,sigma_gxe[i]))
 
 y_gxe = zeros(n_samples)
 u_gxe = ones(n_samples)
@@ -210,15 +210,15 @@ print(
     "should be causal (persistent + GxE)",
 )
 
-slmm = StructLMM(y0, M=np.ones(n_samples), E=E, W=E)
-slmm.fit(verbose=False)
+# slmm = StructLMM(y0, M=np.ones(n_samples), E=E, W=E)
+# slmm.fit(verbose=False)
 
-for i in range(n_snps):
-    g = G[:, i]
-    g = g.reshape(g.shape[0], 1)
-    _p = slmm.score_2dof_assoc(g)
-    print("{}\t{}".format(i, _p))
-    p_values0.append(_p)
+# for i in range(n_snps):
+#     g = G[:, i]
+#     g = g.reshape(g.shape[0], 1)
+#     _p = slmm.score_2dof_assoc(g)
+#     print("{}\t{}".format(i, _p))
+#     p_values0.append(_p)
 
 "Interaction test"
 
@@ -229,7 +229,7 @@ for i in range(n_snps):
     # g = g.reshape(g.shape[0],1)
     M = np.ones(n_samples)
     M = np.stack([M, g], axis=1)
-    slmm_int = StructLMM(y, M=M, E=E, W=E)
+    slmm_int = StructLMM(y0, M=M, E=E, W=E)
     null = slmm_int.fit(verbose=False)
     _p = slmm_int.score_2dof_inter(g)
     print("{}\t{}".format(i, _p))
