@@ -13,9 +13,9 @@ from struct_lmm import StructLMM
 
 """ sample phenotype from the model:
 
-	𝐲 = W𝛂 + 𝐠𝛽 + 𝐠⊙𝛃 + 𝐞 + u + 𝛆
+    𝐲 = W𝛂 + 𝐠𝛽 + 𝐠⊙𝛃 + 𝐞 + u + 𝛆
 
-	𝛃 ∼ 𝓝(𝟎, b²Σ)
+    𝛃 ∼ 𝓝(𝟎, b²Σ)
     𝐞 ∼ 𝓝(𝟎, e²Σ)
     𝛆 ∼ 𝓝(𝟎, 𝜀²I)
     Σ = EEᵀ
@@ -31,7 +31,7 @@ random = RandomState(seed)  # set a seed to replicate simulations
 # set sample size
 n_samples = 500
 # simulate MAF (minor allele frequency) distribution
-maf_min = 0.35
+maf_min = 0.05
 maf_max = 0.45
 n_snps = 20
 
@@ -115,7 +115,7 @@ print("{}\t{}".format(idxs_gxe[1], mafs[idxs_gxe[1]]))
 "simulate sigma parameters"
 
 rho = 0.8  # contribution of interactions (proportion)
-var_tot_g_gxe = 0.9
+var_tot_g_gxe = 0.4
 
 print(rho, "rho (prop var explained by GxE)")
 print(var_tot_g_gxe, "tot variance G + GxE")
@@ -134,9 +134,9 @@ var_noise = v
 
 """ (persistent) genotype portion of phenotype:
 
-	𝐲_g = G 𝛃_g
+    𝐲_g = G 𝛃_g
 
-	𝐲_g = ∑ᵢ𝐠ᵢ𝛽_gᵢ,
+    𝐲_g = ∑ᵢ𝐠ᵢ𝛽_gᵢ,
 
  where 𝐠ᵢ is the i-th column of 𝙶.
 
@@ -156,7 +156,7 @@ y_g = G @ beta_g
 
 """ GxE portion of phenotype:
 
- 	𝐲_gxe = ∑ᵢ gᵢ x 𝛃ᵢ
+     𝐲_gxe = ∑ᵢ gᵢ x 𝛃ᵢ
 
 """
 # simulate (GxE) variance component to have causal SNPs as defined
@@ -164,7 +164,7 @@ sigma_gxe = zeros(n_snps)
 sigma_gxe[idxs_gxe] = var_gxe
 
 # for i in range(n_snps):
-# 	print('{}\t{}'.format(i,sigma_gxe[i]))
+#     print('{}\t{}'.format(i,sigma_gxe[i]))
 
 y_gxe = zeros(n_samples)
 u_gxe = ones(n_samples)
@@ -210,15 +210,15 @@ print(
     "should be causal (persistent + GxE)",
 )
 
-slmm = StructLMM(y0, M=np.ones(n_samples), E=E, W=E)
-slmm.fit(verbose=False)
+# slmm = StructLMM(y0, M=np.ones(n_samples), E=E, W=E)
+# slmm.fit(verbose=False)
 
-for i in range(n_snps):
-    g = G[:, i]
-    g = g.reshape(g.shape[0], 1)
-    _p = slmm.score_2dof_assoc(g)
-    print("{}\t{}".format(i, _p))
-    p_values0.append(_p)
+# for i in range(n_snps):
+#     g = G[:, i]
+#     g = g.reshape(g.shape[0], 1)
+#     _p = slmm.score_2dof_assoc(g)
+#     print("{}\t{}".format(i, _p))
+#     p_values0.append(_p)
 
 "Interaction test"
 
@@ -229,8 +229,8 @@ for i in range(n_snps):
     # g = g.reshape(g.shape[0],1)
     M = np.ones(n_samples)
     M = np.stack([M, g], axis=1)
-    slmm_int = StructLMM(y, M=M, E=E, W=E)
-    null = slmm_int.fit(verbose=False)
+    slmm_int = StructLMM(y0, M=M, E=E, W=E)
+    slmm_int.fit(verbose=False)
     _p = slmm_int.score_2dof_inter(g)
     print("{}\t{}".format(i, _p))
     p_values1.append(_p)
@@ -249,8 +249,10 @@ y = y.reshape(y.shape[0], 1)
 
 Cov = {}
 QS_a = {}
+M = ones((n_samples, 1))
 
 a_values = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+a_values = [1]
 
 for a in a_values:
     Cov[a] = a * Sigma + (1 - a) * K
@@ -313,7 +315,8 @@ for i in range(n_snps):
     dK_GxE = ddot(g.ravel(), ddot(Sigma, g.ravel()))
     Q_GxE = (P0y.T @ dK_GxE @ P0y) / 2
     for i, rho in enumerate(rhos):
-            Q[i] = (rho * Q_G + (1 - rho) * Q_GxE) / 2
+
+        Q[i] = (rho * Q_G + (1 - rho) * Q_GxE) / 2
 
 "Interaction test"
 
@@ -322,13 +325,11 @@ print("p-values of interaction test SNPs", idxs_gxe, "should be causal (GxE)")
 
 for i in range(n_snps):
     g = G[:, i]
-    # import pdb; pdb.set_trace()
     g = g.reshape(g.shape[0], 1)
-    # X = np.stack([E,g], axis = 1)
-    X = concatenate((E, g), axis=1)
+    Mg = concatenate((M, g), axis=1)
     best = {"lml": -inf, "a": 0, "v0": 0, "v1": 0, "beta": 0}
     for a in a_values:
-        lmm = LMM(y, X, QS_a[a], restricted=True)  # cov(y) = v0*(aΣ + (1-a)K) + v1*Is
+        lmm = LMM(y0, Mg, QS_a[a], restricted=True)  # cov(y) = v0*(aΣ + (1-a)K) + v1*Is
         lmm.fit(verbose=False)
         if lmm.lml() > best["lml"]:
             best["lml"] = lmm.lml()
@@ -336,8 +337,6 @@ for i in range(n_snps):
             best["v0"] = lmm.v0
             best["v1"] = lmm.v1
             best["alpha"] = lmm.beta
-
-            # import pdb; pdb.set_trace()
 
     "H0 optimal parameters"
     alpha = lmm.beta[:-1]
@@ -352,13 +351,14 @@ for i in range(n_snps):
     # Let K₀ = g²K + e²Σ + 𝜀²I
     # with optimal values e² and 𝜀² found above.
     K0 = lmm.covariance()
+    X = concatenate((E, g), axis=1)
 
     # Let P₀ = K⁻¹ - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹.
     K0iX = solve(K0, X)
     P0 = inv(K0) - K0iX @ solve(X.T @ K0iX, K0iX.T)
 
     # P₀𝐲 = K⁻¹𝐲 - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹𝐲.
-    K0iy = solve(K0, y)
+    K0iy = solve(K0, y0)
     P0y = K0iy - solve(K0, X @ solve(X.T @ K0iX, X.T @ K0iy))
 
     # The covariance matrix of H1 is K = K₀ + b²diag(𝐠)⋅Σ⋅diag(𝐠)
@@ -372,10 +372,6 @@ for i in range(n_snps):
     # of chi-squared (df=1) distributions:
     # Q ∼ ∑λχ², where λᵢ are the non-zero eigenvalues of ½√P₀⋅∂K⋅√P₀.
     sqrP0 = sqrtm(P0)
-    # lambdas = eigvalsh((sqrP0 @ dK @ sqrP0) / 2)
-    # lambdas = lambdas[lambdas > epsilon.small]
-    # print(lambdas)
-    # print(Q)
     pval = davies_pvalue(Q, (sqrP0 @ dK @ sqrP0) / 2)
     print("{}\t{}".format(i, pval))
     p_values3.append(pval)
