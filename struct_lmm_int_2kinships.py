@@ -67,7 +67,7 @@ for a in a_values:
     # print(QS_a[a][0][1].shape[1])
 
 
-print(time() - start)
+# print(time() - start)
 """
 Interaction test
 ----------------
@@ -77,7 +77,8 @@ H1: b² > 0 => 𝐲 = W𝛂 + 𝐠𝛽 + 𝐠⊙𝛃 + 𝐞 + u + 𝛆
     𝐲 ∼ 𝓝(W𝛂 + 𝐠𝛽, e²Σ + g²K + 𝜀²I + b²Σ)
 """
 start = time()
-for i in range(100):
+for i in range(20):
+    print(i)
     random = RandomState(i)
     g = random.randn(n)
     X = concatenate((W, g[:, newaxis]), axis = 1)
@@ -85,7 +86,7 @@ for i in range(100):
     best = {"lml": -inf, "a": 0, "v0": 0, "v1": 0, "beta": 0}
     for a in a_values:
         # cov(y) = v0*(aΣ + (1-a)K) + v1*I
-        lmm = LMM(y, X, QS_a[a])
+        lmm = LMM(y, X, QS_a[a], restricted = True)
         lmm.fit(verbose = False)
         if lmm.lml() > best["lml"]:
             best["lml"] = lmm.lml()
@@ -138,20 +139,22 @@ for i in range(100):
     # print(lambdas)
     # print(Q)
     pval = davies_pvalue(Q, (sqrP0 @ dK @ sqrP0) / 2)
+    print(pval)
     # p_values2[i] = pval
 
 
-print(time() - start)
-print((time() - start)/100)
+# print(time() - start)
+# print((time() - start)/100)
 
     # # compare to StructLMM (int)
 
-    # from struct_lmm import StructLMM
-    # y = y.reshape(y.shape[0],1)
-    # slmm_int = StructLMM(y, E, W = E, rho_list = [0])
-    # g = g.reshape(g.shape[0],1)
-    # covs1 = np.hstack((W, g))
-    # null = slmm_int.fit_null(F = covs1, verbose = False)
-    # _p = slmm_int.score_2_dof(g)
+    from struct_lmm import StructLMM
+    y = y.reshape(y.shape[0],1)
+    slmm_int = StructLMM(y, E, W = E, rho_list = [0])
+    g = g.reshape(g.shape[0],1)
+    covs1 = np.hstack((W, g))
+    null = slmm_int.fit_null(F = covs1, verbose = False)
+    _p = slmm_int.score_2_dof(g)
     # p_values1[i] = _p
+    print(_p)
 

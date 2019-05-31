@@ -265,6 +265,8 @@ print(
     "should be causal (persistent + GxE)",
 )
 
+rhos = [0.0, 0.1 ** 2, 0.2 ** 2, 0.3 ** 2, 0.4 ** 2, 0.5 ** 2, 0.5, 0.999]
+
 for i in range(n_snps):
     g = G[:, i]
     g = g.reshape(g.shape[0], 1)
@@ -282,11 +284,36 @@ for i in range(n_snps):
     "H0 optimal parameters"
     alpha = lmm.beta[:-1]
     beta = lmm.beta[-1]
+    # e²Σ + g²K = s²(aΣ + (1-a)K)
+    # e² = s²*a
+    # g² = s²*(1-a)
     s2 = lmm.v0  # s²
     eps2 = lmm.v1  # 𝜀²
 
     "H1 via score test"
+    # Let K₀ = g²K + e²Σ + 𝜀²I
+    # with optimal values e² and 𝜀² found above.
     K0 = lmm.covariance()
+
+    # Let P₀ = K⁻¹ - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹.
+    K0iX = solve(K0, X)
+    P0 = inv(K0) - K0iX @ solve(X.T @ K0iX, K0iX.T)
+
+    # P₀𝐲 = K⁻¹𝐲 - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹𝐲.
+    K0iy = solve(K0, y)
+    P0y = K0iy - solve(K0, X @ solve(X.T @ K0iX, X.T @ K0iy))
+
+    # The covariance matrix of H1 is K = K₀ + b²diag(𝐠)⋅Σ⋅diag(𝐠)
+    # We have ∂K/∂b² = diag(𝐠)⋅Σ⋅diag(𝐠)
+    # The score test statistics is given by
+    # Q = ½𝐲ᵀP₀⋅∂K⋅P₀𝐲
+    dK_G = ddot(g.ravel(), ddot(ones((n_samples, n_samples)), g.ravel()))
+    Q_G = (P0y.T @ dK_G @ P0y) / 2
+
+    dK_GxE = ddot(g.ravel(), ddot(Sigma, g.ravel()))
+    Q_GxE = (P0y.T @ dK_GxE @ P0y) / 2
+    for i, rho in enumerate(rhos):
+            Q[i] = (rho * Q_G + (1 - rho) * Q_GxE) / 2
 
 "Interaction test"
 
