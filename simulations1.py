@@ -21,9 +21,9 @@ from numpy.random import RandomState
 seed = int(sys.argv[1])
 random = RandomState(seed) # set a seed to replicate simulations
 # set sample size
-n_samples = 200
+n_samples = 300
 # simulate MAF (minor allele frequency) distribution
-maf_min = 0.05
+maf_min = 0.35
 maf_max = 0.45
 n_snps = 20
 
@@ -44,7 +44,7 @@ E[group_size:, 1] = 1
 
 Sigma = E @ E.T
  
-import pdb; pdb.set_trace()
+# import pdb; pdb.set_trace()
 
 'simulate genotypes (for n_snps variants)'
 
@@ -104,8 +104,8 @@ print('{}\t{}'.format(idxs_gxe[1],mafs[idxs_gxe[1]]))
 
 'simulate sigma parameters'
 
-rho = 0.7 # contribution of interactions (proportion)
-var_tot_g_gxe = 0.8
+rho = 0.8 # contribution of interactions (proportion)
+var_tot_g_gxe = 0.9
 
 print(rho,"rho (prop var explained by GxE)")
 print(var_tot_g_gxe,"tot variance G + GxE")
@@ -175,6 +175,7 @@ eps = random.multivariate_normal(zeros(n_samples), v * eye(n_samples))
 y = 1 + y_g + y_gxe + e + u + eps
 
 
+p_values0 = []
 p_values1 = []
 p_values2 = []
 p_values3 = []
@@ -187,6 +188,20 @@ from struct_lmm import StructLMM
 import numpy as np
 
 y = y.reshape(y.shape[0],1)
+
+'Association test'
+
+print("p-values of association test SNPs",idxs_persistent,idxs_gxe,"should be causal (persistent + GxE)")
+
+slmm = StructLMM(y, M = np.ones(n_samples), E = E, W = E)
+slmm.fit(verbose = False)
+
+for i in range(n_snps):	
+	g = G[:,i]
+	g = g.reshape(g.shape[0],1)
+	_p = slmm.score_2dof_assoc(g)
+	print('{}\t{}'.format(i,_p))
+	p_values0.append(_p)
 
 'Interaction test'
 
@@ -202,20 +217,6 @@ for i in range(n_snps):
 	_p = slmm_int.score_2dof_inter(g)
 	print('{}\t{}'.format(i,_p))
 	p_values1.append(_p)
-
-'Association test'
-
-# print("p-values of association test SNPs",idxs_persistent,idxs_gxe,"should be causal (persistent + GxE)")
-
-# slmm = StructLMM(y, M = np.ones(n_samples), E = E, W = E)
-# slmm.fit(verbose = False)
-
-# for i in range(n_snps):	
-# 	g = G[:,i]
-# 	g = g.reshape(g.shape[0],1)
-# 	_p = slmm.score_2dof_assoc(g)
-# 	print('{}\t{}'.format(i,_p))
-# 	p_values2.append(_p)
 
 
 ################################################
@@ -233,6 +234,10 @@ from chiscore import davies_pvalue#, mod_liu, optimal_davies_pvalue
 from numpy.linalg import eigvalsh, inv, solve
 from scipy.linalg import sqrtm
 from glimix_core.lmm import LMM
+
+'Association test'
+
+###
 
 'Interaction test'
 
