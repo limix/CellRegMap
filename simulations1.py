@@ -1,15 +1,29 @@
 import sys
 
 import numpy as np
-from numpy import asarray, concatenate, eye, inf, newaxis, ones, sqrt, stack, zeros
+from numpy import (
+    asarray,
+    concatenate,
+    empty,
+    eye,
+    inf,
+    newaxis,
+    ones,
+    sqrt,
+    stack,
+    trace,
+    where,
+    zeros,
+)
 from numpy.linalg import eigvalsh, inv, solve
 from numpy.random import RandomState
 from numpy_sugar.linalg import ddot, economic_qs, economic_svd
 from scipy.linalg import sqrtm
 
-from chiscore import davies_pvalue  # , mod_liu, optimal_davies_pvalue
+from chiscore import davies_pvalue, optimal_davies_pvalue
 from glimix_core.lmm import LMM
 from struct_lmm import StructLMM
+
 
 """ sample phenotype from the model:
 
@@ -22,6 +36,30 @@ from struct_lmm import StructLMM
     u ~ 𝓝(𝟎, g²K)
 
 """
+def _mod_liu(q, w):
+    from chiscore import liu_sf
+
+    (pv, dof_x, _, info) = liu_sf(q, w, [1] * len(w), [0] * len(w), True)
+    return (pv, info["mu_q"], info["sigma_q"], dof_x)
+
+
+def _qmin(pliumod):
+    from numpy import zeros
+    import scipy.stats as st
+
+    # T statistic
+    T = pliumod[:, 0].min()
+
+    qmin = zeros(pliumod.shape[0])
+    percentile = 1 - T
+    for i in range(pliumod.shape[0]):
+        q = st.chi2.ppf(percentile, pliumod[i, 3])
+        mu_q = pliumod[i, 1]
+        sigma_q = pliumod[i, 2]
+        dof = pliumod[i, 3]
+        qmin[i] = (q - dof) / (2 * dof) ** 0.5 * sigma_q + mu_q
+
+    return qmin
 
 # Let Σ = 𝙴𝙴ᵀ
 # 𝐲 ∼ 𝓝(𝙼𝛂, 𝓋₀𝙳(ρ𝟏𝟏ᵀ + (1-ρ)Σ)𝙳 + 𝓋₁(aΣ + (1-a)𝙺) + 𝓋₂𝙸).
@@ -203,12 +241,12 @@ y = y.reshape(y.shape[0], 1)
 
 "Association test"
 
-print(
-    "p-values of association test SNPs",
-    idxs_persistent,
-    idxs_gxe,
-    "should be causal (persistent + GxE)",
-)
+# print(
+#     "p-values of association test SNPs",
+#     idxs_persistent,
+#     idxs_gxe,
+#     "should be causal (persistent + GxE)",
+# )
 
 # slmm = StructLMM(y0, M=np.ones(n_samples), E=E, W=E)
 # slmm.fit(verbose=False)
@@ -222,18 +260,18 @@ print(
 
 "Interaction test"
 
-print("p-values of interaction test SNPs", idxs_gxe, "should be causal (GxE)")
+# print("p-values of interaction test SNPs", idxs_gxe, "should be causal (GxE)")
 
-for i in range(n_snps):
-    g = G[:, i]
-    # g = g.reshape(g.shape[0],1)
-    M = np.ones(n_samples)
-    M = np.stack([M, g], axis=1)
-    slmm_int = StructLMM(y0, M=M, E=E, W=E)
-    slmm_int.fit(verbose=False)
-    _p = slmm_int.score_2dof_inter(g)
-    print("{}\t{}".format(i, _p))
-    p_values1.append(_p)
+# for i in range(n_snps):
+#     g = G[:, i]
+#     # g = g.reshape(g.shape[0],1)
+#     M = np.ones(n_samples)
+#     M = np.stack([M, g], axis=1)
+#     slmm_int = StructLMM(y0, M=M, E=E, W=E)
+#     slmm_int.fit(verbose=False)
+#     _p = slmm_int.score_2dof_inter(g)
+#     print("{}\t{}".format(i, _p))
+#     p_values1.append(_p)
 
 
 ################################################
@@ -296,7 +334,9 @@ for i in range(n_snps):
     # Let K₀ = g²K + e²Σ + 𝜀²I
     # with optimal values e² and 𝜀² found above.
     K0 = lmm.covariance()
+    X = concatenate((E, g), axis=1)
 
+    # import pdb; pdb.set_trace()
     # Let P₀ = K⁻¹ - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹.
     K0iX = solve(K0, X)
     P0 = inv(K0) - K0iX @ solve(X.T @ K0iX, K0iX.T)
@@ -305,18 +345,74 @@ for i in range(n_snps):
     K0iy = solve(K0, y)
     P0y = K0iy - solve(K0, X @ solve(X.T @ K0iX, X.T @ K0iy))
 
+    # import pdb; pdb.set_trace()
     # The covariance matrix of H1 is K = K₀ + b²diag(𝐠)⋅Σ⋅diag(𝐠)
     # We have ∂K/∂b² = diag(𝐠)⋅Σ⋅diag(𝐠)
     # The score test statistics is given by
     # Q = ½𝐲ᵀP₀⋅∂K⋅P₀𝐲
     dK_G = ddot(g.ravel(), ddot(ones((n_samples, n_samples)), g.ravel()))
-    Q_G = (P0y.T @ dK_G @ P0y) / 2
-
     dK_GxE = ddot(g.ravel(), ddot(Sigma, g.ravel()))
-    Q_GxE = (P0y.T @ dK_GxE @ P0y) / 2
-    for i, rho in enumerate(rhos):
+    sqrP0 = sqrtm(P0)
+    Q_G = P0y.T @ dK_G @ P0y
+    Q_GxE = P0y.T @ dK_GxE @ P0y
+    # lambdas = zeros(len(rhos))
+    lambdas = []
+    Q = zeros(len(rhos))
+    for ii, rho in enumerate(rhos):
+        Q[ii] = (rho * Q_G + (1 - rho) * Q_GxE) / 2
+        dK = rho * dK_G + (1 - rho) * dK_GxE
+        lambdas.append(eigvalsh(sqrP0 @ dK @ sqrP0) / 2)
+        # lambdas[i] = eigvalsh(sqrP0 @ dK @ sqrP0) / 2
 
-        Q[i] = (rho * Q_G + (1 - rho) * Q_GxE) / 2
+    pliumod = stack([_mod_liu(Qi, lam) for Qi, lam in zip(Q, lambdas)], axis=0)
+    qmin = _qmin(pliumod)
+
+    # 3. Calculate quantites that occur in null distribution
+    Px1 = P0 @ g
+    m = 0.5 * (g.T @ Px1)
+    goE = g * E
+    PgoE = P0 @ goE
+    ETxPxE = 0.5 * (goE.T @ PgoE)
+    ETxPx1 = goE.T @ Px1
+    ETxPx11xPxE = 0.25 / m * (ETxPx1 @ ETxPx1.T)
+    ZTIminusMZ = ETxPxE - ETxPx11xPxE
+    eigh = eigvalsh(ZTIminusMZ)
+
+    eta = ETxPx11xPxE @ ZTIminusMZ
+    vareta = 4 * trace(eta)
+
+    OneZTZE = 0.5 * (g.T @ PgoE)
+    tau_top = OneZTZE @ OneZTZE.T
+    tau_rho = empty(len(rhos))
+    for ii in range(len(rhos)):
+        tau_rho[ii] = rhos[ii] * m + (1 - rhos[ii]) / m * tau_top
+
+    MuQ = sum(eigh)
+    VarQ = sum(eigh ** 2) * 2 + vareta
+    KerQ = sum(eigh ** 4) / (sum(eigh ** 2) ** 2) * 12
+    Df = 12 / KerQ
+
+    # 4. Integration
+    T = pliumod[:, 0].min()
+    pvalue = optimal_davies_pvalue(
+        qmin, MuQ, VarQ, KerQ, eigh, vareta, Df, tau_rho, rhos, T
+    )
+
+    # Final correction to make sure that the p-value returned is sensible
+    multi = 3
+    if len(rhos) < 3:
+        multi = 2
+    idx = where(pliumod[:, 0] > 0)[0]
+    pval = pliumod[:, 0].min() * multi
+    if pvalue <= 0 or len(idx) < len(rhos):
+        pvalue = pval
+    if pvalue == 0:
+        if len(idx) > 0:
+            pvalue = pliumod[:, 0][idx].min()
+
+    print("{}\t{}".format(i, pvalue))
+    p_values2.append(pvalue)
+    # return pvalue
 
 "Interaction test"
 
