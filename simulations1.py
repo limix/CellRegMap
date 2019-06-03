@@ -61,6 +61,33 @@ def _qmin(pliumod):
 
     return qmin
 
+
+def _mod_liu(q, w):
+    from chiscore import liu_sf
+
+    (pv, dof_x, _, info) = liu_sf(q, w, [1] * len(w), [0] * len(w), True)
+    return (pv, info["mu_q"], info["sigma_q"], dof_x)
+
+
+def _qmin(pliumod):
+    from numpy import zeros
+    import scipy.stats as st
+
+    # T statistic
+    T = pliumod[:, 0].min()
+
+    qmin = zeros(pliumod.shape[0])
+    percentile = 1 - T
+    for i in range(pliumod.shape[0]):
+        q = st.chi2.ppf(percentile, pliumod[i, 3])
+        mu_q = pliumod[i, 1]
+        sigma_q = pliumod[i, 2]
+        dof = pliumod[i, 3]
+        qmin[i] = (q - dof) / (2 * dof) ** 0.5 * sigma_q + mu_q
+
+    return qmin
+
+
 # Let Σ = 𝙴𝙴ᵀ
 # 𝐲 ∼ 𝓝(𝙼𝛂, 𝓋₀𝙳(ρ𝟏𝟏ᵀ + (1-ρ)Σ)𝙳 + 𝓋₁(aΣ + (1-a)𝙺) + 𝓋₂𝙸).
 
@@ -355,6 +382,7 @@ for i in range(n_snps):
     sqrP0 = sqrtm(P0)
     Q_G = P0y.T @ dK_G @ P0y
     Q_GxE = P0y.T @ dK_GxE @ P0y
+
     # lambdas = zeros(len(rhos))
     lambdas = []
     Q = zeros(len(rhos))
@@ -384,8 +412,10 @@ for i in range(n_snps):
     OneZTZE = 0.5 * (g.T @ PgoE)
     tau_top = OneZTZE @ OneZTZE.T
     tau_rho = empty(len(rhos))
+
     for ii in range(len(rhos)):
         tau_rho[ii] = rhos[ii] * m + (1 - rhos[ii]) / m * tau_top
+
 
     MuQ = sum(eigh)
     VarQ = sum(eigh ** 2) * 2 + vareta
