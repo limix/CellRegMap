@@ -282,202 +282,202 @@ for i in range(n_snps):
 ################################################
 ################################################
 
-# print("using structLMM 2 now")
+print("using structLMM 2 now")
 
-# "test using struct LMM 2 (in this case it should not be very different)"
+"test using struct LMM 2 (in this case it should not be very different)"
 
-# # y = y.reshape(y.shape[0], 1)
+# y = y.reshape(y.shape[0], 1)
 
-# Cov = {}
-# QS_a = {}
-# M = ones((n_samples, 1))
+Cov = {}
+QS_a = {}
+M = ones((n_samples, 1))
 
-# a_values = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
-# a_values = [1]
+a_values = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+a_values = [1]
 
-# for a in a_values:
-#     Cov[a] = a * Sigma + (1 - a) * K
-#     QS_a[a] = economic_qs(Cov[a])
+for a in a_values:
+    Cov[a] = a * Sigma + (1 - a) * K
+    QS_a[a] = economic_qs(Cov[a])
 
-# "Association test"
+"Association test"
 
-# print(
-#     "p-values of association test SNPs",
-#     idxs_persistent,
-#     idxs_gxe,
-#     "should be causal (persistent + GxE)",
-# )
+print(
+    "p-values of association test SNPs",
+    idxs_persistent,
+    idxs_gxe,
+    "should be causal (persistent + GxE)",
+)
 
-# rhos = [0.0, 0.1 ** 2, 0.2 ** 2, 0.3 ** 2, 0.4 ** 2, 0.5 ** 2, 0.5, 0.999]
+rhos = [0.0, 0.1 ** 2, 0.2 ** 2, 0.3 ** 2, 0.4 ** 2, 0.5 ** 2, 0.5, 0.999]
 
-# for i in range(n_snps):
-#     # print(i)
-#     g = G[:, i]
-#     g = g.reshape(g.shape[0], 1)
-#     best = {"lml": -inf, "a": 0, "v0": 0, "v1": 0, "beta": 0}
-#     for a in a_values:
-#         lmm = LMM(y0, E, QS_a[a], restricted=True)  # cov(y) = v0*(aΣ + (1-a)K) + v1*Is
-#         lmm.fit(verbose=False)
-#         if lmm.lml() > best["lml"]:
-#             best["lml"] = lmm.lml()
-#             best["a"] = a
-#             best["v0"] = lmm.v0
-#             best["v1"] = lmm.v1
-#             best["alpha"] = lmm.beta
+for i in range(n_snps):
+    # print(i)
+    g = G[:, i]
+    g = g.reshape(g.shape[0], 1)
+    best = {"lml": -inf, "a": 0, "v0": 0, "v1": 0, "beta": 0}
+    for a in a_values:
+        lmm = LMM(y0, E, QS_a[a], restricted=True)  # cov(y) = v0*(aΣ + (1-a)K) + v1*Is
+        lmm.fit(verbose=False)
+        if lmm.lml() > best["lml"]:
+            best["lml"] = lmm.lml()
+            best["a"] = a
+            best["v0"] = lmm.v0
+            best["v1"] = lmm.v1
+            best["alpha"] = lmm.beta
 
-#     "H0 optimal parameters"
-#     alpha = lmm.beta[:-1]
-#     beta = lmm.beta[-1]
-#     # e²Σ + g²K = s²(aΣ + (1-a)K)
-#     # e² = s²*a
-#     # g² = s²*(1-a)
-#     s2 = lmm.v0  # s²
-#     eps2 = lmm.v1  # 𝜀²
+    "H0 optimal parameters"
+    alpha = lmm.beta[:-1]
+    beta = lmm.beta[-1]
+    # e²Σ + g²K = s²(aΣ + (1-a)K)
+    # e² = s²*a
+    # g² = s²*(1-a)
+    s2 = lmm.v0  # s²
+    eps2 = lmm.v1  # 𝜀²
 
-#     "H1 via score test"
-#     # Let K₀ = g²K + e²Σ + 𝜀²I
-#     # with optimal values e² and 𝜀² found above.
-#     K0 = lmm.covariance()
-#     X = concatenate((E, g), axis=1)
+    "H1 via score test"
+    # Let K₀ = g²K + e²Σ + 𝜀²I
+    # with optimal values e² and 𝜀² found above.
+    K0 = lmm.covariance()
+    X = concatenate((E, g), axis=1)
 
-#     # import pdb; pdb.set_trace()
-#     # Let P₀ = K⁻¹ - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹.
-#     K0iX = solve(K0, X)
-#     P0 = inv(K0) - K0iX @ solve(X.T @ K0iX, K0iX.T)
+    # import pdb; pdb.set_trace()
+    # Let P₀ = K⁻¹ - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹.
+    K0iX = solve(K0, X)
+    P0 = inv(K0) - K0iX @ solve(X.T @ K0iX, K0iX.T)
 
-#     # P₀𝐲 = K⁻¹𝐲 - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹𝐲.
-#     K0iy = solve(K0, y0)
-#     P0y = K0iy - solve(K0, X @ solve(X.T @ K0iX, X.T @ K0iy))
+    # P₀𝐲 = K⁻¹𝐲 - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹𝐲.
+    K0iy = solve(K0, y0)
+    P0y = K0iy - solve(K0, X @ solve(X.T @ K0iX, X.T @ K0iy))
 
-#     # import pdb; pdb.set_trace()
-#     # The covariance matrix of H1 is K = K₀ + b²diag(𝐠)⋅Σ⋅diag(𝐠)
-#     # We have ∂K/∂b² = diag(𝐠)⋅Σ⋅diag(𝐠)
-#     # The score test statistics is given by
-#     # Q = ½𝐲ᵀP₀⋅∂K⋅P₀𝐲
-#     dK_G = ddot(g.ravel(), ddot(ones((n_samples, n_samples)), g.ravel()))
-#     dK_GxE = ddot(g.ravel(), ddot(Sigma, g.ravel()))
-#     sqrP0 = sqrtm(P0)
-#     Q_G = P0y.T @ dK_G @ P0y
-#     Q_GxE = P0y.T @ dK_GxE @ P0y
+    # import pdb; pdb.set_trace()
+    # The covariance matrix of H1 is K = K₀ + b²diag(𝐠)⋅Σ⋅diag(𝐠)
+    # We have ∂K/∂b² = diag(𝐠)⋅Σ⋅diag(𝐠)
+    # The score test statistics is given by
+    # Q = ½𝐲ᵀP₀⋅∂K⋅P₀𝐲
+    dK_G = ddot(g.ravel(), ddot(ones((n_samples, n_samples)), g.ravel()))
+    dK_GxE = ddot(g.ravel(), ddot(Sigma, g.ravel()))
+    sqrP0 = sqrtm(P0)
+    Q_G = P0y.T @ dK_G @ P0y
+    Q_GxE = P0y.T @ dK_GxE @ P0y
 
-#     # lambdas = zeros(len(rhos))
-#     lambdas = []
-#     Q = []
-#     for ii, rho in enumerate(rhos):
-#         # print(ii)
-#         Q.append((rho * Q_GxE + (1 - rho) * Q_G) / 2)
-#         dK = rho * dK_GxE + (1 - rho) * dK_G
-#         lambdas.append(eigvalsh((sqrP0 @ dK @ sqrP0) / 2))
-#         # lambdas[ii] = eigvalsh(sqrP0 @ dK @ sqrP0) / 2
+    # lambdas = zeros(len(rhos))
+    lambdas = []
+    Q = []
+    for ii, rho in enumerate(rhos):
+        # print(ii)
+        Q.append((rho * Q_GxE + (1 - rho) * Q_G) / 2)
+        dK = rho * dK_GxE + (1 - rho) * dK_G
+        lambdas.append(eigvalsh((sqrP0 @ dK @ sqrP0) / 2))
+        # lambdas[ii] = eigvalsh(sqrP0 @ dK @ sqrP0) / 2
 
-#     pliumod = stack([_mod_liu(Qi, lam) for Qi, lam in zip(Q, lambdas)], axis=0)
-#     qmin = _qmin(pliumod)
+    pliumod = stack([_mod_liu(Qi, lam) for Qi, lam in zip(Q, lambdas)], axis=0)
+    qmin = _qmin(pliumod)
 
-#     # 3. Calculate quantites that occur in null distribution
-#     Px1 = P0 @ g
-#     m = 0.5 * (g.T @ Px1)
-#     goE = g * E
-#     PgoE = P0 @ goE
-#     ETxPxE = 0.5 * (goE.T @ PgoE)
-#     ETxPx1 = goE.T @ Px1
-#     ETxPx11xPxE = 0.25 / m * (ETxPx1 @ ETxPx1.T)
-#     ZTIminusMZ = ETxPxE - ETxPx11xPxE
-#     eigh = eigvalsh(ZTIminusMZ)
+    # 3. Calculate quantites that occur in null distribution
+    Px1 = P0 @ g
+    m = 0.5 * (g.T @ Px1)
+    goE = g * E
+    PgoE = P0 @ goE
+    ETxPxE = 0.5 * (goE.T @ PgoE)
+    ETxPx1 = goE.T @ Px1
+    ETxPx11xPxE = 0.25 / m * (ETxPx1 @ ETxPx1.T)
+    ZTIminusMZ = ETxPxE - ETxPx11xPxE
+    eigh = eigvalsh(ZTIminusMZ)
 
-#     eta = ETxPx11xPxE @ ZTIminusMZ
-#     vareta = 4 * trace(eta)
+    eta = ETxPx11xPxE @ ZTIminusMZ
+    vareta = 4 * trace(eta)
 
-#     OneZTZE = 0.5 * (g.T @ PgoE)
-#     tau_top = OneZTZE @ OneZTZE.T
-#     tau_rho = empty(len(rhos))
+    OneZTZE = 0.5 * (g.T @ PgoE)
+    tau_top = OneZTZE @ OneZTZE.T
+    tau_rho = empty(len(rhos))
 
-#     for ii in range(len(rhos)):
-#         # print(ii)
-#         # tau_rho[ii] = rhos[ii] * m + (1 - rhos[ii]) / m * tau_top
-#         tau_rho[ii] = (1 - rhos[ii]) * m + (rhos[ii]) / m * tau_top
-
-
-#     MuQ = sum(eigh)
-#     VarQ = sum(eigh ** 2) * 2 + vareta
-#     KerQ = sum(eigh ** 4) / (sum(eigh ** 2) ** 2) * 12
-#     Df = 12 / KerQ
-
-#     # 4. Integration
-#     T = pliumod[:, 0].min()
-#     pvalue = optimal_davies_pvalue(
-#         qmin, MuQ, VarQ, KerQ, eigh, vareta, Df, tau_rho, rhos, T
-#     )
-
-#     # Final correction to make sure that the p-value returned is sensible
-#     multi = 3
-#     if len(rhos) < 3:
-#         multi = 2
-#     idx = where(pliumod[:, 0] > 0)[0]
-#     pval = pliumod[:, 0].min() * multi
-#     if pvalue <= 0 or len(idx) < len(rhos):
-#         pvalue = pval
-#     if pvalue == 0:
-#         if len(idx) > 0:
-#             pvalue = pliumod[:, 0][idx].min()
-
-#     print("{}\t{}".format(i, pvalue))
-#     p_values2.append(pvalue)
-#     # return pvalue
-
-# "Interaction test"
+    for ii in range(len(rhos)):
+        # print(ii)
+        # tau_rho[ii] = rhos[ii] * m + (1 - rhos[ii]) / m * tau_top
+        tau_rho[ii] = (1 - rhos[ii]) * m + (rhos[ii]) / m * tau_top
 
 
-# print("p-values of interaction test SNPs", idxs_gxe, "should be causal (GxE)")
+    MuQ = sum(eigh)
+    VarQ = sum(eigh ** 2) * 2 + vareta
+    KerQ = sum(eigh ** 4) / (sum(eigh ** 2) ** 2) * 12
+    Df = 12 / KerQ
 
-# for i in range(n_snps):
-#     g = G[:, i]
-#     g = g.reshape(g.shape[0], 1)
-#     Mg = concatenate((M, g), axis=1)
-#     best = {"lml": -inf, "a": 0, "v0": 0, "v1": 0, "beta": 0}
-#     for a in a_values:
-#         lmm = LMM(y0, Mg, QS_a[a], restricted=True)  # cov(y) = v0*(aΣ + (1-a)K) + v1*Is
-#         lmm.fit(verbose=False)
-#         if lmm.lml() > best["lml"]:
-#             best["lml"] = lmm.lml()
-#             best["a"] = a
-#             best["v0"] = lmm.v0
-#             best["v1"] = lmm.v1
-#             best["alpha"] = lmm.beta
+    # 4. Integration
+    T = pliumod[:, 0].min()
+    pvalue = optimal_davies_pvalue(
+        qmin, MuQ, VarQ, KerQ, eigh, vareta, Df, tau_rho, rhos, T
+    )
 
-#     "H0 optimal parameters"
-#     alpha = lmm.beta[:-1]
-#     beta = lmm.beta[-1]
-#     # e²Σ + g²K = s²(aΣ + (1-a)K)
-#     # e² = s²*a
-#     # g² = s²*(1-a)
-#     s2 = lmm.v0  # s²
-#     eps2 = lmm.v1  # 𝜀²
+    # Final correction to make sure that the p-value returned is sensible
+    multi = 3
+    if len(rhos) < 3:
+        multi = 2
+    idx = where(pliumod[:, 0] > 0)[0]
+    pval = pliumod[:, 0].min() * multi
+    if pvalue <= 0 or len(idx) < len(rhos):
+        pvalue = pval
+    if pvalue == 0:
+        if len(idx) > 0:
+            pvalue = pliumod[:, 0][idx].min()
 
-#     "H1 via score test"
-#     # Let K₀ = g²K + e²Σ + 𝜀²I
-#     # with optimal values e² and 𝜀² found above.
-#     K0 = lmm.covariance()
-#     X = concatenate((E, g), axis=1)
+    print("{}\t{}".format(i, pvalue))
+    p_values2.append(pvalue)
+    # return pvalue
 
-#     # Let P₀ = K⁻¹ - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹.
-#     K0iX = solve(K0, X)
-#     P0 = inv(K0) - K0iX @ solve(X.T @ K0iX, K0iX.T)
+"Interaction test"
 
-#     # P₀𝐲 = K⁻¹𝐲 - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹𝐲.
-#     K0iy = solve(K0, y0)
-#     P0y = K0iy - solve(K0, X @ solve(X.T @ K0iX, X.T @ K0iy))
 
-#     # The covariance matrix of H1 is K = K₀ + b²diag(𝐠)⋅Σ⋅diag(𝐠)
-#     # We have ∂K/∂b² = diag(𝐠)⋅Σ⋅diag(𝐠)
-#     # The score test statistics is given by
-#     # Q = ½𝐲ᵀP₀⋅∂K⋅P₀𝐲
-#     dK = ddot(g.ravel(), ddot(Sigma, g.ravel()))
-#     Q = (P0y.T @ dK @ P0y) / 2
+print("p-values of interaction test SNPs", idxs_gxe, "should be causal (GxE)")
 
-#     # Q is the score statistic for our interaction test and follows a linear combination
-#     # of chi-squared (df=1) distributions:
-#     # Q ∼ ∑λχ², where λᵢ are the non-zero eigenvalues of ½√P₀⋅∂K⋅√P₀.
-#     sqrP0 = sqrtm(P0)
-#     pval = davies_pvalue(Q, (sqrP0 @ dK @ sqrP0) / 2)
-#     print("{}\t{}".format(i, pval))
-#     p_values3.append(pval)
+for i in range(n_snps):
+    g = G[:, i]
+    g = g.reshape(g.shape[0], 1)
+    Mg = concatenate((M, g), axis=1)
+    best = {"lml": -inf, "a": 0, "v0": 0, "v1": 0, "beta": 0}
+    for a in a_values:
+        lmm = LMM(y0, Mg, QS_a[a], restricted=True)  # cov(y) = v0*(aΣ + (1-a)K) + v1*Is
+        lmm.fit(verbose=False)
+        if lmm.lml() > best["lml"]:
+            best["lml"] = lmm.lml()
+            best["a"] = a
+            best["v0"] = lmm.v0
+            best["v1"] = lmm.v1
+            best["alpha"] = lmm.beta
+
+    "H0 optimal parameters"
+    alpha = lmm.beta[:-1]
+    beta = lmm.beta[-1]
+    # e²Σ + g²K = s²(aΣ + (1-a)K)
+    # e² = s²*a
+    # g² = s²*(1-a)
+    s2 = lmm.v0  # s²
+    eps2 = lmm.v1  # 𝜀²
+
+    "H1 via score test"
+    # Let K₀ = g²K + e²Σ + 𝜀²I
+    # with optimal values e² and 𝜀² found above.
+    K0 = lmm.covariance()
+    X = concatenate((E, g), axis=1)
+
+    # Let P₀ = K⁻¹ - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹.
+    K0iX = solve(K0, X)
+    P0 = inv(K0) - K0iX @ solve(X.T @ K0iX, K0iX.T)
+
+    # P₀𝐲 = K⁻¹𝐲 - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹𝐲.
+    K0iy = solve(K0, y0)
+    P0y = K0iy - solve(K0, X @ solve(X.T @ K0iX, X.T @ K0iy))
+
+    # The covariance matrix of H1 is K = K₀ + b²diag(𝐠)⋅Σ⋅diag(𝐠)
+    # We have ∂K/∂b² = diag(𝐠)⋅Σ⋅diag(𝐠)
+    # The score test statistics is given by
+    # Q = ½𝐲ᵀP₀⋅∂K⋅P₀𝐲
+    dK = ddot(g.ravel(), ddot(Sigma, g.ravel()))
+    Q = (P0y.T @ dK @ P0y) / 2
+
+    # Q is the score statistic for our interaction test and follows a linear combination
+    # of chi-squared (df=1) distributions:
+    # Q ∼ ∑λχ², where λᵢ are the non-zero eigenvalues of ½√P₀⋅∂K⋅√P₀.
+    sqrP0 = sqrtm(P0)
+    pval = davies_pvalue(Q, (sqrP0 @ dK @ sqrP0) / 2)
+    print("{}\t{}".format(i, pval))
+    p_values3.append(pval)
