@@ -155,7 +155,7 @@ print("{}\t{}".format(idxs_gxe[1], mafs[idxs_gxe[1]]))
 
 "simulate sigma parameters"
 
-rho = 0.7  # contribution of interactions (proportion)
+rho = 0.8  # contribution of interactions (proportion)
 var_tot_g_gxe = 0.4
 
 print(rho, "rho (prop var explained by GxE)")
@@ -242,39 +242,39 @@ print("testing using standard structLMM")
 
 # y = y.reshape(y.shape[0], 1)
 
-"Association test"
+# "Association test"
 
-print(
-    "p-values of association test SNPs",
-    idxs_persistent,
-    idxs_gxe,
-    "should be causal (persistent + GxE)",
-)
+# print(
+#     "p-values of association test SNPs",
+#     idxs_persistent,
+#     idxs_gxe,
+#     "should be causal (persistent + GxE)",
+# )
 
-slmm = StructLMM(y0, M=np.ones(n_samples), E=E, W=E)
-slmm.fit(verbose=False)
+# slmm = StructLMM(y0, M=np.ones(n_samples), E=E, W=E)
+# slmm.fit(verbose=False)
 
-for i in range(n_snps):
-    g = G[:, i]
-    g = g.reshape(g.shape[0], 1)
-    _p = slmm.score_2dof_assoc(g)
-    print("{}\t{}".format(i, _p))
-    p_values0.append(_p)
+# for i in range(n_snps):
+#     g = G[:, i]
+#     g = g.reshape(g.shape[0], 1)
+#     _p = slmm.score_2dof_assoc(g)
+#     print("{}\t{}".format(i, _p))
+#     p_values0.append(_p)
 
-"Interaction test"
+# "Interaction test"
 
-print("p-values of interaction test SNPs", idxs_gxe, "should be causal (GxE)")
+# print("p-values of interaction test SNPs", idxs_gxe, "should be causal (GxE)")
 
-for i in range(n_snps):
-    g = G[:, i]
-    # g = g.reshape(g.shape[0],1)
-    M = np.ones(n_samples)
-    M = np.stack([M, g], axis=1)
-    slmm_int = StructLMM(y0, M=M, E=E, W=E)
-    slmm_int.fit(verbose=False)
-    _p = slmm_int.score_2dof_inter(g)
-    print("{}\t{}".format(i, _p))
-    p_values1.append(_p)
+# for i in range(n_snps):
+#     g = G[:, i]
+#     # g = g.reshape(g.shape[0],1)
+#     M = np.ones(n_samples)
+#     M = np.stack([M, g], axis=1)
+#     slmm_int = StructLMM(y0, M=M, E=E, W=E)
+#     slmm_int.fit(verbose=False)
+#     _p = slmm_int.score_2dof_inter(g)
+#     print("{}\t{}".format(i, _p))
+#     p_values1.append(_p)
 
 
 ################################################
@@ -293,7 +293,7 @@ QS_a = {}
 M = ones((n_samples, 1))
 
 a_values = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
-a_values = [1]
+# a_values = [1]
 
 for a in a_values:
     Cov[a] = a * Sigma + (1 - a) * K
@@ -354,21 +354,41 @@ for i in range(n_snps):
     # We have ∂K/∂b² = diag(𝐠)⋅Σ⋅diag(𝐠)
     # The score test statistics is given by
     # Q = ½𝐲ᵀP₀⋅∂K⋅P₀𝐲
+
     dK_G = ddot(g.ravel(), ddot(ones((n_samples, n_samples)), g.ravel()))
     dK_GxE = ddot(g.ravel(), ddot(Sigma, g.ravel()))
-    sqrP0 = sqrtm(P0)
+    # P0 = P0 + 1e-9 * eye(P0.shape[0])
+    # sqrP0 = sqrtm(P0)
+    # import pdb; pdb.set_trace()
     Q_G = P0y.T @ dK_G @ P0y
     Q_GxE = P0y.T @ dK_GxE @ P0y
+
+    # the eigenvalues of ½P₀⋅∂K⋅P₀
+    # are tge eigenvalues of 
+    gPg = g.T @ P0 @ g
+    goE = g * E
+    gPgoE = g.T @ P0 @ goE
+    gEgE = goE.T @ goE
+
+    nE = E.shape[1] + 1
+    F = empty((nE, nE))
 
     # lambdas = zeros(len(rhos))
     lambdas = []
     Q = []
-    for ii, rho in enumerate(rhos):
+    # for ii, rho in enumerate(rhos):
+    for rho in rhos:
         # print(ii)
-        Q.append((rho * Q_GxE + (1 - rho) * Q_G) / 2)
-        dK = rho * dK_GxE + (1 - rho) * dK_G
-        lambdas.append(eigvalsh((sqrP0 @ dK @ sqrP0) / 2))
+        # print(rho)
+        Q.append((rho * Q_G + (1 - rho) * Q_GxE) / 2)
+        # dK = rho * dK_GxE + (1 - rho) * dK_G
+        # lambdas.append(eigvalsh((sqrP0 @ dK @ sqrP0) / 2))
         # lambdas[ii] = eigvalsh(sqrP0 @ dK @ sqrP0) / 2
+        F[0, 0] = rho * gPg
+        F[0, 1:] = sqrt(rho) * sqrt(1 - rho) * gPgoE
+        F[1:, 0] = F[0, 1:]
+        F[1:, 1:] = (1 - rho) * gEgE
+        lambdas.append(eigvalsh(F) / 2)
 
     pliumod = stack([_mod_liu(Qi, lam) for Qi, lam in zip(Q, lambdas)], axis=0)
     qmin = _qmin(pliumod)
