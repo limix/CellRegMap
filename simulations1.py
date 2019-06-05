@@ -242,7 +242,7 @@ print("testing using standard structLMM")
 
 # y = y.reshape(y.shape[0], 1)
 
-# "Association test"
+"Association test"
 
 # print(
 #     "p-values of association test SNPs",
@@ -250,16 +250,15 @@ print("testing using standard structLMM")
 #     idxs_gxe,
 #     "should be causal (persistent + GxE)",
 # )
+slmm = StructLMM(y0, M=np.ones(n_samples), E=E, W=E)
+slmm.fit(verbose=False)
 
-# slmm = StructLMM(y0, M=np.ones(n_samples), E=E, W=E)
-# slmm.fit(verbose=False)
-
-# for i in range(n_snps):
-#     g = G[:, i]
-#     g = g.reshape(g.shape[0], 1)
-#     _p = slmm.score_2dof_assoc(g)
-#     print("{}\t{}".format(i, _p))
-#     p_values0.append(_p)
+for i in range(n_snps):
+    g = G[:, i]
+    g = g.reshape(g.shape[0], 1)
+    _p = slmm.score_2dof_assoc(g)
+    print("{}\t{}".format(i, _p))
+    p_values0.append(_p)
 
 # "Interaction test"
 
@@ -292,8 +291,8 @@ Cov = {}
 QS_a = {}
 M = ones((n_samples, 1))
 
-a_values = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
-# a_values = [1]
+# a_values = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+a_values = [1]
 
 for a in a_values:
     Cov[a] = a * Sigma + (1 - a) * K
@@ -316,7 +315,8 @@ for i in range(n_snps):
     g = g.reshape(g.shape[0], 1)
     best = {"lml": -inf, "a": 0, "v0": 0, "v1": 0, "beta": 0}
     for a in a_values:
-        lmm = LMM(y0, E, QS_a[a], restricted=True)  # cov(y) = v0*(aΣ + (1-a)K) + v1*Is
+        M = np.ones(n_samples)
+        lmm = LMM(y0, M, QS_a[a], restricted=True)  # cov(y) = v0*(aΣ + (1-a)K) + v1*Is
         lmm.fit(verbose=False)
         if lmm.lml() > best["lml"]:
             best["lml"] = lmm.lml()
@@ -339,6 +339,7 @@ for i in range(n_snps):
     # with optimal values e² and 𝜀² found above.
     K0 = lmm.covariance()
     X = concatenate((E, g), axis=1)
+    X = M.reshape((-1, 1))
 
     # import pdb; pdb.set_trace()
     # Let P₀ = K⁻¹ - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹.
@@ -348,6 +349,8 @@ for i in range(n_snps):
     # P₀𝐲 = K⁻¹𝐲 - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹𝐲.
     K0iy = solve(K0, y0)
     P0y = K0iy - solve(K0, X @ solve(X.T @ K0iX, X.T @ K0iy))
+    # self._P(self._y).min()
+    # -4.90270502291706
 
     # import pdb; pdb.set_trace()
     # The covariance matrix of H1 is K = K₀ + b²diag(𝐠)⋅Σ⋅diag(𝐠)
@@ -364,11 +367,11 @@ for i in range(n_snps):
     Q_GxE = P0y.T @ dK_GxE @ P0y
 
     # the eigenvalues of ½P₀⋅∂K⋅P₀
-    # are tge eigenvalues of 
+    # are tge eigenvalues of
     gPg = g.T @ P0 @ g
     goE = g * E
     gPgoE = g.T @ P0 @ goE
-    gEgE = goE.T @ goE
+    gEPgE = goE.T @ P0 @ goE
 
     nE = E.shape[1] + 1
     F = empty((nE, nE))
@@ -376,7 +379,6 @@ for i in range(n_snps):
     # lambdas = zeros(len(rhos))
     lambdas = []
     Q = []
-    # for ii, rho in enumerate(rhos):
     for rho in rhos:
         # print(ii)
         # print(rho)
@@ -387,7 +389,7 @@ for i in range(n_snps):
         F[0, 0] = rho * gPg
         F[0, 1:] = sqrt(rho) * sqrt(1 - rho) * gPgoE
         F[1:, 0] = F[0, 1:]
-        F[1:, 1:] = (1 - rho) * gEgE
+        F[1:, 1:] = (1 - rho) * gEPgE
         lambdas.append(eigvalsh(F) / 2)
 
     pliumod = stack([_mod_liu(Qi, lam) for Qi, lam in zip(Q, lambdas)], axis=0)
@@ -444,6 +446,7 @@ for i in range(n_snps):
     p_values2.append(pvalue)
     # return pvalue
 
+sys.exit(0)
 "Interaction test"
 
 
