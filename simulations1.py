@@ -242,14 +242,14 @@ print("testing using standard structLMM")
 
 # y = y.reshape(y.shape[0], 1)
 
-"Association test"
+# "Association test"
 
-# print(
-#     "p-values of association test SNPs",
-#     idxs_persistent,
-#     idxs_gxe,
-#     "should be causal (persistent + GxE)",
-# )
+print(
+    "p-values of association test SNPs",
+    idxs_persistent,
+    idxs_gxe,
+    "should be causal (persistent + GxE)",
+)
 slmm = StructLMM(y0, M=np.ones(n_samples), E=E, W=E)
 slmm.fit(verbose=False)
 
@@ -260,32 +260,32 @@ for i in range(n_snps):
     print("{}\t{}".format(i, _p))
     p_values0.append(_p)
 
-# "Interaction test"
+## "Interaction test"
 
-# print("p-values of interaction test SNPs", idxs_gxe, "should be causal (GxE)")
+print("p-values of interaction test SNPs", idxs_gxe, "should be causal (GxE)")
 
-# for i in range(n_snps):
-#     g = G[:, i]
-#     # g = g.reshape(g.shape[0],1)
-#     M = np.ones(n_samples)
-#     M = np.stack([M, g], axis=1)
-#     slmm_int = StructLMM(y0, M=M, E=E, W=E)
-#     slmm_int.fit(verbose=False)
-#     _p = slmm_int.score_2dof_inter(g)
-#     print("{}\t{}".format(i, _p))
-#     p_values1.append(_p)
+for i in range(n_snps):
+    g = G[:, i]
+    # g = g.reshape(g.shape[0],1)
+    M = np.ones(n_samples)
+    M = np.stack([M, g], axis=1)
+    slmm_int = StructLMM(y0, M=M, E=E, W=E)
+    slmm_int.fit(verbose=False)
+    _p = slmm_int.score_2dof_inter(g)
+    print("{}\t{}".format(i, _p))
+    p_values1.append(_p)
 
 
-################################################
-################################################
-################################################
-################################################
+#################################################
+#################################################
+#################################################
+#################################################
 
-print("using structLMM 2 now")
+# print("using structLMM 2 now")
 
-"test using struct LMM 2 (in this case it should not be very different)"
+# "test using struct LMM 2 (in this case it should not be very different)"
 
-# y = y.reshape(y.shape[0], 1)
+## y = y.reshape(y.shape[0], 1)
 
 Cov = {}
 QS_a = {}
@@ -298,7 +298,7 @@ for a in a_values:
     Cov[a] = a * Sigma + (1 - a) * K
     QS_a[a] = economic_qs(Cov[a])
 
-"Association test"
+# "Association test"
 
 print(
     "p-values of association test SNPs",
@@ -418,7 +418,6 @@ for i in range(n_snps):
         # tau_rho[ii] = rhos[ii] * m + (1 - rhos[ii]) / m * tau_top
         tau_rho[ii] = (1 - rhos[ii]) * m + (rhos[ii]) / m * tau_top
 
-
     MuQ = sum(eigh)
     VarQ = sum(eigh ** 2) * 2 + vareta
     KerQ = sum(eigh ** 4) / (sum(eigh ** 2) ** 2) * 12
@@ -446,7 +445,7 @@ for i in range(n_snps):
     p_values2.append(pvalue)
     # return pvalue
 
-sys.exit(0)
+# sys.exit(0)
 "Interaction test"
 
 
@@ -455,6 +454,7 @@ print("p-values of interaction test SNPs", idxs_gxe, "should be causal (GxE)")
 for i in range(n_snps):
     g = G[:, i]
     g = g.reshape(g.shape[0], 1)
+    M = np.ones((n_samples, 1))
     Mg = concatenate((M, g), axis=1)
     best = {"lml": -inf, "a": 0, "v0": 0, "v1": 0, "beta": 0}
     for a in a_values:
