@@ -75,6 +75,7 @@ n_samples = 500
 maf_min = 0.05
 maf_max = 0.45
 n_snps = 20
+n_rep = 1
 
 print(n_samples, "samples")
 print(n_snps, "snps")
@@ -90,6 +91,7 @@ E = zeros((n_samples, 2))
 
 E[:group_size, 0] = 1
 E[group_size:, 1] = 1
+E = np.tile(E, (n_rep, 1))
 
 Sigma = E @ E.T
 
@@ -120,9 +122,15 @@ G -= G.mean(0)
 G /= G.std(0)
 
 G0 = G.copy()
+G0 = random.rand(G.shape[0], 10000)
+G0 -= G0.mean(0)
+G0 /= G0.std(0)
 G0 /= sqrt(G0.shape[1])
+G = np.tile(G, (n_rep, 1))
+G0 = np.tile(G0, (n_rep, 1))
 K = G0 @ G0.T
 
+n_samples *= n_rep
 
 "simulate two SNPs to have persistent effects and two to have interaction effects"
 "one SNP in common, one unique to each category"
@@ -227,8 +235,8 @@ eps0 = random.multivariate_normal(zeros(n_samples), v * 3 / 2 * eye(n_samples))
 
 "sum all parts of y"
 y = 1 + y_g + y_gxe + e + u + eps
-y0 = 1 + y_g + y_gxe + e0 + eps0
-
+# y0 = 1 + y_g + y_gxe + e0 + eps0
+y0 = y
 
 p_values0 = []
 p_values1 = []
@@ -250,7 +258,7 @@ print(
     idxs_gxe,
     "should be causal (persistent + GxE)",
 )
-slmm = StructLMM(y0, M=np.ones(n_samples), E=E, W=E)
+slmm = StructLMM(y0.copy(), M=np.ones(n_samples), E=E, W=E)
 slmm.fit(verbose=False)
 
 for i in range(n_snps):
@@ -269,7 +277,7 @@ for i in range(n_snps):
     # g = g.reshape(g.shape[0],1)
     M = np.ones(n_samples)
     M = np.stack([M, g], axis=1)
-    slmm_int = StructLMM(y0, M=M, E=E, W=E)
+    slmm_int = StructLMM(y0.copy(), M=M, E=E, W=E)
     slmm_int.fit(verbose=False)
     _p = slmm_int.score_2dof_inter(g)
     print("{}\t{}".format(i, _p))
@@ -291,8 +299,8 @@ Cov = {}
 QS_a = {}
 M = ones((n_samples, 1))
 
-# a_values = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
-a_values = [1]
+a_values = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+# a_values = [1]
 
 for a in a_values:
     Cov[a] = a * Sigma + (1 - a) * K
@@ -309,22 +317,27 @@ print(
 
 rhos = [0.0, 0.1 ** 2, 0.2 ** 2, 0.3 ** 2, 0.4 ** 2, 0.5 ** 2, 0.5, 0.999]
 
+best = {"lml": -inf, "a": 0, "v0": 0, "v1": 0, "beta": 0}
+for a in a_values:
+    M = np.ones(n_samples)
+    breakpoint()
+    lmm = LMM(y0, M, QS_a[a], restricted=True)  # cov(y) = v0*(aΣ + (1-a)K) + v1*Is
+    lmm.fit(verbose=True)
+    print(a, ": ", lmm.lml())
+    if lmm.lml() > best["lml"]:
+        best["lml"] = lmm.lml()
+        best["a"] = a
+        best["v0"] = lmm.v0
+        best["v1"] = lmm.v1
+        best["alpha"] = lmm.beta
+        best["lmm"] = lmm
+
 for i in range(n_snps):
     # print(i)
     g = G[:, i]
     g = g.reshape(g.shape[0], 1)
-    best = {"lml": -inf, "a": 0, "v0": 0, "v1": 0, "beta": 0}
-    for a in a_values:
-        M = np.ones(n_samples)
-        lmm = LMM(y0, M, QS_a[a], restricted=True)  # cov(y) = v0*(aΣ + (1-a)K) + v1*Is
-        lmm.fit(verbose=False)
-        if lmm.lml() > best["lml"]:
-            best["lml"] = lmm.lml()
-            best["a"] = a
-            best["v0"] = lmm.v0
-            best["v1"] = lmm.v1
-            best["alpha"] = lmm.beta
 
+    lmm = best["lmm"]
     "H0 optimal parameters"
     alpha = lmm.beta[:-1]
     beta = lmm.beta[-1]
@@ -466,7 +479,9 @@ for i in range(n_snps):
             best["v0"] = lmm.v0
             best["v1"] = lmm.v1
             best["alpha"] = lmm.beta
+            best["lmm"] = lmm
 
+    lmm = best["lmm"]
     "H0 optimal parameters"
     alpha = lmm.beta[:-1]
     beta = lmm.beta[-1]
