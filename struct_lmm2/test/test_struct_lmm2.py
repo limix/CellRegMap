@@ -8,7 +8,7 @@ from struct_lmm import StructLMM
 from struct_lmm2 import StructLMM2
 
 
-@pytest.skip("Not working yet.")
+@pytest.mark.skip("Not working yet.")
 def test_structlmm_int_2kinships():
     random = RandomState(0)
     n = 100

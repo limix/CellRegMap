@@ -1,5 +1,5 @@
 from glimix_core.lmm import LMM
-from numpy import concatenate, empty, inf, ones, sqrt, sqrtm, stack
+from numpy import concatenate, empty, inf, ones, sqrt, stack
 from numpy.linalg import eigvalsh, inv, solve
 from numpy_sugar import ddot
 from numpy_sugar.linalg import economic_qs
