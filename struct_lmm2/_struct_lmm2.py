@@ -1,10 +1,12 @@
 from glimix_core.lmm import LMM
-from numpy import concatenate, diag, empty, inf, ones, sqrt, stack
+from numpy import concatenate, diag, empty, inf, ones, sqrt, stack, trace
 from numpy.linalg import eigvalsh, inv, solve
 from numpy_sugar import ddot
 from numpy_sugar.linalg import economic_qs
 
 from ._math import (
+    P_matrix,
+    qmin,
     score_statistic,
     score_statistic_distr_weights,
     score_statistic_liu_params,
@@ -103,6 +105,7 @@ class StructLMM2:
         n_snps = G.shape[1]
         lmm = self._null_lmm_assoc["lmm"]
         K0 = lmm.covariance()
+        P = P_matrix(self._W, K0)
         # H1 vs H0 via score test
         for i in range(n_snps):
             g = G[:, i].reshape(G.shape[0], 1)
@@ -119,6 +122,34 @@ class StructLMM2:
                 Q = score_statistic(self._y, self._W, K0, dK)
                 weights += [score_statistic_distr_weights(self._W, K0, dK)]
                 liu_params += [score_statistic_liu_params(Q, weights)]
+
+            q = qmin(liu_params)
+
+            # 3. Calculate quantities that occur in null distribution
+            # g has to be a column-vector
+            D = diag(g.ravel())
+            Pg = P @ g
+            m = (g.T @ Pg)[0, 0]
+            M = 1 / m * (sqrtm(P) @ g @ g.T @ sqrtm(P))
+            H1 = E.T @ D.T @ P @ D @ E
+            H2 = E.T @ D.T @ sqrtm(P) @ M @ sqrtm(P) @ D @ E
+            H = H1 - H2
+            lambdas = eigvalsh(H / 2)
+            lambdas = eigh
+
+            eta = ETxPx11xPxE @ ZTIminusMZ
+            vareta = 4 * trace(eta)
+
+            OneZTZE = 0.5 * (g.T @ PxoE)
+            tau_top = OneZTZE @ OneZTZE.T
+            tau_rho = empty(len(self._rho0))
+            for i in range(len(self._rho0)):
+                tau_rho[i] = self._rho0[i] * m + (1 - self._rho0[i]) / m * tau_top
+
+            MuQ = sum(eigh)
+            VarQ = sum(eigh ** 2) * 2 + vareta
+            KerQ = sum(eigh ** 4) / (sum(eigh ** 2) ** 2) * 12
+            Df = 12 / KerQ
 
 
 #     def _score_stats_null_dist(self, g):
