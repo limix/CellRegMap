@@ -46,7 +46,7 @@ def score_statistic(y, W, K, dK):
     return y.T @ P @ dK @ P @ y / 2
 
 
-def score_statistic_dist_weights(W, K, dK):
+def score_statistic_distr_weights(W, K, dK):
     """
     Score-test statistic follows a weighted sum of random variables [1]_:
 
@@ -78,8 +78,7 @@ def score_statistic_liu_params(q, weights):
     return {"pv": pv, "mu_q": info["mu_q"], "sigma_q": info["sigma_q"], "dof_x": dof_x}
 
 
-# This function is not fully implemented yet.
-def _Qmin(liu_params):
+def qmin(liu_params):
     from numpy import zeros
     import scipy.stats as st
 
@@ -91,10 +90,10 @@ def _Qmin(liu_params):
     qmin = zeros(n)
     percentile = 1 - T
     for i in range(n):
-        q = st.chi2.ppf(percentile, liu_params[i]["dof"])
+        q = st.chi2.ppf(percentile, liu_params[i]["dof_x"])
         mu_q = liu_params[i]["mu_q"]
         sigma_q = liu_params[i]["sigma_q"]
-        dof = liu_params[i]["dof"]
+        dof = liu_params[i]["dof_x"]
         qmin[i] = (q - dof) / (2 * dof) ** 0.5 * sigma_q + mu_q
 
     return qmin
