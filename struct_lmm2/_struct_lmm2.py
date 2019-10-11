@@ -1,8 +1,9 @@
 from glimix_core.lmm import LMM
-from numpy import concatenate, diag, empty, inf, ones, sqrt, stack, trace
+from numpy import asarray, concatenate, diag, empty, inf, ones, sqrt, stack, trace
 from numpy.linalg import eigvalsh, inv, solve
 from numpy_sugar import ddot
 from numpy_sugar.linalg import economic_qs
+from scipy.linalg import sqrtm
 
 from ._math import (
     P_matrix,
@@ -32,7 +33,7 @@ class StructLMM2:
     𝐞 is the environment effect, 𝐮 is the population structure effect, and 𝛆 is the iid
     noise. The full covariance of 𝐲 is therefore given by:
 
-        cov(𝐲) = 𝓋₀(1-ρ₀)𝟏𝟏ᵀ + 𝓋₀ρ₀𝙴𝙴ᵀ + 𝓋₁ρ₁EEᵀ + 𝓋₁(1-ρ₁)𝙺 + 𝓋₂𝙸.
+        cov(𝐲) = 𝓋₀(1-ρ₀)𝙳𝟏𝟏ᵀ𝙳 + 𝓋₀ρ₀𝙳𝙴𝙴ᵀ𝙳 + 𝓋₁ρ₁EEᵀ + 𝓋₁(1-ρ₁)𝙺 + 𝓋₂𝙸.
 
     Its marginalised form is given by:
 
@@ -151,110 +152,55 @@ class StructLMM2:
             KerQ = sum(eigh ** 4) / (sum(eigh ** 2) ** 2) * 12
             Df = 12 / KerQ
 
+    def scan_interaction(self, G):
+        from chiscore import davies_pvalue
 
-#     def _score_stats_null_dist(self, g):
-#         """
-#         Under the null hypothesis, the score-based test statistic follows a weighted sum
-#         of random variables:
-#             𝑄 ∼ ∑ᵢ𝜆ᵢχ²(1),
-#         where 𝜆ᵢ are the non-zero eigenvalues of ½√𝙿(∂𝙺)√𝙿.
-#         Note that
-#             ∂𝙺ᵨ = 𝙳(ρ𝟏𝟏ᵀ + (1-ρ)𝙴𝙴ᵀ)𝙳 = (ρ𝐠𝐠ᵀ + (1-ρ)𝙴̃𝙴̃ᵀ)
-#         for 𝙴̃ = 𝙳𝙴.
-#         By using SVD decomposition, one can show that the non-zero eigenvalues of 𝚇𝚇ᵀ
-#         are equal to the non-zero eigenvalues of 𝚇ᵀ𝚇.
-#         Therefore, 𝜆ᵢ are the non-zero eigenvalues of
-#             ½[√ρ𝐠 √(1-ρ)𝙴̃]𝙿[√ρ𝐠 √(1-ρ)𝙴̃]ᵀ.
-#         """
-#         # P₀𝐲 = K⁻¹𝐲 - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹𝐲.
+        n_snps = G.shape[1]
+        pvalues = []
+        for i in range(n_snps):
+            g = G[:, [i]]
+            Wg = concatenate((self._W, g), axis=1)
+            best = {"lml": -inf, "a": 0, "v0": 0, "v1": 0, "beta": 0}
+            for a in self._rho1:
+                QS = self._Sigma_qs[a]
+                # cov(y) = v0*(aΣ + (1-a)K) + v1*Is
+                lmm = LMM(self._y, Wg, QS, restricted=True)
+                lmm.fit(verbose=False)
+                if lmm.lml() > best["lml"]:
+                    best["lml"] = lmm.lml()
+                    best["a"] = a
+                    best["v0"] = lmm.v0
+                    best["v1"] = lmm.v1
+                    best["alpha"] = lmm.beta
+                    best["lmm"] = lmm
 
-#         K0 = self._null_lmm_assoc["lmm"].covariance()
-#         K0iy = solve(K0, self._y)
-#         X = self._W
-#         P0y = K0iy - solve(K0, X @ solve(X.T @ K0iX, X.T @ K0iy))
+            lmm = best["lmm"]
+            "H1 via score test"
+            # Let K₀ = g²K + e²Σ + 𝜀²I
+            # with optimal values e² and 𝜀² found above.
+            K0 = lmm.covariance()
+            X = concatenate((self._E, g), axis=1)
 
-#         # The covariance matrix of H1 is K = K₀ + b²diag(𝐠)⋅Σ⋅diag(𝐠)
-#         # We have ∂K/∂b² = diag(𝐠)⋅Σ⋅diag(𝐠)
-#         # The score test statistics is given by
-#         # Q = ½𝐲ᵀP₀⋅∂K⋅P₀𝐲
-#         n_samples = len(g)
-#         dK_G = ddot(g.ravel(), ddot(ones((n_samples, n_samples)), g.ravel()))
-#         dK_GxE = ddot(g.ravel(), ddot(self._EE, g.ravel()))
+            # Let P₀ = K⁻¹ - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹.
+            K0iX = solve(K0, X)
+            P0 = inv(K0) - K0iX @ solve(X.T @ K0iX, K0iX.T)
 
-#         # P0 = P0 + 1e-9 * eye(P0.shape[0])
-#         Q_G = P0y.T @ dK_G @ P0y
-#         Q_GxE = P0y.T @ dK_GxE @ P0y
+            # P₀𝐲 = K⁻¹𝐲 - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹𝐲.
+            K0iy = solve(K0, self._y)
+            P0y = K0iy - solve(K0, X @ solve(X.T @ K0iX, X.T @ K0iy))
 
-#         P0 = inv(K0) - K0iX @ solve(X.T @ K0iX, K0iX.T)
-#         # the eigenvalues of ½P₀⋅∂K⋅P₀
-#         # are tge eigenvalues of
-#         gPg = g.T @ P0 @ g
-#         goE = g * self._E
-#         gPgoE = g.T @ P0 @ goE
-#         gEPgE = goE.T @ P0 @ goE
+            # The covariance matrix of H1 is K = K₀ + b²diag(𝐠)⋅Σ⋅diag(𝐠)
+            # We have ∂K/∂b² = diag(𝐠)⋅Σ⋅diag(𝐠)
+            # The score test statistics is given by
+            # Q = ½𝐲ᵀP₀⋅∂K⋅P₀𝐲
+            dK = ddot(g.ravel(), ddot(self._EE, g.ravel()))
+            Q = (P0y.T @ dK @ P0y) / 2
 
-#         lambdas = []
-#         Q = []
-#         for rho0 in self._rho0:
-#             Q.append((rho0 * Q_G + (1 - rho0) * Q_GxE) / 2)
-#             F[0, 0] = rho0 * gPg
-#             F[0, 1:] = sqrt(rho0) * sqrt(1 - rho0) * gPgoE
-#             F[1:, 0] = F[0, 1:]
-#             F[1:, 1:] = (1 - rho0) * gEPgE
-#             lambdas.append(eigvalsh(F) / 2)
+            # Q is the score statistic for our interaction test and follows a linear combination
+            # of chi-squared (df=1) distributions:
+            # Q ∼ ∑λχ², where λᵢ are the non-zero eigenvalues of ½√P₀⋅∂K⋅√P₀.
+            sqrP0 = sqrtm(P0)
+            pval = davies_pvalue(Q, (sqrP0 @ dK @ sqrP0) / 2)
+            pvalues.append(pval)
 
-#         return lambdas
-
-
-# def _score_stats_null_dist(g):
-#     """
-#     Under the null hypothesis, the score-based test statistic follows a weighted sum
-#     of random variables:
-#         𝑄 ∼ ∑ᵢ𝜆ᵢχ²(1),
-#     where 𝜆ᵢ are the non-zero eigenvalues of ½√𝙿(∂𝙺)√𝙿.
-#     Note that
-#         ∂𝙺ᵨ = 𝙳(ρ𝟏𝟏ᵀ + (1-ρ)𝙴𝙴ᵀ)𝙳 = (ρ𝐠𝐠ᵀ + (1-ρ)𝙴̃𝙴̃ᵀ)
-#     for 𝙴̃ = 𝙳𝙴.
-#     By using SVD decomposition, one can show that the non-zero eigenvalues of 𝚇𝚇ᵀ
-#     are equal to the non-zero eigenvalues of 𝚇ᵀ𝚇.
-#     Therefore, 𝜆ᵢ are the non-zero eigenvalues of
-#         ½[√ρ𝐠 √(1-ρ)𝙴̃]𝙿[√ρ𝐠 √(1-ρ)𝙴̃]ᵀ.
-#     """
-#     # P₀𝐲 = K⁻¹𝐲 - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹𝐲.
-#     K0 = self._null_lmm_assoc["lmm"].covariance()
-#     K0iy = solve(K0, self._y)
-#     X = self._W
-#     K0iX = solve(K0, X)
-#     P0y = K0iy - solve(K0, X @ solve(X.T @ K0iX, X.T @ K0iy))
-
-#     # The covariance matrix of H1 is K = K₀ + b²diag(𝐠)⋅Σ⋅diag(𝐠)
-#     # We have ∂K/∂b² = diag(𝐠)⋅Σ⋅diag(𝐠)
-#     # The score test statistics is given by
-#     # Q = ½𝐲ᵀP₀⋅∂K⋅P₀𝐲
-#     n_samples = len(g)
-#     dK_G = ddot(g.ravel(), ddot(ones((n_samples, n_samples)), g.ravel()))
-#     dK_GxE = ddot(g.ravel(), ddot(self._EE, g.ravel()))
-
-#     # P0 = P0 + 1e-9 * eye(P0.shape[0])
-#     Q_G = P0y.T @ dK_G @ P0y
-#     Q_GxE = P0y.T @ dK_GxE @ P0y
-
-#     P0 = inv(K0) - K0iX @ solve(X.T @ K0iX, K0iX.T)
-#     # the eigenvalues of ½P₀⋅∂K⋅P₀
-#     # are tge eigenvalues of
-#     gPg = g.T @ P0 @ g
-#     goE = g * self._E
-#     gPgoE = g.T @ P0 @ goE
-#     gEPgE = goE.T @ P0 @ goE
-
-#     lambdas = []
-#     Q = []
-#     for rho0 in self._rho0:
-#         Q.append((rho0 * Q_G + (1 - rho0) * Q_GxE) / 2)
-#         F[0, 0] = rho0 * gPg
-#         F[0, 1:] = sqrt(rho0) * sqrt(1 - rho0) * gPgoE
-#         F[1:, 0] = F[0, 1:]
-#         F[1:, 1:] = (1 - rho0) * gEPgE
-#         lambdas.append(eigvalsh(F) / 2)
-
-#     return lambdas
+        return asarray(pvalues, float)
