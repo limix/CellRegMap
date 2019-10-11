@@ -1,6 +1,8 @@
 import sys
 
 import numpy as np
+from chiscore import davies_pvalue, optimal_davies_pvalue
+from glimix_core.lmm import LMM
 from numpy import (
     asarray,
     concatenate,
@@ -19,9 +21,6 @@ from numpy.linalg import eigvalsh, inv, solve
 from numpy.random import RandomState
 from numpy_sugar.linalg import ddot, economic_qs, economic_svd
 from scipy.linalg import sqrtm
-
-from chiscore import davies_pvalue, optimal_davies_pvalue
-from glimix_core.lmm import LMM
 from struct_lmm import StructLMM
 
 
