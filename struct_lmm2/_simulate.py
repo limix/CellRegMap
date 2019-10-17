@@ -52,7 +52,7 @@ def sample_covariance_matrix(n_samples: int, random, n_rep: int = 1):
 
     with errstate(divide="raise", invalid="raise"):
         # This small diagonal offset is to guarantee the full-rankness.
-        K /= K.diagonal().mean() + 1e-4 * eye(n_samples)
+        K /= K.diagonal().mean() + 1e-4 * eye(n_samples * n_rep)
         K /= K.diagonal().mean()
 
     return K
@@ -103,23 +103,49 @@ def variances(r0, v0, has_kinship=True):
     else:
         v = (1 - v_gxe - v_g) / 2
         v_e = v
-        v_k = None
         v_n = v
 
-    return {"v_g": v_g, "v_gxe": v_gxe, "v_e": v_e, "v_k": v_k, "v_n": v_n}
+    variances = {"v_g": v_g, "v_gxe": v_gxe, "v_e": v_e, "v_n": v_n}
+    if has_kinship:
+        variances["v_k"] = v_k
+
+    return variances
 
 
-def sample_persistent_effsizes(
+def sample_persistent_effects(
     n_effects: int, causal_indices: list, variance: float, random
 ):
     """
-    Sample 𝛃 such that 𝛃ᵢ=0 for the non-causal positions and 𝔼[𝛃ᵀ𝛃] = 𝓋.
+    Let ⱼ denote a sample index and ₖ denote a SNP index. Let 𝚟ⱼ = 𝐠ⱼᵀ𝛃.
+    We assume that 𝑔ⱼₖ is a random variable such that:
+
+        𝔼[𝑔ⱼₖ] = 0
+        𝔼[𝑔ⱼₖ²] = 1
+
+    And we also assume that SNPs are uncorrelated from each other.
+    Assuming that 𝛃 is given (fixed), we want to simulate 𝛃 such that:
+
+        𝔼[𝚟ⱼ] = 𝔼[∑ₖ𝑔ⱼₖ𝛽ₖ] = ∑ₖ𝔼[𝑔ⱼₖ]𝛽ₖ = 0
+        𝔼[𝚟ⱼ²] = 𝔼[(∑ₖ𝑔ⱼₖ𝛽ₖ)²]
+
+    Using the uncorrelation property between SNPs, we can write
+
+        𝔼[(∑ₖ𝑔ⱼₖ𝛽ₖ)²] = ∑ₖ𝔼[𝑔ⱼₖ²]𝛽ₖ² = ∑ₖ𝛽ₖ² = 𝓋.
+
+    Let ᵢ denote a causal index. We initialize 𝛃=𝟎 and then randomly set 𝛽ᵢϵ{-1,+1} for
+    the causal SNPs. At last, we set 𝛃←𝛃×√(𝓋/𝘯) where 𝘯 is the number of causal SNPs so
+    that ∑ₖ𝛽ₖ² = 𝓋.
     """
-    from numpy import zeros, errstate
+    from numpy import zeros, errstate, sqrt
 
-    effects = zeros(n_effects)
-    effects[causal_indices] = random.choice([+1, -1], size=len(causal_indices))
+    n_causals = len(causal_indices)
 
+    effsizes = zeros(n_effects)
+    effsizes[causal_indices] = random.choice([+1, -1], size=len(causal_indices))
+    with errstate(divide="raise", invalid="raise"):
+        effsizes *= sqrt(variance / n_causals)
+
+    # effects =
     with errstate(divide="raise", invalid="raise"):
         effects /= effects.std()
         effects *= variance / len(causal_indices)
