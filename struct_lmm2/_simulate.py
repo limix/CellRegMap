@@ -27,7 +27,7 @@ def column_normalize(X):
 
 def create_environment_matrix(n_samples: int):
     """
-    The created matrix will represent two environments.
+    The created matrix 𝙴 will represent two environments.
     """
     from numpy import zeros
 
@@ -81,6 +81,10 @@ def variances(r0, v0, has_kinship=True):
 
         v = σ²_e = σ²_k = σ²_n
 
+    For `has_kinship=False`, we instead set the variances such that:
+
+        v = σ²_e = σ²_n
+
     Parameters
     ----------
     r0 : float
@@ -88,8 +92,8 @@ def variances(r0, v0, has_kinship=True):
     v0 : float
         This is 𝓋₀.
     """
-    v_g = (1 - r0) * v0
-    v_gxe = r0 * v0
+    v_g = v0 * (1 - r0)
+    v_gxe = v0 * r0
 
     if has_kinship:
         v = (1 - v_gxe - v_g) / 3
@@ -105,9 +109,11 @@ def variances(r0, v0, has_kinship=True):
     return {"v_g": v_g, "v_gxe": v_gxe, "v_e": v_e, "v_k": v_k, "v_n": v_n}
 
 
-def sample_effect_sizes(n_effects: int, causal_indices: list, variance: float, random):
+def sample_persistent_effsizes(
+    n_effects: int, causal_indices: list, variance: float, random
+):
     """
-        Sample 𝛃 such that 𝛃ᵢ=0 for the non-causal positions and 𝔼[𝛃ᵀ𝛃] = 𝓋.
+    Sample 𝛃 such that 𝛃ᵢ=0 for the non-causal positions and 𝔼[𝛃ᵀ𝛃] = 𝓋.
     """
     from numpy import zeros, errstate
 
@@ -119,3 +125,43 @@ def sample_effect_sizes(n_effects: int, causal_indices: list, variance: float, r
         effects *= variance / len(causal_indices)
 
     return effects
+
+
+def sample_gxe_effects(G, E, causal_indices: list, variance: float, random):
+    """
+    Let ᵢ denote a causal index. We sample 𝐯 = ∑ᵢ𝐠ᵢ⊙𝛃ᵢ such that:
+
+        𝛃ᵢ ∼ 𝓝(𝟎, 𝓋ᵢ𝙴𝙴ᵀ)
+
+    and 𝔼[𝐯ᵀ𝐯] = 𝓋 and 𝓋ᵢ = 𝓋 / 𝘯, for 𝘯 being the number of causal SNPs.
+    """
+    from numpy import zeros, errstate, sqrt
+
+    n_samples = G.shape[0]
+    n_envs = E.shape[1]
+    n_causals = len(causal_indices)
+    vi = variance / n_causals
+
+    v = zeros(n_samples)
+    for causal in causal_indices:
+        # Let 𝐮 ∼ 𝓝(𝟎, 𝙸) and 𝛃 = σ𝙴𝐮.
+        # We have 𝔼[𝛃] = σ𝙴𝔼[𝐮]= 𝟎 and 𝔼[𝛃ᵀ𝛃] = 𝔼[σ𝙴𝐮𝐮ᵀ𝙴ᵀσ] = σ²𝙴𝔼[𝐮𝐮ᵀ]𝙴ᵀ =
+        # Therefore, 𝛃 ∼ 𝓝(𝟎, σ²𝙴𝙴ᵀ).
+        u = random.randn(n_envs)
+        beta = sqrt(vi) * (E @ u)
+        eff = G[:, causal] * beta
+        with errstate(divide="raise", invalid="raise"):
+            eff /= eff.std(0)
+        eff *= vi
+        v += eff
+
+    v -= v.mean(0)
+    with errstate(divide="raise", invalid="raise"):
+        v /= v.std(0)
+    v *= variance
+
+    return v
+
+
+def sample_phenotype():
+    pass
