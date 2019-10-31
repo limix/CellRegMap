@@ -112,29 +112,35 @@ def variances(r0, v0, has_kinship=True):
     return variances
 
 
-def sample_persistent_effects(
+def sample_persistent_effsizes(
     n_effects: int, causal_indices: list, variance: float, random
 ):
     """
-    Let ⱼ denote a sample index and ₖ denote a SNP index. Let 𝚟ⱼ = 𝐠ⱼᵀ𝛃.
+    Let 𝚓 denote a sample index and 𝚔 denote a SNP index. Let 𝚟ⱼ = 𝐠ⱼᵀ𝛃.
     We assume that 𝑔ⱼₖ is a random variable such that:
 
         𝔼[𝑔ⱼₖ] = 0
         𝔼[𝑔ⱼₖ²] = 1
 
-    And we also assume that SNPs are uncorrelated from each other.
+    And we also assume that SNPs are uncorrelated from each other: 𝔼[𝑔ⱼₖ⋅𝑔ⱼᵣ] = 0
+    for 𝚔≠𝚛.
     Assuming that 𝛃 is given (fixed), we want to simulate 𝛃 such that:
 
         𝔼[𝚟ⱼ] = 𝔼[∑ₖ𝑔ⱼₖ𝛽ₖ] = ∑ₖ𝔼[𝑔ⱼₖ]𝛽ₖ = 0
-        𝔼[𝚟ⱼ²] = 𝔼[(∑ₖ𝑔ⱼₖ𝛽ₖ)²]
+        𝔼[𝚟ⱼ²] = 𝔼[(∑ₖ𝑔ⱼₖ𝛽ₖ)²] = ∑ₖ𝔼[𝑔ⱼₖ²]𝛽ₖ² = ∑ₖ𝛽ₖ² = 𝓋.
 
-    Using the uncorrelation property between SNPs, we can write
+    Let 𝚒 denote a causal index. We initialize 𝛃←𝟎 and then randomly set 𝛽ᵢϵ{-1,+1} for
+    the causal SNPs. At last, we set 𝛃←𝛃×√(𝓋/𝘯) where 𝘯 is the number of causal SNPs.
+    This way we have ∑ₖ𝛽ₖ² = 𝓋.
 
-        𝔼[(∑ₖ𝑔ⱼₖ𝛽ₖ)²] = ∑ₖ𝔼[𝑔ⱼₖ²]𝛽ₖ² = ∑ₖ𝛽ₖ² = 𝓋.
-
-    Let ᵢ denote a causal index. We initialize 𝛃=𝟎 and then randomly set 𝛽ᵢϵ{-1,+1} for
-    the causal SNPs. At last, we set 𝛃←𝛃×√(𝓋/𝘯) where 𝘯 is the number of causal SNPs so
-    that ∑ₖ𝛽ₖ² = 𝓋.
+    Parameters
+    ----------
+    n_effects : int
+        Number of effects.
+    causal_indices : list
+        List of causal SNPs.
+    variance : float
+        Correspond to 𝓋.
     """
     from numpy import zeros, errstate, sqrt
 
@@ -145,12 +151,7 @@ def sample_persistent_effects(
     with errstate(divide="raise", invalid="raise"):
         effsizes *= sqrt(variance / n_causals)
 
-    # effects =
-    with errstate(divide="raise", invalid="raise"):
-        effects /= effects.std()
-        effects *= variance / len(causal_indices)
-
-    return effects
+    return effsizes
 
 
 def sample_gxe_effects(G, E, causal_indices: list, variance: float, random):

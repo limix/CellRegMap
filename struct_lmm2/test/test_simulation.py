@@ -100,4 +100,4 @@ def test_sample_persistent_effsizes():
 
     beta = sample_persistent_effsizes(n_effects, causal_indices, variance, random)
     assert_allclose(beta.mean(), 0.0, atol=1e-7)
-    assert_allclose((beta ** 2).mean(), variance)
+    assert_allclose((beta ** 2).sum(), variance)
