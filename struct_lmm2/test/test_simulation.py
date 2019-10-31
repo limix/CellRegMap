@@ -1,5 +1,5 @@
 import pytest
-from numpy import logical_and, ones, zeros, sqrt
+from numpy import logical_and, ones, zeros
 from numpy.linalg import matrix_rank
 from numpy.random import RandomState
 from numpy.testing import assert_, assert_allclose, assert_equal
@@ -15,7 +15,7 @@ from struct_lmm2._simulate import (
     sample_environment_effects,
     sample_population_effects,
     sample_noise_effects,
-    variances,
+    create_variances,
 )
 
 
@@ -82,15 +82,16 @@ def test_variances():
     r0 = 0.1
     v0 = 0.5
 
-    v = variances(r0, v0)
-    assert_allclose(sum(v.values()), 1.0)
-    assert_allclose(v["v_e"], v["v_n"])
-    assert_allclose(v["v_n"], v["v_k"])
+    v = create_variances(r0, v0)
+    assert_allclose(v.g + v.gxe + v.k + v.e + v.n, 1.0)
+    assert_allclose(v.e, v.n)
+    assert_allclose(v.n, v.k)
 
     has_kinship = False
-    v = variances(r0, v0, has_kinship)
-    assert_allclose(sum(v.values()), 1.0)
-    assert_allclose(v["v_e"], v["v_n"])
+    v = create_variances(r0, v0, has_kinship)
+    assert_allclose(v.g + v.gxe + v.e + v.n, 1.0)
+    assert_allclose(v.e, v.n)
+    assert_equal(v.k, None)
 
 
 def test_sample_persistent_effsizes():
@@ -153,7 +154,7 @@ def test_sample_population_effects():
     G = sample_genotype(n_samples, mafs, random)
 
     variance = 0.4
-    y4 = sample_environment_effects(G, variance, random)
+    y4 = sample_population_effects(G, variance, random)
 
     assert_allclose(y4.mean(), 0.0, atol=1e-7)
     assert_allclose(y4.var(), variance)

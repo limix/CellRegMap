@@ -12,7 +12,7 @@ from struct_lmm2._simulate import (
     sample_genotype,
     sample_maf,
     sample_persistent_effsizes,
-    variances,
+    create_variances,
 )
 
 
@@ -41,7 +41,7 @@ def data():
     G = column_normalize(G)
 
     K = sample_covariance_matrix(n_samples, random)
-    v = variances(r0, v0)
+    v = create_variances(r0, v0)
     beta_g = sample_effect_sizes(n_snps, g_snps, v["v_g"], random)
     beta_gxe = sample_effect_sizes(n_snps, gxe_snps, v["v_gxe"], random)
     y_g = G @ beta_g

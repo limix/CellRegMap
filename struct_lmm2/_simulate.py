@@ -1,3 +1,8 @@
+from collections import namedtuple
+
+Variances = namedtuple("Variances", "g gxe k e n")
+
+
 def sample_maf(n_snps: int, maf_min: float, maf_max: float, random):
     assert maf_min <= maf_max and maf_min >= 0 and maf_max <= 1
     return random.rand(n_snps) * (maf_max - maf_min) + maf_min
@@ -58,7 +63,7 @@ def sample_covariance_matrix(n_samples: int, random, n_rep: int = 1):
     return K
 
 
-def variances(r0, v0, has_kinship=True):
+def create_variances(r0, v0, has_kinship=True) -> Variances:
     """
     Remember that:
 
@@ -105,11 +110,13 @@ def variances(r0, v0, has_kinship=True):
         v_e = v
         v_n = v
 
-    variances = {"v_g": v_g, "v_gxe": v_gxe, "v_e": v_e, "v_n": v_n}
+    variances = {"g": v_g, "gxe": v_gxe, "e": v_e, "n": v_n}
     if has_kinship:
-        variances["v_k"] = v_k
+        variances["k"] = v_k
+    else:
+        variances["k"] = None
 
-    return variances
+    return Variances(**variances)
 
 
 def sample_persistent_effsizes(
@@ -240,7 +247,7 @@ def sample_noise_effects(n_samples: int, variance: float, random):
     return y5
 
 
-def sample_phenotype():
+def sample_phenotype(n_samples, random):
     pass
 
 
