@@ -7,15 +7,16 @@ from numpy.testing import assert_, assert_allclose, assert_equal
 from struct_lmm2._simulate import (
     column_normalize,
     create_environment_matrix,
-    sample_covariance_matrix,
-    sample_genotype,
-    sample_maf,
-    sample_persistent_effsizes,
-    sample_gxe_effects,
-    sample_environment_effects,
-    sample_population_effects,
-    sample_noise_effects,
     create_variances,
+    sample_covariance_matrix,
+    sample_environment_effects,
+    sample_genotype,
+    sample_gxe_effects,
+    sample_maf,
+    sample_noise_effects,
+    sample_persistent_effsizes,
+    sample_phenotype,
+    sample_population_effects,
 )
 
 
@@ -146,15 +147,11 @@ def test_sample_environment_effects():
 
 def test_sample_population_effects():
     random = RandomState(0)
-    n_samples = 3
-    n_snps = 30
-    maf_min = 0.2
-    maf_max = 0.3
-    mafs = sample_maf(n_snps, maf_min, maf_max, random)
-    G = sample_genotype(n_samples, mafs, random)
-
+    n_samples = 10
     variance = 0.4
-    y4 = sample_population_effects(G, variance, random)
+    n_rep = 1
+    K = sample_covariance_matrix(n_samples, random, n_rep)
+    y4 = sample_population_effects(K, variance, random)
 
     assert_allclose(y4.mean(), 0.0, atol=1e-7)
     assert_allclose(y4.var(), variance)
@@ -169,3 +166,45 @@ def test_sample_noise_effects():
 
     assert_allclose(y5.mean(), 0.0, atol=1e-7)
     assert_allclose(y5.var(), variance)
+
+
+def test_sample_phenotype():
+    from numpy import corrcoef
+
+    random = RandomState(0)
+
+    r0 = 0.1
+    v0 = 0.5
+    v = create_variances(r0, v0)
+
+    offset = 0.3
+    s = sample_phenotype(
+        offset=offset,
+        n_samples=500,
+        n_snps=300,
+        n_rep=1,
+        maf_min=0.1,
+        maf_max=0.4,
+        g_causals=[3, 4],
+        gxe_causals=[4, 5],
+        variances=v,
+        random=random,
+    )
+    assert_allclose(
+        s.y_g.var() + s.y_gxe.var() + s.y_n.var() + s.y_e.var() + s.y_k.var(), 1.0
+    )
+    assert_(abs(corrcoef(s.y_g, s.y_gxe)[0, 1]) < 0.1)
+    assert_(abs(corrcoef(s.y_g, s.y_n)[0, 1]) < 0.1)
+    assert_(abs(corrcoef(s.y_g, s.y_e)[0, 1]) < 0.1)
+    assert_(abs(corrcoef(s.y_g, s.y_k)[0, 1]) < 0.1)
+
+    assert_(abs(corrcoef(s.y_gxe, s.y_n)[0, 1]) < 0.1)
+    assert_(abs(corrcoef(s.y_gxe, s.y_e)[0, 1]) < 0.1)
+    assert_(abs(corrcoef(s.y_gxe, s.y_k)[0, 1]) < 0.1)
+
+    assert_(abs(corrcoef(s.y_n, s.y_e)[0, 1]) < 0.1)
+    assert_(abs(corrcoef(s.y_n, s.y_k)[0, 1]) < 0.1)
+
+    assert_(abs(corrcoef(s.y_e, s.y_k)[0, 1]) < 0.1)
+    assert_allclose(s.y, offset + s.y_g + s.y_gxe + s.y_n + s.y_e + s.y_k)
+    assert_allclose(s.y.mean(), offset)

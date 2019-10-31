@@ -1,6 +1,9 @@
 from collections import namedtuple
 
 Variances = namedtuple("Variances", "g gxe k e n")
+Simulation = namedtuple(
+    "Simulation", "mafs y offset beta_g y_g y_gxe y_k y_e y_n variances G E K"
+)
 
 
 def sample_maf(n_snps: int, maf_min: float, maf_max: float, random):
@@ -57,8 +60,7 @@ def sample_covariance_matrix(n_samples: int, random, n_rep: int = 1):
 
     with errstate(divide="raise", invalid="raise"):
         # This small diagonal offset is to guarantee the full-rankness.
-        K /= K.diagonal().mean() + 1e-4 * eye(n_samples * n_rep)
-        K /= K.diagonal().mean()
+        K /= K.diagonal().mean() + 1e-8 * eye(n_samples * n_rep)
 
     return K
 
@@ -161,6 +163,12 @@ def sample_persistent_effsizes(
     return effsizes
 
 
+def sample_persistent_effects(G, effsizes, variance: float):
+    y_g = G @ effsizes
+    _ensure_moments(y_g, 0, variance)
+    return y_g
+
+
 def sample_gxe_effects(G, E, causal_indices: list, variance: float, random):
     """
     Let 𝚒 denote a SNP index and 𝚓 denote an environment.
@@ -187,7 +195,7 @@ def sample_gxe_effects(G, E, causal_indices: list, variance: float, random):
 
     We also assume that 𝔼[𝜖ⱼ]=0 and 𝔼[𝜖ⱼ²]=1/𝑛ₑ for every environment 𝚓.
     """
-    from numpy import zeros, errstate, sqrt
+    from numpy import zeros, sqrt
 
     n_samples = G.shape[0]
     n_envs = E.shape[1]
@@ -226,12 +234,10 @@ def sample_environment_effects(E, variance: float, random):
     return y3
 
 
-def sample_population_effects(G, variance: float, random):
-    from numpy import sqrt
+def sample_population_effects(K, variance: float, random):
+    from numpy import zeros
 
-    n_snps = G.shape[1]
-    effsizes = sqrt(variance) * random.randn(n_snps)
-    y4 = G @ effsizes
+    y4 = random.multivariate_normal(zeros(K.shape[0]), K)
 
     _ensure_moments(y4, 0, variance)
 
@@ -247,8 +253,53 @@ def sample_noise_effects(n_samples: int, variance: float, random):
     return y5
 
 
-def sample_phenotype(n_samples, random):
-    pass
+def sample_phenotype(
+    offset: float,
+    n_samples: int,
+    n_snps: int,
+    n_rep: int,
+    maf_min: float,
+    maf_max: float,
+    g_causals: list,
+    gxe_causals: list,
+    variances: Variances,
+    random,
+) -> Simulation:
+    mafs = sample_maf(n_snps, maf_min, maf_max, random)
+
+    G = sample_genotype(n_samples, mafs, random)
+    G = column_normalize(G)
+
+    E = create_environment_matrix(n_samples)
+    E = column_normalize(E)
+
+    K = sample_covariance_matrix(n_samples, random, n_rep)
+
+    beta_g = sample_persistent_effsizes(n_snps, g_causals, variances.g, random)
+    y_g = sample_persistent_effects(G, beta_g, variances.g)
+    y_gxe = sample_gxe_effects(G, E, gxe_causals, variances.gxe, random)
+    y_k = sample_population_effects(K, variances.k, random)
+    y_e = sample_environment_effects(E, variances.e, random)
+    y_n = sample_noise_effects(n_samples, variances.n, random)
+    y = offset + y_g + y_gxe + y_k + y_e + y_n
+
+    simulation = Simulation(
+        mafs=mafs,
+        offset=offset,
+        beta_g=beta_g,
+        y_g=y_g,
+        y_gxe=y_gxe,
+        y_k=y_k,
+        y_e=y_e,
+        y_n=y_n,
+        y=y,
+        variances=variances,
+        K=K,
+        E=E,
+        G=G,
+    )
+
+    return simulation
 
 
 def _ensure_moments(arr, mean: float, variance: float):
