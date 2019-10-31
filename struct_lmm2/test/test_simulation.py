@@ -1,5 +1,5 @@
 import pytest
-from numpy import logical_and, ones, zeros
+from numpy import logical_and, ones, zeros, sqrt
 from numpy.linalg import matrix_rank
 from numpy.random import RandomState
 from numpy.testing import assert_, assert_allclose, assert_equal
@@ -11,6 +11,7 @@ from struct_lmm2._simulate import (
     sample_genotype,
     sample_maf,
     sample_persistent_effsizes,
+    sample_gxe_effects,
     variances,
 )
 
@@ -101,3 +102,24 @@ def test_sample_persistent_effsizes():
     beta = sample_persistent_effsizes(n_effects, causal_indices, variance, random)
     assert_allclose(beta.mean(), 0.0, atol=1e-7)
     assert_allclose((beta ** 2).sum(), variance)
+
+
+def test_sample_gxe_effects():
+    random = RandomState(0)
+    n_samples = 10
+    n_snps = 30
+    maf_min = 0.2
+    maf_max = 0.3
+    mafs = sample_maf(n_snps, maf_min, maf_max, random)
+    G = sample_genotype(n_samples, mafs, random)
+    G = column_normalize(G)
+    E = create_environment_matrix(n_samples)
+    E = column_normalize(E)
+    E /= sqrt(E.shape[1])
+
+    causal_indices = [3, 5, 8]
+    variance = 0.9
+
+    y2 = sample_gxe_effects(G, E, causal_indices, variance, random)
+    assert_allclose(y2.mean(), 0.0, atol=1e-7)
+    assert_allclose(y2.var(), variance)

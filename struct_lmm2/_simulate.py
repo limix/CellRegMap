@@ -156,11 +156,29 @@ def sample_persistent_effsizes(
 
 def sample_gxe_effects(G, E, causal_indices: list, variance: float, random):
     """
-    Let ᵢ denote a causal index. We sample 𝐯 = ∑ᵢ𝐠ᵢ⊙𝛃ᵢ such that:
+    Let 𝚒 denote a SNP index and 𝚓 denote an environment.
+    Let 𝑦₂ = ∑ᵢ(𝑔ᵢ⋅𝛜ᵀ𝜶ᵢ) be the total GxE effect with
 
-        𝛃ᵢ ∼ 𝓝(𝟎, 𝓋ᵢ𝙴𝙴ᵀ)
+        𝜶ᵢ ∼ 𝓝(𝟎, 𝜎ᵢ²I)
 
-    and 𝔼[𝐯ᵀ𝐯] = 𝓋 and 𝓋ᵢ = 𝓋 / 𝘯, for 𝘯 being the number of causal SNPs.
+    for every SNP ᵢ.
+    We have
+
+        𝔼[𝑦₂] = ∑ᵢ𝔼[𝑔ᵢ⋅𝛜ᵀ𝜶ᵢ] = ∑ᵢ𝔼[𝑔ᵢ]𝔼[𝛜ᵀ𝜶ᵢ] = ∑ᵢ0⋅𝔼[𝛜ᵀ𝜶ᵢ] = 0,
+
+    where 𝑔ᵢ and 𝛜ᵀ𝜶ᵢ are assumed to be uncorrelated.
+
+    We also have
+
+        𝔼[𝑦₂²] = 𝔼[(∑ᵢ𝑔ᵢ⋅𝛜ᵀ𝜶ᵢ)²] = ∑ᵢ∑ⱼ𝔼[𝜖ⱼ²]𝔼[𝛼ᵢⱼ²] = ∑ᵢ𝜎ᵢ² = 𝜎²,
+
+    after a couple of assumptions.
+
+    We define 𝜎ᵢ²=𝑣ᵢ if 𝑔ᵢ is causal and 𝜎ᵢ²=0 otherwise. We assume all causal SNPs
+    to have equal effect as defined by 𝑣ᵢ=𝜎²/𝑛₂, where 𝑛₂ is the number of SNPs
+    having GxE effects.
+
+    We also assume that 𝔼[𝜖ⱼ]=0 and 𝔼[𝜖ⱼ²]=1/𝑛ₑ for every environment 𝚓.
     """
     from numpy import zeros, errstate, sqrt
 
@@ -169,25 +187,32 @@ def sample_gxe_effects(G, E, causal_indices: list, variance: float, random):
     n_causals = len(causal_indices)
     vi = variance / n_causals
 
-    v = zeros(n_samples)
+    y2 = zeros(n_samples)
     for causal in causal_indices:
-        # Let 𝐮 ∼ 𝓝(𝟎, 𝙸) and 𝛃 = σ𝙴𝐮.
-        # We have 𝔼[𝛃] = σ𝙴𝔼[𝐮]= 𝟎 and 𝔼[𝛃ᵀ𝛃] = 𝔼[σ𝙴𝐮𝐮ᵀ𝙴ᵀσ] = σ²𝙴𝔼[𝐮𝐮ᵀ]𝙴ᵀ =
-        # Therefore, 𝛃 ∼ 𝓝(𝟎, σ²𝙴𝙴ᵀ).
-        u = random.randn(n_envs)
-        beta = sqrt(vi) * (E @ u)
-        eff = G[:, causal] * beta
+        # 𝜶ᵢ ∼ 𝓝(𝟎, 𝜎ᵢ²I)
+        alpha = sqrt(vi) * random.randn(n_envs)
+
+        # Make the sample statistics close to population
+        # statistics
+        alpha -= alpha.mean(0)
         with errstate(divide="raise", invalid="raise"):
-            eff /= eff.std(0)
-        eff *= vi
-        v += eff
+            alpha /= alpha.std(0)
+        alpha *= sqrt(vi)
 
-    v -= v.mean(0)
+        # 𝜷 = 𝛜ᵀ𝜶ᵢ
+        beta = E @ alpha
+
+        # 𝑔ᵢ⋅𝛜ᵀ𝜶ᵢ
+        y2 += G[:, causal] * beta
+
+    # Make the sample statistics close to population
+    # statistics
+    y2 -= y2.mean(0)
     with errstate(divide="raise", invalid="raise"):
-        v /= v.std(0)
-    v *= variance
+        y2 /= y2.std(0)
+    y2 *= sqrt(variance)
 
-    return v
+    return y2
 
 
 def sample_phenotype():
