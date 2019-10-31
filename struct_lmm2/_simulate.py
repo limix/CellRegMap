@@ -194,10 +194,7 @@ def sample_gxe_effects(G, E, causal_indices: list, variance: float, random):
 
         # Make the sample statistics close to population
         # statistics
-        alpha -= alpha.mean(0)
-        with errstate(divide="raise", invalid="raise"):
-            alpha /= alpha.std(0)
-        alpha *= sqrt(vi)
+        _ensure_moments(alpha, 0, sqrt(vi))
 
         # 𝜷 = 𝛜ᵀ𝜶ᵢ
         beta = E @ alpha
@@ -205,15 +202,52 @@ def sample_gxe_effects(G, E, causal_indices: list, variance: float, random):
         # 𝑔ᵢ⋅𝛜ᵀ𝜶ᵢ
         y2 += G[:, causal] * beta
 
-    # Make the sample statistics close to population
-    # statistics
-    y2 -= y2.mean(0)
-    with errstate(divide="raise", invalid="raise"):
-        y2 /= y2.std(0)
-    y2 *= sqrt(variance)
+    _ensure_moments(y2, 0, variance)
 
     return y2
 
 
+def sample_environment_effects(E, variance: float, random):
+    from numpy import sqrt
+
+    n_envs = E.shape[1]
+    effsizes = sqrt(variance) * random.randn(n_envs)
+    y3 = E @ effsizes
+
+    _ensure_moments(y3, 0, variance)
+
+    return y3
+
+
+def sample_population_effects(G, variance: float, random):
+    from numpy import sqrt
+
+    n_snps = G.shape[1]
+    effsizes = sqrt(variance) * random.randn(n_snps)
+    y4 = G @ effsizes
+
+    _ensure_moments(y4, 0, variance)
+
+    return y4
+
+
+def sample_noise_effects(n_samples: int, variance: float, random):
+    from numpy import sqrt
+
+    y5 = sqrt(variance) * random.randn(n_samples)
+    _ensure_moments(y5, 0, variance)
+
+    return y5
+
+
 def sample_phenotype():
     pass
+
+
+def _ensure_moments(arr, mean: float, variance: float):
+    from numpy import errstate, sqrt
+
+    arr -= arr.mean(0) + mean
+    with errstate(divide="raise", invalid="raise"):
+        arr /= arr.std(0)
+    arr *= sqrt(variance)

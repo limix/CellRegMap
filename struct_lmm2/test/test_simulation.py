@@ -12,6 +12,9 @@ from struct_lmm2._simulate import (
     sample_maf,
     sample_persistent_effsizes,
     sample_gxe_effects,
+    sample_environment_effects,
+    sample_population_effects,
+    sample_noise_effects,
     variances,
 )
 
@@ -111,11 +114,12 @@ def test_sample_gxe_effects():
     maf_min = 0.2
     maf_max = 0.3
     mafs = sample_maf(n_snps, maf_min, maf_max, random)
+
     G = sample_genotype(n_samples, mafs, random)
     G = column_normalize(G)
+
     E = create_environment_matrix(n_samples)
     E = column_normalize(E)
-    E /= sqrt(E.shape[1])
 
     causal_indices = [3, 5, 8]
     variance = 0.9
@@ -123,3 +127,44 @@ def test_sample_gxe_effects():
     y2 = sample_gxe_effects(G, E, causal_indices, variance, random)
     assert_allclose(y2.mean(), 0.0, atol=1e-7)
     assert_allclose(y2.var(), variance)
+
+
+def test_sample_environment_effects():
+    random = RandomState(0)
+    n_samples = 10
+
+    E = create_environment_matrix(n_samples)
+    E = column_normalize(E)
+
+    variance = 0.3
+    y3 = sample_environment_effects(E, variance, random)
+
+    assert_allclose(y3.mean(), 0.0, atol=1e-7)
+    assert_allclose(y3.var(), variance)
+
+
+def test_sample_population_effects():
+    random = RandomState(0)
+    n_samples = 3
+    n_snps = 30
+    maf_min = 0.2
+    maf_max = 0.3
+    mafs = sample_maf(n_snps, maf_min, maf_max, random)
+    G = sample_genotype(n_samples, mafs, random)
+
+    variance = 0.4
+    y4 = sample_environment_effects(G, variance, random)
+
+    assert_allclose(y4.mean(), 0.0, atol=1e-7)
+    assert_allclose(y4.var(), variance)
+
+
+def test_sample_noise_effects():
+    random = RandomState(0)
+    n_samples = 10
+
+    variance = 0.3
+    y5 = sample_noise_effects(n_samples, variance, random)
+
+    assert_allclose(y5.mean(), 0.0, atol=1e-7)
+    assert_allclose(y5.var(), variance)
