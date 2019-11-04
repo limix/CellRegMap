@@ -1,6 +1,6 @@
 from glimix_core.lmm import LMM
 from numpy import asarray, concatenate, diag, empty, inf, ones, sqrt, stack, trace
-from numpy.linalg import eigvalsh, inv, solve
+from numpy.linalg import eigvalsh, inv, lstsq
 from numpy_sugar import ddot
 from numpy_sugar.linalg import economic_qs
 from scipy.linalg import sqrtm
@@ -12,6 +12,13 @@ from ._math import (
     score_statistic_distr_weights,
     score_statistic_liu_params,
 )
+
+
+def rsolve(a, b):
+    """
+    Robust solver.
+    """
+    return lstsq(a, b, rcond=None)[0]
 
 
 class StructLMM2:
@@ -79,16 +86,23 @@ class StructLMM2:
         self._K = K
         self._EE = E @ E.T
 
-        self._rho0 = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
-        self._rho1 = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
         self._null_lmm_assoc = {}
 
         self._Sigma = {}
         self._Sigma_qs = {}
-        for rho1 in self._rho1:
-            # Σ = ρ₁𝙴𝙴ᵀ + (1-ρ₁)𝙺
-            self._Sigma[rho1] = rho1 * self._EE + (1 - rho1) * self._K
-            self._Sigma_qs[rho1] = economic_qs(self._Sigma[rho1])
+
+        if K is None:
+            self._rho0 = [1.0]
+            self._rho1 = [1.0]
+            self._Sigma[1.0] = self._EE
+            self._Sigma_qs[1.0] = economic_qs(self._Sigma[1.0])
+        else:
+            self._rho0 = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+            self._rho1 = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+            for rho1 in self._rho1:
+                # Σ = ρ₁𝙴𝙴ᵀ + (1-ρ₁)𝙺
+                self._Sigma[rho1] = rho1 * self._EE + (1 - rho1) * self._K
+                self._Sigma_qs[rho1] = economic_qs(self._Sigma[rho1])
 
     def fit_null_association(self):
         best = {"lml": -inf, "lmm": None, "rho1": -1.0}
@@ -110,6 +124,7 @@ class StructLMM2:
         # H1 vs H0 via score test
         for i in range(n_snps):
             g = G[:, i].reshape(G.shape[0], 1)
+            D = diag(g.ravel())
             K0 = lmm.covariance()
             weights = []
             liu_params = []
@@ -117,7 +132,7 @@ class StructLMM2:
                 # K = K0 + s2total * (
                 #     (1 - rho0) * g @ g.T + rho0 * diag(g) @ self._EE @ diag(g)
                 # )
-                dK = (1 - rho0) * g @ g.T + rho0 * diag(g) @ self._EE @ diag(g)
+                dK = (1 - rho0) * g @ g.T + rho0 * D @ self._EE @ D
                 # 𝙿 = 𝙺⁻¹ - 𝙺⁻¹𝚆(𝚆ᵀ𝙺⁻¹𝚆)⁻¹𝚆ᵀ𝙺⁻¹
                 # 𝑄 = ½𝐲ᵀ𝙿(∂𝙺)𝙿𝐲.
                 Q = score_statistic(self._y, self._W, K0, dK)
@@ -182,12 +197,12 @@ class StructLMM2:
             X = concatenate((self._E, g), axis=1)
 
             # Let P₀ = K⁻¹ - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹.
-            K0iX = solve(K0, X)
-            P0 = inv(K0) - K0iX @ solve(X.T @ K0iX, K0iX.T)
+            K0iX = rsolve(K0, X)
+            P0 = inv(K0) - K0iX @ rsolve(X.T @ K0iX, K0iX.T)
 
             # P₀𝐲 = K⁻¹𝐲 - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹𝐲.
-            K0iy = solve(K0, self._y)
-            P0y = K0iy - solve(K0, X @ solve(X.T @ K0iX, X.T @ K0iy))
+            K0iy = rsolve(K0, self._y)
+            P0y = K0iy - rsolve(K0, X @ rsolve(X.T @ K0iX, X.T @ K0iy))
 
             # The covariance matrix of H1 is K = K₀ + b²diag(𝐠)⋅Σ⋅diag(𝐠)
             # We have ∂K/∂b² = diag(𝐠)⋅Σ⋅diag(𝐠)

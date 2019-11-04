@@ -1,99 +1,109 @@
 import pytest
-import scipy.stats as stats
-from numpy import array, asarray, eye, hstack, ones, sqrt, stack, tile, zeros
-from numpy.random import RandomState
-from numpy.testing import assert_allclose
-
+from numpy import ones, stack, concatenate, asarray
+from numpy.testing import assert_
 from struct_lmm2 import StructLMM2
-from struct_lmm2._simulate import (
-    column_normalize,
-    create_environment_matrix,
-    sample_covariance_matrix,
-    sample_genotype,
-    sample_maf,
-    sample_persistent_effsizes,
-    create_variances,
-)
+from struct_lmm import StructLMM
+from numpy.random import RandomState
+from struct_lmm2 import sample_phenotype, create_variances
 
 
-@pytest.fixture
-def data():
-    seed = 0
-    random = RandomState(seed)
-    n_samples = 100
+@pytest.mark.skip
+def test_struct_lmm2_assoc():
+    random = RandomState(0)
+
+    n_samples = 50
     maf_min = 0.05
     maf_max = 0.45
     n_snps = 20
-    # SNPs with persistent effect
-    g_snps = [5, 6]
-    # SNPs with interaction effect
-    gxe_snps = [10, 11]
-    # Contribution of interactions (proportion)
-    r0 = 0.8
-    v0 = 0.4
+    n_rep = 1
+    offset = 0.3
+    r0 = 0.5
+    v0 = 0.5
+    g_causals = [5, 6]
+    gxe_causals = [10, 11]
 
-    # Simulate two environments
-    E = create_environment_matrix(n_samples)
-
-    mafs = sample_maf(n_snps, maf_min, maf_max, random)
-    G = sample_genotype(n_samples, mafs, random)
-    # We normalize the columns of G so that we have 𝔼[𝐠ᵀ𝐠] = 1.
-    G = column_normalize(G)
-
-    K = sample_covariance_matrix(n_samples, random)
     v = create_variances(r0, v0)
-    beta_g = sample_effect_sizes(n_snps, g_snps, v["v_g"], random)
-    beta_gxe = sample_effect_sizes(n_snps, gxe_snps, v["v_gxe"], random)
-    y_g = G @ beta_g
 
-    for i in range(n_snps):
-        # beta_gxe = random.multivariate_normal(zeros(n_samples), sigma_gxe[i] * Sigma)
-        beta_gxe = sigma_gxe[i] * u_gxe
-        y_gxe += G[:, i] * beta_gxe
+    s = sample_phenotype(
+        offset=offset,
+        n_samples=n_samples,
+        n_snps=n_snps,
+        n_rep=n_rep,
+        maf_min=maf_min,
+        maf_max=maf_max,
+        g_causals=g_causals,
+        gxe_causals=gxe_causals,
+        variances=v,
+        random=random,
+    )
 
-    # return {"y": y, "W": W, "E": E, "K": K, "G": G}
+    M = ones((n_samples, 1))
+    # slmm = StructLMM(s.y.copy(), M=M, E=s.E, W=s.E)
+    # slmm.fit(verbose=False)
 
+    # p_values0 = []
+    # print()
+    # for i in range(n_snps):
+    #     g = s.G[:, [i]]
+    #     p = slmm.score_2dof_assoc(g)
+    #     print("{}\t{}".format(i, p))
+    #     p_values0.append(p)
 
-@pytest.mark.skip("Not working yet.")
-def test_structlmm_int_2kinships():
-    random = RandomState(0)
-    n = 100
-    c = 2
-    y = random.randn(n)
-    M = ones((n, 1))
-    W = random.randn(n, c)
-    E = random.randn(n, 4)
-
-    p_values1 = []
-    p_values2 = []
-
-    for i in range(10):
-        random = RandomState(i)
-        g = random.randn(n)
-        lmm2 = StructLMM2(y, W, E)
-        lmm2.fit_null(g)
-        _p = lmm2.score_2_dof(g)
-        p_values2.append(_p)
-
-        y = y.reshape(y.shape[0], 1)
-        lmm = StructLMM(y, M, E)
-        g = g.reshape(g.shape[0], 1)
-        covs1 = hstack((W, g))
-        lmm.fit(covs1)
-        _p = lmm.score_2dof_inter(g)
-        p_values1.append(_p)
-
-    print(stats.pearsonr(p_values2, p_values1)[0])
-    assert_allclose(p_values2, p_values1, rtol=1e-4)
+    slmm2 = StructLMM2(s.y, M, s.E)
+    slmm2.fit_null_association()
+    p_values1 = slmm2.scan_association(s.G)
+    for i, pv in enumerate(p_values1):
+        print("{}\t{}".format(i, pv))
 
 
-@pytest.mark.skip("Not working yet.")
-def test_structlmm2_interaction(data):
-    y = data["y"]
-    W = data["W"]
-    E = data["E"]
-    K = data["K"]
-    G = data["G"]
-    lmm2 = StructLMM2(y, W, E, K)
-    print(lmm2.scan_interaction(G))
-    pass
+def test_struct_lmm2_inter():
+    random = RandomState(2)
+
+    n_samples = 500
+    maf_min = 0.05
+    maf_max = 0.45
+    n_snps = 20
+    n_rep = 1
+    offset = 0.3
+    r0 = 0.5
+    v0 = 0.5
+    g_causals = [5, 6]
+    gxe_causals = [10, 11]
+
+    v = create_variances(r0, v0)
+
+    s = sample_phenotype(
+        offset=offset,
+        n_samples=n_samples,
+        n_snps=n_snps,
+        n_rep=n_rep,
+        maf_min=maf_min,
+        maf_max=maf_max,
+        g_causals=g_causals,
+        gxe_causals=gxe_causals,
+        variances=v,
+        random=random,
+    )
+
+    M = ones((n_samples, 1))
+
+    # p_values0 = []
+    # for i in range(n_snps):
+    #     g = s.G[:, [i]]
+    #     Mg = concatenate([M, g], axis=1)
+    #     slmm_int = StructLMM(s.y.copy(), M=Mg, E=s.E, W=s.E)
+    #     slmm_int.fit(verbose=False)
+    #     p = slmm_int.score_2dof_inter(g)
+    #     print("{}\t{}".format(i, p))
+    #     p_values0.append(p)
+
+    slmm2 = StructLMM2(s.y, M, s.E)
+    pvals = slmm2.scan_interaction(s.G)
+
+    causal_pvalues = [pvals[i] for i in range(len(pvals)) if i in gxe_causals]
+    noncausal_pvalues = [pvals[i] for i in range(len(pvals)) if i not in gxe_causals]
+    causal_pvalues = asarray(causal_pvalues)
+    noncausal_pvalues = asarray(noncausal_pvalues)
+
+    assert_(all(causal_pvalues < 1e-7))
+    assert_(all(noncausal_pvalues > 1e-2))
