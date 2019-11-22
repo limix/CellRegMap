@@ -144,7 +144,7 @@ class StructLMM2:
 
     def scan_association(self, G):
         """
-        Brief description.
+        Association test.
 
         Let us define:
 
@@ -152,9 +152,9 @@ class StructLMM2:
 
         The marginalised form of Eq. (1) can be written as
 
-            𝐲 ~ 𝓝(W𝛂, 𝙺₁ = 𝓋₀𝙳((1-ρ₀)𝟏𝟏ᵀ + ρ₀𝙴𝙴ᵀ)𝙳 + 𝙺₀).
+            𝐲 ~ 𝓝(W𝛂, 𝙺₁ = 𝓋₀𝙳((1-ρ₀)𝟏𝟏ᵀ + ρ₀𝙴𝙴ᵀ)𝙳 + 𝙺₀),
 
-        For a given ρ₀, the score test allows us to compare the hypotheses:
+        where 𝙳 = diag(𝐠). For a given ρ₀, the score test allows us to compare the hypotheses:
 
             𝓗₀: 𝓋₀ = 0
             𝓗₁: 𝓋₀ > 0
@@ -166,6 +166,17 @@ class StructLMM2:
             𝑄 ∼ ∑ᵢ𝜆ᵢχ²(1),
 
         where 𝜆ᵢ are the non-zero eigenvalues of ½√𝙿(∂𝙺₁)√𝙿.
+
+        Unfortunately we don't know the value of ρ₀, and therefore the vanilla score test cannot be
+        applied. We instead employ an alternative test defined follows.
+
+        - Calculate qᵨ = ½𝐲ᵀ𝙿(∂𝙺₁)𝙿𝐲 for a set of ρ₀ values. Let pᵨ be its corresponding p-value.
+        - Define the T statistic as T = min{pᵨ}.
+        - Derive the distribution of T under the null hypothesis
+        - Compute the p-value of T.
+
+        The p-value of T will be therefore used to assess whether we have enough evidence to reject
+        the hypothesis that 𝐠 has no effect.
         """
         K0 = self._null_lmm_assoc["cov"]
         P = P_matrix(self._W, K0)
