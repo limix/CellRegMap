@@ -51,7 +51,7 @@ def test_struct_lmm2_assoc():
 
     slmm2 = StructLMM2(s.y, M, s.E)
     slmm2.fit_null_association()
-    # p_values1 = slmm2.scan_association(s.G)
+    p_values1 = slmm2.scan_association(s.G)
     # for i, pv in enumerate(p_values1):
     #     print("{}\t{}".format(i, pv))
 

@@ -1,5 +1,17 @@
 from glimix_core.lmm import LMM
-from numpy import asarray, concatenate, diag, empty, inf, ones, sqrt, stack, trace, eye
+from numpy import (
+    asarray,
+    concatenate,
+    diag,
+    empty,
+    inf,
+    ones,
+    sqrt,
+    stack,
+    trace,
+    eye,
+    newaxis,
+)
 from numpy.linalg import eigvalsh, inv, lstsq
 from numpy_sugar import ddot
 from chiscore import optimal_davies_pvalue
@@ -131,22 +143,18 @@ class StructLMM2:
         }
 
     def scan_association(self, G):
-        breakpoint()
-        n_snps = G.shape[1]
-        lmm = self._null_lmm_assoc["lmm"]
-        K0 = lmm.covariance()
+        K0 = self._null_lmm_assoc["cov"]
         P = P_matrix(self._W, K0)
         # H1 vs H0 via score test
-        for i in range(n_snps):
-            g = G[:, [i]]
-            D = diag(g.ravel())
-            K0 = lmm.covariance()
+        breakpoint()
+        for g in G.T:
+            D = diag(g)
+            g = g[:, newaxis]
+
             weights = []
             liu_params = []
             for rho0 in self._rho0:
                 dK = (1 - rho0) * g @ g.T + rho0 * D @ self._EE @ D
-                # 𝙿 = 𝙺⁻¹ - 𝙺⁻¹𝚆(𝚆ᵀ𝙺⁻¹𝚆)⁻¹𝚆ᵀ𝙺⁻¹
-                # 𝑄 = ½𝐲ᵀ𝙿(∂𝙺)𝙿𝐲.
                 Q = score_statistic(self._y, self._W, K0, dK)
                 weights += [score_statistic_distr_weights(self._W, K0, dK)]
                 liu_params += [score_statistic_liu_params(Q, weights)]
