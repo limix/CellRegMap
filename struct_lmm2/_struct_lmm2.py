@@ -1,7 +1,8 @@
 from glimix_core.lmm import LMM
-from numpy import asarray, concatenate, diag, empty, inf, ones, sqrt, stack, trace
+from numpy import asarray, concatenate, diag, empty, inf, ones, sqrt, stack, trace, eye
 from numpy.linalg import eigvalsh, inv, lstsq
 from numpy_sugar import ddot
+from chiscore import optimal_davies_pvalue
 from numpy_sugar.linalg import economic_qs
 from scipy.linalg import sqrtm
 
@@ -117,21 +118,19 @@ class StructLMM2:
         self._null_lmm_assoc = best
 
     def scan_association(self, G):
+        breakpoint()
         n_snps = G.shape[1]
         lmm = self._null_lmm_assoc["lmm"]
         K0 = lmm.covariance()
         P = P_matrix(self._W, K0)
         # H1 vs H0 via score test
         for i in range(n_snps):
-            g = G[:, i].reshape(G.shape[0], 1)
+            g = G[:, [i]]
             D = diag(g.ravel())
             K0 = lmm.covariance()
             weights = []
             liu_params = []
             for rho0 in self._rho0:
-                # K = K0 + s2total * (
-                #     (1 - rho0) * g @ g.T + rho0 * diag(g) @ self._EE @ diag(g)
-                # )
                 dK = (1 - rho0) * g @ g.T + rho0 * D @ self._EE @ D
                 # 𝙿 = 𝙺⁻¹ - 𝙺⁻¹𝚆(𝚆ᵀ𝙺⁻¹𝚆)⁻¹𝚆ᵀ𝙺⁻¹
                 # 𝑄 = ½𝐲ᵀ𝙿(∂𝙺)𝙿𝐲.
@@ -139,7 +138,9 @@ class StructLMM2:
                 weights += [score_statistic_distr_weights(self._W, K0, dK)]
                 liu_params += [score_statistic_liu_params(Q, weights)]
 
+            T = min(i["pv"] for i in liu_params)
             q = qmin(liu_params)
+            E = self._E
 
             # 3. Calculate quantities that occur in null distribution
             # g has to be a column-vector
@@ -151,21 +152,42 @@ class StructLMM2:
             H2 = E.T @ D.T @ sqrtm(P) @ M @ sqrtm(P) @ D @ E
             H = H1 - H2
             lambdas = eigvalsh(H / 2)
-            lambdas = eigh
 
-            eta = ETxPx11xPxE @ ZTIminusMZ
+            # eta = ETxPx11xPxE @ ZTIminusMZ
+
+            Z = sqrtm(P).T @ D
+            I = eye(M.shape[0])
+            eta = E.T @ Z.T @ (I - M) @ Z @ E @ E.T @ Z.T @ M @ Z @ E
             vareta = 4 * trace(eta)
 
-            OneZTZE = 0.5 * (g.T @ PxoE)
-            tau_top = OneZTZE @ OneZTZE.T
+            # OneZTZE = 0.5 * (g.T @ PxoE)
+            one = ones((Z.shape[0], 1))
+            tau_top = one.T @ Z.T @ Z @ self._EE @ Z.T @ Z @ one
+            tau_top = tau_top[0, 0]
             tau_rho = empty(len(self._rho0))
-            for i in range(len(self._rho0)):
-                tau_rho[i] = self._rho0[i] * m + (1 - self._rho0[i]) / m * tau_top
+            for i, r0 in enumerate(self._rho0):
+                tau_rho[i] = (1 - r0) * m + r0 * tau_top / m
 
-            MuQ = sum(eigh)
-            VarQ = sum(eigh ** 2) * 2 + vareta
-            KerQ = sum(eigh ** 4) / (sum(eigh ** 2) ** 2) * 12
+            MuQ = sum(lambdas)
+            VarQ = sum(lambdas ** 2) * 2 + vareta
+            KerQ = sum(lambdas ** 4) / (sum(lambdas ** 2) ** 2) * 12
             Df = 12 / KerQ
+
+            pvalue = optimal_davies_pvalue(
+                q, MuQ, VarQ, KerQ, lambdas, vareta, Df, tau_rho, self._rho0, T
+            )
+            # Final correction to make sure that the p-value returned is sensible
+            # multi = 3
+            # if len(self._rhos) < 3:
+            #     multi = 2
+            # idx = where(pliumod[:, 0] > 0)[0]
+            # pval = pliumod[:, 0].min() * multi
+            # if pvalue <= 0 or len(idx) < len(self._rhos):
+            #     pvalue = pval
+            # if pvalue == 0:
+            #     if len(idx) > 0:
+            #         pvalue = pliumod[:, 0][idx].min()
+            return pvalue
 
     def scan_interaction(self, G):
         from chiscore import davies_pvalue
