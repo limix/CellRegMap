@@ -73,7 +73,7 @@ def score_statistic_liu_params(q, weights):
     # of such distribution: the weights, degrees of freedom, and noncentrality (Qh).
     #   𝑄 ∼ ∑λᵢχ²(hᵢ, 𝛿ᵢ),
     # where λᵢ, hᵢ, and 𝛿ᵢ are the weights, degrees of freedom (1), and noncentrality (0)
-    # parameters. By setting the last input to True we use the better modified version [REF].
+    # parameters. By setting the last input to True we use the modified version [REF].
     (pv, dof_x, _, info) = liu_sf(q, weights, [1] * n, [0] * n, True)
     return {"pv": pv, "mu_q": info["mu_q"], "sigma_q": info["sigma_q"], "dof_x": dof_x}
 

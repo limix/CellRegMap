@@ -143,6 +143,30 @@ class StructLMM2:
         }
 
     def scan_association(self, G):
+        """
+        Brief description.
+
+        Let us define:
+
+            𝙺₀ = 𝓋₁(ρ₁EEᵀ + (1-ρ₁)𝙺) + 𝓋₂𝙸.
+
+        The marginalised form of Eq. (1) can be written as
+
+            𝐲 ~ 𝓝(W𝛂, 𝙺₁ = 𝓋₀𝙳((1-ρ₀)𝟏𝟏ᵀ + ρ₀𝙴𝙴ᵀ)𝙳 + 𝙺₀).
+
+        For a given ρ₀, the score test allows us to compare the hypotheses:
+
+            𝓗₀: 𝓋₀ = 0
+            𝓗₁: 𝓋₀ > 0
+
+        by first estimating the parameters 𝛂, 𝓋₁, ρ₁, and 𝓋₂ with 𝓋₀ set to zero and then defining
+        the score statistic 𝑄 = ½𝐲ᵀ𝙿(∂𝙺₁)𝙿𝐲. Under the null hypothesis, the score statistic follows
+        the distribution:
+
+            𝑄 ∼ ∑ᵢ𝜆ᵢχ²(1),
+
+        where 𝜆ᵢ are the non-zero eigenvalues of ½√𝙿(∂𝙺₁)√𝙿.
+        """
         K0 = self._null_lmm_assoc["cov"]
         P = P_matrix(self._W, K0)
         # H1 vs H0 via score test
