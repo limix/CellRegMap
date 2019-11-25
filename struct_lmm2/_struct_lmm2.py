@@ -160,23 +160,42 @@ class StructLMM2:
             𝓗₁: 𝓋₀ > 0
 
         by first estimating the parameters 𝛂, 𝓋₁, ρ₁, and 𝓋₂ with 𝓋₀ set to zero and then defining
-        the score statistic 𝑄 = ½𝐲ᵀ𝙿(∂𝙺₁)𝙿𝐲. Under the null hypothesis, the score statistic follows
+        the score statistic 𝑄ᵨ = ½𝐲ᵀ𝙿(∂𝙺₁)𝙿𝐲. Under the null hypothesis, the score statistic follows
         the distribution:
 
-            𝑄 ∼ ∑ᵢ𝜆ᵢχ²(1),
+            𝑄ᵨ ∼ ∑ᵢ𝜆ᵢχ²(1),
 
-        where 𝜆ᵢ are the non-zero eigenvalues of ½√𝙿(∂𝙺₁)√𝙿.
+        where 𝜆ᵢ are the non-zero eigenvalues of ½√𝙿(∂𝙺₁)√𝙿 (given ρ=ρ₀).
 
         Unfortunately we don't know the value of ρ₀, and therefore the vanilla score test cannot be
         applied. We instead employ an alternative test defined follows.
 
         - Calculate qᵨ = ½𝐲ᵀ𝙿(∂𝙺₁)𝙿𝐲 for a set of ρ₀ values. Let pᵨ be its corresponding p-value.
         - Define the T statistic as T = min{pᵨ}.
-        - Derive the distribution of T under the null hypothesis
+        - Derive the distribution of T under the null hypothesis that 𝓋₀=0.
         - Compute the p-value of T.
 
         The p-value of T will be therefore used to assess whether we have enough evidence to reject
         the hypothesis that 𝐠 has no effect.
+
+        T statistic
+        -----------
+
+        It can be show that:
+
+            Qᵨ ∼ ½𝜏ᵨ⋅χ²(1) + ½ρ𝑘,
+
+        where:
+
+            𝜏ᵨ = 𝑚(1-ρ₀) + (ρ₀/𝑚)𝟏ᵀ𝚉𝚉ᵀ𝙴𝙴ᵀ𝚉ᵀ𝚉𝟏
+            𝙼  = (𝚉𝟏𝟏ᵀ𝚉ᵀ)/𝑚
+            𝑘  ∼ ∑λₛ⋅χ²(1) + ξ
+
+        The terms λₛ are the non-zero eigenvalues of 𝙴ᵀ𝚉ᵀ(𝙸-𝙼)𝚉𝙴.
+        It can also be shown that the above random variables are pair-wise uncorrelated and that
+
+            𝔼[ξ]   = 𝟎
+            𝔼[ξξᵀ] = 4⋅tr[𝙴ᵀ𝚉ᵀ(𝙸-𝙼)𝚉𝙴𝙴ᵀ𝚉ᵀ𝙼𝚉𝙴]
         """
         K0 = self._null_lmm_assoc["cov"]
         P = P_matrix(self._W, K0)
