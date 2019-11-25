@@ -183,19 +183,28 @@ class StructLMM2:
 
         It can be show that:
 
-            Qᵨ ∼ ½𝜏ᵨ⋅χ²(1) + ½ρ𝑘,
+            Qᵨ ∼ ½𝜏ᵨ⋅η₀ + ½ρ𝑘,
 
         where:
 
             𝜏ᵨ = 𝑚(1-ρ₀) + (ρ₀/𝑚)𝟏ᵀ𝚉𝚉ᵀ𝙴𝙴ᵀ𝚉ᵀ𝚉𝟏
+            η₀ = χ²(𝟷)
             𝙼  = (𝚉𝟏𝟏ᵀ𝚉ᵀ)/𝑚
-            𝑘  ∼ ∑λₛ⋅χ²(1) + ξ
+            𝑘  ∼ ∑ηₛ + ξ                             for 𝑠=𝟷, 𝟸, ..., 𝑆
+            ηₛ = λₛ⋅χ²(𝟷)
 
-        The terms λₛ are the non-zero eigenvalues of 𝙴ᵀ𝚉ᵀ(𝙸-𝙼)𝚉𝙴.
-        It can also be shown that the above random variables are pair-wise uncorrelated and that
+        The terms λₛ are the non-zero eigenvalues of 𝙴ᵀ𝚉ᵀ(𝙸-𝙼)𝚉𝙴. It can also be shown that the
+        above (𝑆+2) random variables are pair-wise uncorrelated and that
 
             𝔼[ξ]   = 𝟎
-            𝔼[ξξᵀ] = 4⋅tr[𝙴ᵀ𝚉ᵀ(𝙸-𝙼)𝚉𝙴𝙴ᵀ𝚉ᵀ𝙼𝚉𝙴]
+            𝔼[ξξᵀ] = 𝟺⋅tr[𝙴ᵀ𝚉ᵀ(𝙸-𝙼)𝚉𝙴𝙴ᵀ𝚉ᵀ𝙼𝚉𝙴]
+
+        It can be show that the p-value of the T statistic is given by:
+
+            P(t<T) = P(min{pᵨ} < T)
+                   = 𝟷 - 𝔼[P(𝑘 < min{(2⋅q(pᵨ) - 𝜏ᵨη₀) / ρ}) | η₀],
+
+        where q(pᵨ) is the (𝟷-T)th percentile of the Qᵨ distribution.
         """
         K0 = self._null_lmm_assoc["cov"]
         P = P_matrix(self._W, K0)
