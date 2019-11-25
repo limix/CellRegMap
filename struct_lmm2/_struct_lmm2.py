@@ -202,9 +202,24 @@ class StructLMM2:
         It can be show that the p-value of the T statistic is given by:
 
             P(t<T) = P(min{pᵨ} < T)
-                   = 𝟷 - 𝔼[P(𝑘 < min{(2⋅q(pᵨ) - 𝜏ᵨη₀) / ρ}) | η₀],
+                   = 𝟷 - 𝔼[P(𝑘 < min{(2⋅q(pᵨ) - 𝜏ᵨη₀) / ρ} | η₀)],
 
-        where q(pᵨ) is the (𝟷-T)th percentile of the Qᵨ distribution.
+        where q(pᵨ) is the (𝟷-T)th percentile of the Qᵨ distribution and the expectation is under
+        the distribution of η₀.
+        Ideally, we would calculate
+
+            P(t<T) = 1 - ∫F(g(𝑥))⋅p(η₀=𝑥)⋅d𝑥,
+
+        where F(⋅) would be the cumulative distribution of 𝑘 and g(𝑥)=min{(2⋅q(pᵨ) - 𝜏ᵨη₀) / ρ}.
+        Since we do not know the distribution of ξ, and therefore neither do we know F(⋅), we will
+        instead use the cumulative function Fᵪ(⋅) of ∑ηₛ and adjust its mean variance accordingly:
+
+            P(t<T) ≈ 1 - ∫Fᵪ((g(𝑥)-𝜇)⋅c + 𝜇)⋅p(η₀=𝑥)⋅d𝑥,
+
+        where
+
+            𝜇 = 𝔼[𝑘]
+            c = √(Var[𝑘] - Var[ξ])/√Var[𝑘].
         """
         K0 = self._null_lmm_assoc["cov"]
         P = P_matrix(self._W, K0)
