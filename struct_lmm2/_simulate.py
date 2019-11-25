@@ -265,6 +265,8 @@ def sample_phenotype(
     variances: Variances,
     random,
 ) -> Simulation:
+    from numpy import concatenate as concat
+
     mafs = sample_maf(n_snps, maf_min, maf_max, random)
 
     G = sample_genotype(n_samples, mafs, random)
@@ -276,11 +278,23 @@ def sample_phenotype(
     K = sample_covariance_matrix(n_samples, random, n_rep)
 
     beta_g = sample_persistent_effsizes(n_snps, g_causals, variances.g, random)
-    y_g = sample_persistent_effects(G, beta_g, variances.g)
-    y_gxe = sample_gxe_effects(G, E, gxe_causals, variances.gxe, random)
+    y_g = concat(
+        [sample_persistent_effects(G, beta_g, variances.g) for i in range(n_rep)]
+    )
+    y_gxe = concat(
+        [
+            sample_gxe_effects(G, E, gxe_causals, variances.gxe, random)
+            for i in range(n_rep)
+        ]
+    )
     y_k = sample_population_effects(K, variances.k, random)
-    y_e = sample_environment_effects(E, variances.e, random)
-    y_n = sample_noise_effects(n_samples, variances.n, random)
+    y_e = concat(
+        [sample_environment_effects(E, variances.e, random) for i in range(n_rep)]
+    )
+    y_n = concat(
+        [sample_noise_effects(n_samples, variances.n, random) for i in range(n_rep)]
+    )
+
     y = offset + y_g + y_gxe + y_k + y_e + y_n
 
     simulation = Simulation(

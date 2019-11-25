@@ -208,3 +208,16 @@ def test_sample_phenotype():
     assert_(abs(corrcoef(s.y_e, s.y_k)[0, 1]) < 0.1)
     assert_allclose(s.y, offset + s.y_g + s.y_gxe + s.y_n + s.y_e + s.y_k)
     assert_allclose(s.y.mean(), offset)
+
+    s = sample_phenotype(
+        offset=offset,
+        n_samples=500,
+        n_snps=300,
+        n_rep=2,
+        maf_min=0.1,
+        maf_max=0.4,
+        g_causals=[3, 4],
+        gxe_causals=[4, 5],
+        variances=v,
+        random=random,
+    )
