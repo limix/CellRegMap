@@ -200,7 +200,6 @@ class StructLMM2:
         K0 = self._null_lmm_assoc["cov"]
         P = P_matrix(self._W, K0)
         # H1 vs H0 via score test
-        breakpoint()
         for g in G.T:
             D = diag(g)
             g = g[:, newaxis]
