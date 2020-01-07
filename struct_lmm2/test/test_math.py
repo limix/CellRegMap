@@ -51,7 +51,7 @@ def test_score_statistic(data):
 
 def test_score_statistic_distr_weights(data):
     weights = score_statistic_distr_weights(data["W"], data["K"], data["dK"])
-    assert_allclose(weights, array([4.55266277e-09, 3.46249449e-01]))
+    assert_allclose(weights, array([4.55266277e-09, 3.46249449e-01]), atol=1e-7)
 
 
 def test_score_statistic_liu_params(data):

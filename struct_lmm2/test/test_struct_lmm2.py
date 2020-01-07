@@ -97,6 +97,7 @@ def test_struct_lmm2_inter():
     #     print("{}\t{}".format(i, p))
     #     p_values0.append(p)
 
+    # TODO: add kinship to test it properly
     slmm2 = StructLMM2(s.y, M, s.E)
     pvals = slmm2.scan_interaction(s.G)
 

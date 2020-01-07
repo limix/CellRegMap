@@ -15,7 +15,7 @@ from numpy import (
 from numpy.linalg import eigvalsh, inv, lstsq
 from numpy_sugar import ddot
 from chiscore import optimal_davies_pvalue
-from numpy_sugar.linalg import economic_qs
+from numpy_sugar.linalg import economic_qs, economic_qs_linear
 from scipy.linalg import sqrtm
 
 from ._math import (
@@ -88,30 +88,37 @@ class StructLMM2:
         𝓗₁: 𝓋₃ > 0
     """
 
-    def __init__(self, y, W, E, K=None):
+    def __init__(self, y, W, E, G=None):
+        # TODO: convert y to nx0
+        # TODO: convert W to nxp
+        # TODO: convert to array of floats
         self._y = y
         self._W = W
         self._E = E
-        self._K = K
-        self._EE = E @ E.T
+        self._G = G
+        # self._EE = E @ E.T
 
         self._null_lmm_assoc = {}
 
-        self._Sigma = {}
+        self._halfSigma = {}
         self._Sigma_qs = {}
 
-        if K is None:
+        if G is None:
             self._rho0 = [1.0]
             self._rho1 = [1.0]
-            self._Sigma[1.0] = self._EE
-            self._Sigma_qs[1.0] = economic_qs(self._Sigma[1.0])
+            self._halfSigma[1.0] = self._E
+            self._Sigma_qs[1.0] = economic_qs_linear(self._E)
         else:
             self._rho0 = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
             self._rho1 = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
             for rho1 in self._rho1:
                 # Σ = ρ₁𝙴𝙴ᵀ + (1-ρ₁)𝙺
-                self._Sigma[rho1] = rho1 * self._EE + (1 - rho1) * self._K
-                self._Sigma_qs[rho1] = economic_qs(self._Sigma[rho1])
+                # concatenate((sqrt(rho1) * self._E, sqrt(1 - rho1) * G1), axis=1)
+                # self._Sigma[rho1] = rho1 * self._EE + (1 - rho1) * self._K
+                # self._Sigma_qs[rho1] = economic_qs(self._Sigma[rho1])
+                hS = concatenate((sqrt(rho1) * self._E, sqrt(1 - rho1) * G), axis=1)
+                self._halfSigma[rho1] = hS
+                self._Sigma_qs[rho1] = economic_qs_linear(self._halfSigma[rho1])
 
     def fit_null_association(self):
         """
@@ -223,16 +230,21 @@ class StructLMM2:
         K0 = self._null_lmm_assoc["cov"]
         P = P_matrix(self._W, K0)
         # H1 vs H0 via score test
-        for g in G.T:
-            D = diag(g)
-            g = g[:, newaxis]
+        for gr in G.T:
+            # D = diag(g)
+            g = gr[:, newaxis]
 
             weights = []
             liu_params = []
             for rho0 in self._rho0:
-                dK = (1 - rho0) * g @ g.T + rho0 * D @ self._EE @ D
-                Q = score_statistic(self._y, self._W, K0, dK)
-                weights += [score_statistic_distr_weights(self._W, K0, dK)]
+                # dK = (1 - rho0) * g @ g.T + rho0 * D @ self._EE @ D
+                hdK = concatenate(
+                    [sqrt(1 - rho0) * g, sqrt(rho0) * ddot(gr, self._E)], axis=1
+                )
+                # Q = score_statistic(self._y, self._W, K0, dK)
+                Q = score_statistic(self._y, self._W, K0, hdK @ hdK.T)
+                # weights += [score_statistic_distr_weights(self._W, K0, dK)]
+                weights += [score_statistic_distr_weights(self._W, K0, hdK @ hdK.T)]
                 liu_params += [score_statistic_liu_params(Q, weights)]
 
             T = min(i["pv"] for i in liu_params)
@@ -259,7 +271,7 @@ class StructLMM2:
 
             # OneZTZE = 0.5 * (g.T @ PxoE)
             one = ones((Z.shape[0], 1))
-            tau_top = one.T @ Z.T @ Z @ self._EE @ Z.T @ Z @ one
+            tau_top = one.T @ Z.T @ Z @ self._E @ self._E.T @ Z.T @ Z @ one
             tau_top = tau_top[0, 0]
             tau_rho = empty(len(self._rho0))
             for i, r0 in enumerate(self._rho0):
@@ -287,6 +299,8 @@ class StructLMM2:
             return pvalue
 
     def scan_interaction(self, G):
+        # TODO: make sure G is nxp
+        # TODO: convert to array(float)
         from chiscore import davies_pvalue
 
         n_snps = G.shape[1]
@@ -301,6 +315,8 @@ class StructLMM2:
                 lmm = LMM(self._y, Wg, QS, restricted=True)
                 lmm.fit(verbose=False)
                 if lmm.lml() > best["lml"]:
+                    # TODO: save ratio between K and I
+                    # save rho1 (rename a -> rho1)
                     best["lml"] = lmm.lml()
                     best["a"] = a
                     best["v0"] = lmm.v0
@@ -327,14 +343,15 @@ class StructLMM2:
             # We have ∂K/∂b² = diag(𝐠)⋅Σ⋅diag(𝐠)
             # The score test statistics is given by
             # Q = ½𝐲ᵀP₀⋅∂K⋅P₀𝐲
-            dK = ddot(g.ravel(), ddot(self._EE, g.ravel()))
-            Q = (P0y.T @ dK @ P0y) / 2
+            # dK = ddot(g.ravel(), ddot(self._EE, g.ravel()))
+            hdK = ddot(g.ravel(), self._E)
+            Q = (P0y.T @ hdK @ hdK.T @ P0y) / 2
 
             # Q is the score statistic for our interaction test and follows a linear combination
             # of chi-squared (df=1) distributions:
             # Q ∼ ∑λχ², where λᵢ are the non-zero eigenvalues of ½√P₀⋅∂K⋅√P₀.
             sqrP0 = sqrtm(P0)
-            pval = davies_pvalue(Q, (sqrP0 @ dK @ sqrP0) / 2)
+            pval = davies_pvalue(Q, (sqrP0 @ hdK @ hdK.T @ sqrP0) / 2)
             pvalues.append(pval)
 
         return asarray(pvalues, float)
