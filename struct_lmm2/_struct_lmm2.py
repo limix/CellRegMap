@@ -345,7 +345,9 @@ class StructLMM2:
             "H1 via score test"
             # Let K₀ = g²K + e²Σ + 𝜀²I
             # with optimal values e² and 𝜀² found above.
+            # TODO: replace covariance and sqrt(P) by linear things
             K0 = lmm.covariance()
+            # K0 = QSCov(QS, lmm.v0, lmm.v1)
             X = concatenate((self._E, g), axis=1)
 
             # Let P₀ = K⁻¹ - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹.
