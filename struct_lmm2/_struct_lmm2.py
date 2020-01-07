@@ -19,6 +19,7 @@ from numpy_sugar.linalg import economic_qs_linear
 from scipy.linalg import sqrtm
 
 from ._math import (
+    QSCov,
     rsolve,
     P_matrix,
     qmin,
@@ -135,10 +136,7 @@ class StructLMM2:
                 best["rho1"] = rho1
 
         rho1 = best["rho1"]
-        Q = self._Sigma_qs[rho1][0][0]
-        S = self._Sigma_qs[rho1][1]
-        hcov0 = sqrt(best["lmm"].v0) * ddot(Q, sqrt(S))
-        # best["lmm"].covariance() == hcov0 @ hcov0.T + best["lmm"].v1 * I
+        qscov = QSCov(self._Sigma_qs[rho1], best["lmm"].v0, best["lmm"].v1)
 
         self._null_lmm_assoc = {
             "lml": best["lml"],
@@ -146,7 +144,7 @@ class StructLMM2:
             "v1": best["lmm"].v0,
             "rho1": best["rho1"],
             "v2": best["lmm"].v1,
-            "hcov0": hcov0,
+            "qscov": qscov,
             "cov": best["lmm"].covariance(),  # TODO: remove it
         }
 
@@ -229,7 +227,6 @@ class StructLMM2:
             c = √(Var[𝑘] - Var[ξ])/√Var[𝑘].
         """
         K0 = self._null_lmm_assoc["cov"]
-        # best["lmm"].covariance() == hcov0 @ hcov0.T + best["lmm"].v1 * I
 
         P = P_matrix(self._W, K0)
         # H1 vs H0 via score test

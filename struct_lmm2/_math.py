@@ -26,7 +26,7 @@ References
    variant effects in sequencing association studies." Biostatistics 13.4 (2012):
    762-775.
 """
-from numpy import concatenate, ones
+from numpy import ones
 from numpy.linalg import eigvalsh, inv, lstsq, solve
 from numpy_sugar import ddot
 from scipy.linalg import sqrtm
@@ -40,6 +40,12 @@ def rsolve(a, b):
 
 
 class QSCov:
+    """
+    Represents 𝑎𝙺 + 𝑏𝙸.
+
+    𝙺 matrix is defined by its eigen decomposition, `QS`.
+    """
+
     def __init__(self, QS, a=1.0, b=1.0):
         self._Q0 = QS[0][0]
         self._Q1 = QS[0][1]
@@ -68,10 +74,27 @@ class QSCov:
         return (left + right) / self._b
 
 
+class PMat:
+    """
+    Represents 𝙿 = 𝙺⁻¹ - 𝙺⁻¹𝚆(𝚆ᵀ𝙺⁻¹𝚆)⁻¹𝚆ᵀ𝙺⁻¹.
+
+    The 𝙺 is defined via an `QSCov` object.
+    """
+
+    def __init__(self, qscov: QSCov, W):
+        self._qscov = qscov
+        self._W = W
+        self._KiW = self._qscov.solve(self._W)
+
+    def dot(self, v):
+        Kiv = self._qscov.solve(v)
+        return Kiv - self._KiW @ rsolve(self._W.T @ self._KiW, self._KiW.T)
+
+
 def P_matrix(W, K):
     """ Computes 𝙿 = 𝙺⁻¹ - 𝙺⁻¹𝚆(𝚆ᵀ𝙺⁻¹𝚆)⁻¹𝚆ᵀ𝙺⁻¹. """
-    KiX = solve(K, W)
-    return inv(K) - KiX @ solve(W.T @ KiX, KiX.T)
+    KiW = solve(K, W)
+    return inv(K) - KiW @ solve(W.T @ KiW, KiW.T)
 
 
 def score_statistic(y, W, K, dK):
