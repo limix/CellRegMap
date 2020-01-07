@@ -1,4 +1,5 @@
 import pytest
+from numpy_sugar.linalg import economic_qs
 from numpy import array, eye
 from numpy.random import RandomState
 from numpy.testing import assert_allclose
@@ -9,6 +10,7 @@ from struct_lmm2._math import (
     score_statistic,
     score_statistic_distr_weights,
     score_statistic_liu_params,
+    QSCov,
 )
 
 
@@ -31,6 +33,22 @@ def data():
     y = random.multivariate_normal(W @ alpha, K)
 
     return {"y": y, "W": W, "K": K, "dK": dK}
+
+
+def test_QSCov(data):
+    K = data["K"]
+    n_samples = K.shape[0]
+    QS = economic_qs(K)
+    a = 0.2
+    b = 0.3
+
+    finalK = a * K + b * eye(n_samples)
+
+    qscov = QSCov(QS, a, b)
+    v = array([0.3, -0.2, 0.19])
+
+    assert_allclose(finalK @ v, qscov.dot(v))
+    # assert_allclose(solve(finalK, v), qscov.solve(v))
 
 
 def test_P_matrix(data):

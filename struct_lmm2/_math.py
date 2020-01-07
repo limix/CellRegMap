@@ -26,8 +26,39 @@ References
    variant effects in sequencing association studies." Biostatistics 13.4 (2012):
    762-775.
 """
-from numpy.linalg import eigvalsh, inv, solve
+from numpy import concatenate, ones
+from numpy.linalg import eigvalsh, inv, lstsq, solve
+from numpy_sugar import ddot
 from scipy.linalg import sqrtm
+
+
+def rsolve(a, b):
+    """
+    Robust solver.
+    """
+    return lstsq(a, b, rcond=None)[0]
+
+
+class QSCov:
+    def __init__(self, QS, a=1.0, b=1.0):
+        self._Q0 = QS[0][0]
+        self._Q1 = QS[0][1]
+        self._S0 = QS[1]
+        self._a = a
+        self._b = b
+
+    def _Qt_dot(self, v):
+        return concatenate([self._Q0.T @ v, self._Q1.T @ v], axis=0)
+
+    def dot(self, v):
+        left = self._a * self._Q0 @ ddot(self._S0, self._Q0.T @ v, left=True)
+        right = self._b * v
+        return left + right
+
+    def solve(self, v):
+        SI = ones(self._Q0.shape[0])
+        SI[: self._S0.shape[0]] += (self._a / self._b) * self._S0
+        return self._Qt_dot(ddot(1 / SI, self._Qt_dot(v))) / self._b
 
 
 def P_matrix(W, K):
