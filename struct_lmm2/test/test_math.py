@@ -6,6 +6,7 @@ from numpy.testing import assert_allclose
 
 from struct_lmm2._math import (
     P_matrix,
+    rsolve,
     qmin,
     score_statistic,
     score_statistic_distr_weights,
@@ -48,7 +49,7 @@ def test_QSCov(data):
     v = array([0.3, -0.2, 0.19])
 
     assert_allclose(finalK @ v, qscov.dot(v))
-    # assert_allclose(solve(finalK, v), qscov.solve(v))
+    assert_allclose(rsolve(finalK, v), qscov.solve(v))
 
 
 def test_P_matrix(data):

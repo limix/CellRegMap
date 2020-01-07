@@ -47,18 +47,25 @@ class QSCov:
         self._a = a
         self._b = b
 
-    def _Qt_dot(self, v):
-        return concatenate([self._Q0.T @ v, self._Q1.T @ v], axis=0)
-
     def dot(self, v):
         left = self._a * self._Q0 @ ddot(self._S0, self._Q0.T @ v, left=True)
         right = self._b * v
         return left + right
 
     def solve(self, v):
-        SI = ones(self._Q0.shape[0])
-        SI[: self._S0.shape[0]] += (self._a / self._b) * self._S0
-        return self._Qt_dot(ddot(1 / SI, self._Qt_dot(v))) / self._b
+        nrows = self._Q0.shape[0]
+        rank = self._Q0.shape[1]
+
+        tmp = ones(nrows)
+        tmp[:rank] += (self._a / self._b) * self._S0
+        R = 1 / tmp
+
+        R0 = R[:rank]
+        R1 = R[rank:]
+
+        left = self._Q0 @ ddot(R0, self._Q0.T @ v, left=True)
+        right = self._Q1 @ ddot(R1, self._Q1.T @ v, left=True)
+        return (left + right) / self._b
 
 
 def P_matrix(W, K):
