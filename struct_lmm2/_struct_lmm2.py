@@ -12,13 +12,15 @@ from numpy import (
     eye,
     newaxis,
 )
-from numpy.linalg import eigvalsh, inv, lstsq
+from numpy.linalg import eigvalsh, inv, lstsq, multi_dot
 from numpy_sugar import ddot
+from numpy_sugar.linalg import trace2
 from chiscore import optimal_davies_pvalue
 from numpy_sugar.linalg import economic_qs_linear
 from scipy.linalg import sqrtm
 
 from ._math import (
+    PMat,
     QSCov,
     rsolve,
     P_matrix,
@@ -114,6 +116,10 @@ class StructLMM2:
                 hS = concatenate((sqrt(rho1) * self._E, sqrt(1 - rho1) * G), axis=1)
                 self._halfSigma[rho1] = hS
                 self._Sigma_qs[rho1] = economic_qs_linear(self._halfSigma[rho1])
+
+    @property
+    def _n_samples(self):
+        return self._y.shape[0]
 
     def fit_null_association(self):
         """
@@ -228,7 +234,8 @@ class StructLMM2:
         """
         K0 = self._null_lmm_assoc["cov"]
 
-        P = P_matrix(self._W, K0)
+        # P = P_matrix(self._W, K0)
+        Pmat = PMat(self._null_lmm_assoc["qscov"], self._W)
         # H1 vs H0 via score test
         for gr in G.T:
             # D = diag(g)
@@ -253,25 +260,35 @@ class StructLMM2:
 
             # 3. Calculate quantities that occur in null distribution
             # g has to be a column-vector
-            D = diag(g.ravel())
-            Pg = P @ g
+            # D = diag(gr)
+            # Pg = P @ g
+            Pg = Pmat.dot(g)
             m = (g.T @ Pg)[0, 0]
-            M = 1 / m * (sqrtm(P) @ g @ g.T @ sqrtm(P))
-            H1 = E.T @ D.T @ P @ D @ E
-            H2 = E.T @ D.T @ sqrtm(P) @ M @ sqrtm(P) @ D @ E
+            # M = 1 / m * (sqrtm(P) @ g @ g.T @ sqrtm(P))
+            DE = ddot(gr, E)
+            # H1 = E.T @ D.T @ P @ D @ E
+            H1 = DE.T @ Pmat.dot(DE)
+            # H2 = E.T @ D.T @ sqrtm(P) @ M @ sqrtm(P) @ D @ E
+            H2 = 1 / m * multi_dot([DE.T, Pg, Pg.T, ddot(gr, E)])
             H = H1 - H2
             lambdas = eigvalsh(H / 2)
 
             # eta = ETxPx11xPxE @ ZTIminusMZ
 
-            Z = sqrtm(P).T @ D
-            I = eye(M.shape[0])
-            eta = E.T @ Z.T @ (I - M) @ Z @ E @ E.T @ Z.T @ M @ Z @ E
-            vareta = 4 * trace(eta)
+            # Z = sqrtm(P).T @ D
+            # I = eye(M.shape[0])
+            # eta = E.T @ Z.T @ (I - M) @ Z @ E @ E.T @ Z.T @ M @ Z @ E
+            eta_left = (
+                ddot(Pmat.dot(DE).T, gr) - multi_dot([DE.T, Pg, ddot(Pg.T, gr)]) / m
+            )
+            eta_right = multi_dot([E, DE.T, Pg, Pg.T, DE]) / m
+            # eta = eta_left @ eta_right
+            vareta = 4 * trace2(eta_left, eta_right)
 
             # OneZTZE = 0.5 * (g.T @ PxoE)
-            one = ones((Z.shape[0], 1))
-            tau_top = one.T @ Z.T @ Z @ self._E @ self._E.T @ Z.T @ Z @ one
+            one = ones((self._n_samples, 1))
+            # tau_top = one.T @ Z.T @ Z @ self._E @ self._E.T @ Z.T @ Z @ one
+            tau_top = ddot(one.T, gr) @ Pmat.dot(multi_dot([DE, DE.T, Pmat.dot(one)]))
             tau_top = tau_top[0, 0]
             tau_rho = empty(len(self._rho0))
             for i, r0 in enumerate(self._rho0):

@@ -88,7 +88,7 @@ class PMat:
 
     def dot(self, v):
         Kiv = self._qscov.solve(v)
-        return Kiv - self._KiW @ rsolve(self._W.T @ self._KiW, self._KiW.T)
+        return Kiv - self._KiW @ rsolve(self._W.T @ self._KiW, self._KiW.T @ v)
 
 
 def P_matrix(W, K):
