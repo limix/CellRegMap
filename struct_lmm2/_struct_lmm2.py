@@ -28,6 +28,8 @@ from ._math import (
     score_statistic,
     score_statistic_distr_weights,
     score_statistic_liu_params,
+    score_statistic_qs,
+    ScoreStatistic,
 )
 
 
@@ -232,10 +234,11 @@ class StructLMM2:
             𝜇 = 𝔼[𝑘]
             c = √(Var[𝑘] - Var[ξ])/√Var[𝑘].
         """
-        K0 = self._null_lmm_assoc["cov"]
+        # K0 = self._null_lmm_assoc["cov"]
+        qscov = self._null_lmm_assoc["qscov"]
 
         # P = P_matrix(self._W, K0)
-        Pmat = PMat(self._null_lmm_assoc["qscov"], self._W)
+        Pmat = PMat(qscov, self._W)
         # H1 vs H0 via score test
         for gr in G.T:
             # D = diag(g)
@@ -248,10 +251,9 @@ class StructLMM2:
                 hdK = concatenate(
                     [sqrt(1 - rho0) * g, sqrt(rho0) * ddot(gr, self._E)], axis=1
                 )
-                # Q = score_statistic(self._y, self._W, K0, dK)
-                Q = score_statistic(self._y, self._W, K0, hdK @ hdK.T)
-                # weights += [score_statistic_distr_weights(self._W, K0, dK)]
-                weights += [score_statistic_distr_weights(self._W, K0, hdK @ hdK.T)]
+                ss = ScoreStatistic(Pmat, qscov, hdK)
+                Q = ss.statistic(self._y)
+                weights += [ss.distr_weights()]
                 liu_params += [score_statistic_liu_params(Q, weights)]
 
             T = min(i["pv"] for i in liu_params)
@@ -340,29 +342,28 @@ class StructLMM2:
             # H1 via score test
             # Let K₀ = g²K + e²Σ + 𝜀²I
             # with optimal values e² and 𝜀² found above.
-            # K0 = lmm.covariance()
             qscov = QSCov(self._Sigma_qs[best["rho1"]], lmm.v0, lmm.v1)
             X = concatenate((self._E, g), axis=1)
 
             # Let P₀ = K⁻¹ - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹.
-            Pmat = PMat(qscov, X)
+            P = PMat(qscov, X)
 
             # P₀𝐲 = K⁻¹𝐲 - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹𝐲.
-            P0y = Pmat.dot(self._y)
+            # P0y = Pmat.dot(self._y)
 
             # The covariance matrix of H1 is K = K₀ + b²diag(𝐠)⋅Σ⋅diag(𝐠)
             # We have ∂K/∂b² = diag(𝐠)⋅Σ⋅diag(𝐠)
             # The score test statistics is given by
             # Q = ½𝐲ᵀP₀⋅∂K⋅P₀𝐲
-            DE = ddot(g.ravel(), self._E)
-            Q = (P0y.T @ DE @ DE.T @ P0y) / 2
+            ss = ScoreStatistic(P, qscov, ddot(g.ravel(), self._E))
+            Q = ss.statistic(self._y)
 
             # Q is the score statistic for our interaction test and follows a linear combination
             # of chi-squared (df=1) distributions:
             # Q ∼ ∑λχ², where λᵢ are the non-zero eigenvalues of ½√P₀⋅∂K⋅√P₀.
             # Since eigenvals(𝙰𝙰ᵀ) = eigenvals(𝙰ᵀ𝙰) (TODO: find citation),
             # we can compute ½(√∂K)P₀(√∂K) instead.
-            pval = davies_pvalue(Q, (DE.T @ Pmat.dot(DE)) / 2)
+            pval = davies_pvalue(Q, ss.matrix_for_dist_weights())
             pvalues.append(pval)
 
         return asarray(pvalues, float)

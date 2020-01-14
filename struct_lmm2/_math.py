@@ -97,6 +97,35 @@ def P_matrix(W, K):
     return inv(K) - KiW @ solve(W.T @ KiW, KiW.T)
 
 
+class ScoreStatistic:
+    """
+    Score-test statistic [1]_ is given by
+
+        𝑄 = ½𝐲ᵀ𝙿(∂𝙺)𝙿𝐲.
+    """
+
+    def __init__(self, P: PMat, K: QSCov, sqrt_dK):
+        self._P = P
+        self._K = K
+        self._sqrt_dK = sqrt_dK
+
+    def statistic(self, y):
+        """ Compute 𝑄 = ½𝐲ᵀ𝙿(∂𝙺)𝙿𝐲. """
+        Py = self._P.dot(y)
+        return Py.T @ self._sqrt_dK @ self._sqrt_dK.T @ Py / 2
+
+    def matrix_for_dist_weights(self):
+        """ Compute ½(√∂𝙺)𝙿(√∂𝙺).
+
+        The returned matrix has its eigenvalues equal to the eigenvalues of ½√𝙿(∂𝙺)√𝙿.
+        """
+        return self._sqrt_dK.T @ self._P.dot(self._sqrt_dK) / 2
+
+    def distr_weights(self):
+        weights = eigvalsh(self.matrix_for_dist_weights())
+        return weights[weights > 1e-16]
+
+
 def score_statistic(y, W, K, dK):
     """
     Score-test statistic [1]_ is given by
@@ -105,6 +134,15 @@ def score_statistic(y, W, K, dK):
     """
     P = P_matrix(W, K)
     return y.T @ P @ dK @ P @ y / 2
+
+
+def score_statistic_qs(y, W, qscov, dK):
+    """
+    Same as `score_statistic`.
+    """
+    P = PMat(qscov, W)
+    Py = P.dot(y)
+    return Py.T @ dK @ Py / 2
 
 
 def score_statistic_distr_weights(W, K, dK):
