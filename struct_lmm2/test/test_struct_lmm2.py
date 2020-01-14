@@ -1,5 +1,6 @@
 import pytest
-from numpy import ones, stack, concatenate, asarray
+from numpy.linalg import cholesky
+from numpy import ones, stack, concatenate, asarray, eye
 from numpy.testing import assert_
 from struct_lmm2 import StructLMM2
 from struct_lmm import StructLMM
@@ -99,6 +100,50 @@ def test_struct_lmm2_inter():
 
     # TODO: add kinship to test it properly
     slmm2 = StructLMM2(s.y, M, s.E)
+    pvals = slmm2.scan_interaction(s.G)
+
+    causal_pvalues = [pvals[i] for i in range(len(pvals)) if i in gxe_causals]
+    noncausal_pvalues = [pvals[i] for i in range(len(pvals)) if i not in gxe_causals]
+    causal_pvalues = asarray(causal_pvalues)
+    noncausal_pvalues = asarray(noncausal_pvalues)
+
+    assert_(all(causal_pvalues < 1e-7))
+    assert_(all(noncausal_pvalues > 1e-2))
+
+
+def test_struct_lmm2_inter_kinship():
+    random = RandomState(2)
+
+    n_samples = 500
+    maf_min = 0.05
+    maf_max = 0.45
+    n_snps = 20
+    n_rep = 1
+    offset = 0.3
+    r0 = 0.5
+    v0 = 0.5
+    g_causals = [5, 6]
+    gxe_causals = [10, 11]
+
+    v = create_variances(r0, v0)
+
+    s = sample_phenotype(
+        offset=offset,
+        n_samples=n_samples,
+        n_snps=n_snps,
+        n_rep=n_rep,
+        maf_min=maf_min,
+        maf_max=maf_max,
+        g_causals=g_causals,
+        gxe_causals=gxe_causals,
+        variances=v,
+        random=random,
+    )
+
+    M = ones((n_samples, 1))
+
+    G_kinship = cholesky(s.K + eye(n_samples) * 1e-7)
+    slmm2 = StructLMM2(s.y, M, s.E, G_kinship)
     pvals = slmm2.scan_interaction(s.G)
 
     causal_pvalues = [pvals[i] for i in range(len(pvals)) if i in gxe_causals]
