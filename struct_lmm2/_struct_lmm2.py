@@ -317,9 +317,9 @@ class StructLMM2:
 
     def scan_interaction(self, G):
         # TODO: make sure G is nxp
-        # TODO: convert to array(float)
         from chiscore import davies_pvalue
 
+        G = asarray(G, float)
         n_snps = G.shape[1]
         pvalues = []
         for i in range(n_snps):
@@ -332,21 +332,16 @@ class StructLMM2:
                 lmm = LMM(self._y, Wg, QS, restricted=True)
                 lmm.fit(verbose=False)
                 if lmm.lml() > best["lml"]:
-                    # TODO: save ratio between K and I
-                    # save rho1 (rename a -> rho1)
                     best["lml"] = lmm.lml()
-                    best["a"] = a
-                    best["v0"] = lmm.v0
-                    best["v1"] = lmm.v1
-                    best["alpha"] = lmm.beta
+                    best["rho1"] = a
                     best["lmm"] = lmm
 
             lmm = best["lmm"]
-            "H1 via score test"
+            # H1 via score test
             # Let K₀ = g²K + e²Σ + 𝜀²I
             # with optimal values e² and 𝜀² found above.
             # K0 = lmm.covariance()
-            qscov = QSCov(self._Sigma_qs[best["a"]], lmm.v0, lmm.v1)
+            qscov = QSCov(self._Sigma_qs[best["rho1"]], lmm.v0, lmm.v1)
             X = concatenate((self._E, g), axis=1)
 
             # Let P₀ = K⁻¹ - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹.
