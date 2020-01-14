@@ -153,7 +153,6 @@ class StructLMM2:
             "rho1": best["rho1"],
             "v2": best["lmm"].v1,
             "qscov": qscov,
-            "cov": best["lmm"].covariance(),  # TODO: remove it
         }
 
     def scan_association(self, G):
