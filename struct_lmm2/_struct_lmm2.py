@@ -345,32 +345,29 @@ class StructLMM2:
             "H1 via score test"
             # Let K₀ = g²K + e²Σ + 𝜀²I
             # with optimal values e² and 𝜀² found above.
-            # TODO: replace covariance and sqrt(P) by linear things
-            K0 = lmm.covariance()
-            # K0 = QSCov(QS, lmm.v0, lmm.v1)
+            # K0 = lmm.covariance()
+            qscov = QSCov(self._Sigma_qs[best["a"]], lmm.v0, lmm.v1)
             X = concatenate((self._E, g), axis=1)
 
             # Let P₀ = K⁻¹ - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹.
-            K0iX = rsolve(K0, X)
-            P0 = inv(K0) - K0iX @ rsolve(X.T @ K0iX, K0iX.T)
+            Pmat = PMat(qscov, X)
 
             # P₀𝐲 = K⁻¹𝐲 - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹𝐲.
-            K0iy = rsolve(K0, self._y)
-            P0y = K0iy - rsolve(K0, X @ rsolve(X.T @ K0iX, X.T @ K0iy))
+            P0y = Pmat.dot(self._y)
 
             # The covariance matrix of H1 is K = K₀ + b²diag(𝐠)⋅Σ⋅diag(𝐠)
             # We have ∂K/∂b² = diag(𝐠)⋅Σ⋅diag(𝐠)
             # The score test statistics is given by
             # Q = ½𝐲ᵀP₀⋅∂K⋅P₀𝐲
-            # dK = ddot(g.ravel(), ddot(self._EE, g.ravel()))
-            hdK = ddot(g.ravel(), self._E)
-            Q = (P0y.T @ hdK @ hdK.T @ P0y) / 2
+            DE = ddot(g.ravel(), self._E)
+            Q = (P0y.T @ DE @ DE.T @ P0y) / 2
 
             # Q is the score statistic for our interaction test and follows a linear combination
             # of chi-squared (df=1) distributions:
             # Q ∼ ∑λχ², where λᵢ are the non-zero eigenvalues of ½√P₀⋅∂K⋅√P₀.
-            sqrP0 = sqrtm(P0)
-            pval = davies_pvalue(Q, (sqrP0 @ hdK @ hdK.T @ sqrP0) / 2)
+            # Since eigenvals(𝙰𝙰ᵀ) = eigenvals(𝙰ᵀ𝙰) (TODO: find citation),
+            # we can compute ½(√∂K)P₀(√∂K) instead.
+            pval = davies_pvalue(Q, (DE.T @ Pmat.dot(DE)) / 2)
             pvalues.append(pval)
 
         return asarray(pvalues, float)
