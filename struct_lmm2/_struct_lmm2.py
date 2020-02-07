@@ -1,4 +1,5 @@
 from glimix_core.lmm import LMM
+from glimix_core.lmm import Kron2Sum
 from numpy import (
     asarray,
     concatenate,
@@ -134,8 +135,14 @@ class StructLMM2:
         using the restricted maximum likelihood approach.
         """
         best = {"lml": -inf, "lmm": None, "rho1": -1.0}
-        for rho1, Sigma_qs in self._Sigma_qs.items():
-            lmm = LMM(self._y, self._W, Sigma_qs, restricted=True)
+        for rho1, halfSigma in self._halfSigma.items():
+            # for rho1, Sigma_qs in self._Sigma_qs.items():
+            Sigma_qs = self._Sigma_qs[rho1]
+            lmm2 = LMM(self._y, self._W, Sigma_qs, restricted=True)
+            lmm2.fit(verbose=False)
+            lmm = Kron2Sum(
+                self._y[:, newaxis], [[1]], self._W, halfSigma, restricted=True
+            )
             lmm.fit(verbose=True)
             lml = lmm.lml()
             if lml > best["lml"]:
@@ -144,14 +151,14 @@ class StructLMM2:
                 best["rho1"] = rho1
 
         rho1 = best["rho1"]
-        qscov = QSCov(self._Sigma_qs[rho1], best["lmm"].v0, best["lmm"].v1)
+        qscov = QSCov(self._Sigma_qs[rho1], best["lmm"].C0[0, 0], best["lmm"].C1[0, 0])
 
         self._null_lmm_assoc = {
             "lml": best["lml"],
             "alpha": best["lmm"].beta,
-            "v1": best["lmm"].v0,
+            "v1": best["lmm"].C0[0, 0],
             "rho1": best["rho1"],
-            "v2": best["lmm"].v1,
+            "v2": best["lmm"].C1[0, 0],
             "qscov": qscov,
         }
 
@@ -329,8 +336,13 @@ class StructLMM2:
             best = {"lml": -inf, "a": 0, "v0": 0, "v1": 0, "beta": 0}
             for a in self._rho1:
                 QS = self._Sigma_qs[a]
+                halfSigma = self._halfSigma[a]
                 # cov(y) = v0*(aΣ + (1-a)K) + v1*Is
-                lmm = LMM(self._y, Wg, QS, restricted=True)
+                # lmm2 = LMM(self._y, Wg, QS, restricted=True)
+                # lmm2.fit(verbose=False)
+                lmm = Kron2Sum(
+                    self._y[:, newaxis], [[1]], Wg, halfSigma, restricted=True
+                )
                 lmm.fit(verbose=False)
                 if lmm.lml() > best["lml"]:
                     best["lml"] = lmm.lml()
@@ -341,7 +353,8 @@ class StructLMM2:
             # H1 via score test
             # Let K₀ = g²K + e²Σ + 𝜀²I
             # with optimal values e² and 𝜀² found above.
-            qscov = QSCov(self._Sigma_qs[best["rho1"]], lmm.v0, lmm.v1)
+            # qscov = QSCov(self._Sigma_qs[best["rho1"]], lmm.v0, lmm.v1)
+            qscov = QSCov(self._Sigma_qs[best["rho1"]], lmm.C0[0, 0], lmm.C1[0, 0])
             X = concatenate((self._E, g), axis=1)
 
             # Let P₀ = K⁻¹ - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹.
