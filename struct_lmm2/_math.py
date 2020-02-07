@@ -48,7 +48,7 @@ class QSCov:
 
     def __init__(self, QS, a=1.0, b=1.0):
         self._Q0 = QS[0][0]
-        self._Q1 = QS[0][1]
+        # self._Q1 = QS[0][1]
         self._S0 = QS[1]
         self._a = a
         self._b = b
@@ -59,19 +59,24 @@ class QSCov:
         return left + right
 
     def solve(self, v):
-        nrows = self._Q0.shape[0]
-        rank = self._Q0.shape[1]
+        # nrows = self._Q0.shape[0]
+        # rank = self._Q0.shape[1]
 
-        tmp = ones(nrows)
-        tmp[:rank] += (self._a / self._b) * self._S0
-        R = 1 / tmp
+        # tmp = ones(nrows)
+        # tmp[:rank] += (self._a / self._b) * self._S0
+        # R = 1 / tmp
 
-        R0 = R[:rank]
-        R1 = R[rank:]
+        # R0 = R[:rank]
+        # R1 = R[rank:]  # Always ones
 
-        left = self._Q0 @ ddot(R0, self._Q0.T @ v, left=True)
-        right = self._Q1 @ ddot(R1, self._Q1.T @ v, left=True)
-        return (left + right) / self._b
+        # tmp = (self._a / self._b) * self._S0
+        R0 = 1 / (1 + ((self._a / self._b) * self._S0))
+        # R0 = R[:rank]
+        Q0v = self._Q0.T @ v
+        return (self._Q0 @ ddot(R0, Q0v, left=True) + v - self._Q0 @ Q0v) / self._b
+        # left = self._Q0 @ ddot(R0, self._Q0.T @ v, left=True)
+        # right = self._Q1 @ ddot(R1, self._Q1.T @ v, left=True)
+        # return (left + right) / self._b
 
 
 class PMat:
