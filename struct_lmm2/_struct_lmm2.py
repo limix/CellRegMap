@@ -17,7 +17,7 @@ from numpy.linalg import eigvalsh, inv, lstsq, multi_dot
 from numpy_sugar import ddot
 from numpy_sugar.linalg import trace2
 from chiscore import optimal_davies_pvalue
-from numpy_sugar.linalg import economic_qs_linear
+from ._math import economic_qs_linear
 from scipy.linalg import sqrtm
 
 from ._math import (
@@ -137,9 +137,9 @@ class StructLMM2:
         best = {"lml": -inf, "lmm": None, "rho1": -1.0}
         for rho1, halfSigma in self._halfSigma.items():
             # for rho1, Sigma_qs in self._Sigma_qs.items():
-            Sigma_qs = self._Sigma_qs[rho1]
-            lmm2 = LMM(self._y, self._W, Sigma_qs, restricted=True)
-            lmm2.fit(verbose=False)
+            # Sigma_qs = self._Sigma_qs[rho1]
+            # lmm2 = LMM(self._y, self._W, Sigma_qs, restricted=True)
+            # lmm2.fit(verbose=False)
             lmm = Kron2Sum(
                 self._y[:, newaxis], [[1]], self._W, halfSigma, restricted=True
             )
@@ -335,7 +335,7 @@ class StructLMM2:
             Wg = concatenate((self._W, g), axis=1)
             best = {"lml": -inf, "a": 0, "v0": 0, "v1": 0, "beta": 0}
             for a in self._rho1:
-                QS = self._Sigma_qs[a]
+                # QS = self._Sigma_qs[a]
                 halfSigma = self._halfSigma[a]
                 # cov(y) = v0*(aΣ + (1-a)K) + v1*Is
                 # lmm2 = LMM(self._y, Wg, QS, restricted=True)

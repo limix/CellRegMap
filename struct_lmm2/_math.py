@@ -26,10 +26,12 @@ References
    variant effects in sequencing association studies." Biostatistics 13.4 (2012):
    762-775.
 """
-from numpy import ones
 from numpy.linalg import eigvalsh, inv, lstsq, solve
 from numpy_sugar import ddot
 from scipy.linalg import sqrtm
+
+from numpy import finfo, logical_not, sqrt
+from numpy.linalg import eigh, svd
 
 
 def rsolve(a, b):
@@ -47,7 +49,7 @@ class QSCov:
     """
 
     def __init__(self, QS, a=1.0, b=1.0):
-        self._Q0 = QS[0][0]
+        self._Q0 = QS[0]
         # self._Q1 = QS[0][1]
         self._S0 = QS[1]
         self._a = a
@@ -201,3 +203,58 @@ def qmin(liu_params):
         qmin[i] = (q - dof) / (2 * dof) ** 0.5 * sigma_q + mu_q
 
     return qmin
+
+
+def economic_qs(K, epsilon=sqrt(finfo(float).eps)):
+    r"""Economic eigen decomposition for symmetric matrices.
+
+    A symmetric matrix ``K`` can be decomposed in
+    :math:`\mathrm Q_0 \mathrm S_0 \mathrm Q_0^\intercal + \mathrm Q_1\
+    \mathrm S_1 \mathrm Q_1^ \intercal`, where :math:`\mathrm S_1` is a zero
+    matrix with size determined by ``K``'s rank deficiency.
+
+    Args:
+        K (array_like): Symmetric matrix.
+        epsilon (float): Eigen value threshold. Default is
+                         ``sqrt(finfo(float).eps)``.
+
+    Returns:
+        tuple: ``((Q0, Q1), S0)``.
+    """
+
+    (S, Q) = eigh(K)
+
+    nok = abs(max(Q[0].min(), Q[0].max(), key=abs)) < epsilon
+    nok = nok and abs(max(K.min(), K.max(), key=abs)) >= epsilon
+    if nok:
+        from scipy.linalg import eigh as sp_eigh
+
+        (S, Q) = sp_eigh(K)
+
+    ok = S >= epsilon
+    nok = logical_not(ok)
+    S0 = S[ok]
+    Q0 = Q[:, ok]
+    Q1 = Q[:, nok]
+    return ((Q0, Q1), S0)
+
+
+def economic_qs_linear(G):
+    r"""Economic eigen decomposition for symmetric matrices ``dot(G, G.T)``.
+
+    It is theoretically equivalent to ``economic_qs(dot(G, G.T))``.
+    Refer to :func:`numpy_sugar.economic_qs` for further information.
+
+    Args:
+        G (array_like): Matrix.
+
+    Returns:
+        tuple: ``((Q0, Q1), S0)``.
+    """
+    if G.shape[0] > G.shape[1]:
+        (Q0, Ssq, _) = svd(G, full_matrices=False)
+        S0 = Ssq ** 2
+        return (Q0, S0)
+
+    Q, S0 = economic_qs(G.dot(G.T))
+    return (Q[0], S0)

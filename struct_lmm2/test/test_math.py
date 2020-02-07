@@ -41,6 +41,7 @@ def test_QSCov(data):
     K = data["K"][:, :rank] @ data["K"][:, :rank].T
     n_samples = K.shape[0]
     QS = economic_qs(K)
+    QS = (QS[0][0], QS[1])
     a = 0.2
     b = 0.3
 
