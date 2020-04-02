@@ -329,12 +329,8 @@ class StructLMM2:
         # TODO: make sure G is nxp
         from chiscore import davies_pvalue
 
-        if permute is None:
-            E1 = self._E
-        else:
+        if permute is not None:
             random = RandomState(permute)
-            idx = random.permutation(self._E.shape[0])
-            E1 = self._E[idx, :]
 
         G = asarray(G, float)
         n_snps = G.shape[1]
@@ -371,6 +367,12 @@ class StructLMM2:
 
             # P₀𝐲 = K⁻¹𝐲 - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹𝐲.
             # P0y = Pmat.dot(self._y)
+
+            if permute is None:
+                E1 = self._E
+            else:
+                idx = random.permutation(self._E.shape[0])
+                E1 = self._E[idx, :]
 
             # The covariance matrix of H1 is K = K₀ + b²diag(𝐠)⋅Σ⋅diag(𝐠)
             # We have ∂K/∂b² = diag(𝐠)⋅Σ⋅diag(𝐠)
