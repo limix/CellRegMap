@@ -257,10 +257,7 @@ class StructLMM2:
         # H1 vs H0 via score test
         for gr in G.T:
             # D = diag(g)
-            if permute:
-                g = gr[:, idx]
-            else:
-                g = gr[:, newaxis]
+            g = gr[:, newaxis]
 
             weights = []
             liu_params = []
@@ -338,6 +335,13 @@ class StructLMM2:
         # TODO: make sure G is nxp
         from chiscore import davies_pvalue
 
+        if permute is None:
+            E1 = self._E
+        else:
+            random = RandomState(permute)
+            idx = random.permutation(self._E.shape[0])
+            E1 = self._E[idx, :]
+
         G = asarray(G, float)
         n_snps = G.shape[1]
         pvalues = []
@@ -378,12 +382,6 @@ class StructLMM2:
             # We have ∂K/∂b² = diag(𝐠)⋅Σ⋅diag(𝐠)
             # The score test statistics is given by
             # Q = ½𝐲ᵀP₀⋅∂K⋅P₀𝐲
-            if permute is None:
-                E1 = self._E
-            else:
-                random = RandomState(permute)
-                idx = random.permutation(self._E.shape[0])
-                E1 = self._E[idx, :]
             ss = ScoreStatistic(P, qscov, ddot(g.ravel(), E1))
             Q = ss.statistic(self._y)
 
