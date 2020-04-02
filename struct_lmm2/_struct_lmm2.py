@@ -164,7 +164,7 @@ class StructLMM2:
             "qscov": qscov,
         }
 
-    def scan_association(self, G, permute: Optional[int] = None):
+    def scan_association(self, G):
         """
         Association test.
 
@@ -242,13 +242,6 @@ class StructLMM2:
             𝜇 = 𝔼[𝑘]
             c = √(Var[𝑘] - Var[ξ])/√Var[𝑘].
         """
-        if permute is None:
-            E1 = self._E
-        else:
-            random = RandomState(permute)
-            idx = random.permutation(self._E.shape[0])
-            E1 = self._E[idx, :]
-
         # K0 = self._null_lmm_assoc["cov"]
         qscov = self._null_lmm_assoc["qscov"]
 
@@ -264,7 +257,7 @@ class StructLMM2:
             for rho0 in self._rho0:
                 # dK = (1 - rho0) * g @ g.T + rho0 * D @ self._EE @ D
                 hdK = concatenate(
-                    [sqrt(1 - rho0) * g, sqrt(rho0) * ddot(gr, E1)], axis=1
+                    [sqrt(1 - rho0) * g, sqrt(rho0) * ddot(gr, self._E)], axis=1
                 )
                 ss = ScoreStatistic(Pmat, qscov, hdK)
                 Q = ss.statistic(self._y)
@@ -273,6 +266,7 @@ class StructLMM2:
 
             T = min(i["pv"] for i in liu_params)
             q = qmin(liu_params)
+            E = self._E
 
             # 3. Calculate quantities that occur in null distribution
             # g has to be a column-vector
@@ -281,11 +275,11 @@ class StructLMM2:
             Pg = Pmat.dot(g)
             m = (g.T @ Pg)[0, 0]
             # M = 1 / m * (sqrtm(P) @ g @ g.T @ sqrtm(P))
-            DE = ddot(gr, E1)
+            DE = ddot(gr, E)
             # H1 = E.T @ D.T @ P @ D @ E
             H1 = DE.T @ Pmat.dot(DE)
             # H2 = E.T @ D.T @ sqrtm(P) @ M @ sqrtm(P) @ D @ E
-            H2 = 1 / m * multi_dot([DE.T, Pg, Pg.T, ddot(gr, E1)])
+            H2 = 1 / m * multi_dot([DE.T, Pg, Pg.T, ddot(gr, E)])
             H = H1 - H2
             lambdas = eigvalsh(H / 2)
 
@@ -297,7 +291,7 @@ class StructLMM2:
             eta_left = (
                 ddot(Pmat.dot(DE).T, gr) - multi_dot([DE.T, Pg, ddot(Pg.T, gr)]) / m
             )
-            eta_right = multi_dot([E1, DE.T, Pg, Pg.T, DE]) / m
+            eta_right = multi_dot([E, DE.T, Pg, Pg.T, DE]) / m
             # eta = eta_left @ eta_right
             vareta = 4 * trace2(eta_left, eta_right)
 
