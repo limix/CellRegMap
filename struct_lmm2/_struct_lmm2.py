@@ -1,3 +1,4 @@
+from typing import Optional
 from glimix_core.lmm import LMM
 from glimix_core.lmm import Kron2Sum
 from numpy import (
@@ -14,6 +15,7 @@ from numpy import (
     newaxis,
 )
 from numpy.linalg import eigvalsh, inv, lstsq, multi_dot
+from numpy.random import RandomState
 from numpy_sugar import ddot
 from numpy_sugar.linalg import trace2
 from chiscore import optimal_davies_pvalue
@@ -162,7 +164,7 @@ class StructLMM2:
             "qscov": qscov,
         }
 
-    def scan_association(self, G):
+    def scan_association(self, G, permute: Optional[int] = None):
         """
         Association test.
 
@@ -188,7 +190,7 @@ class StructLMM2:
         where 𝜆ᵢ are the non-zero eigenvalues of ½√𝙿(∂𝙺₁)√𝙿 (given ρ=ρ₀).
 
         Unfortunately we don't know the value of ρ₀, and therefore the vanilla score test cannot be
-        applied. We instead employ an alternative test defined follows.
+        applied. We instead employ an alternative test defined as follows.
 
         - Calculate qᵨ = ½𝐲ᵀ𝙿(∂𝙺₁)𝙿𝐲 for a set of ρ₀ values. Let pᵨ be its corresponding p-value.
         - Define the T statistic as T = min{pᵨ}.
@@ -240,6 +242,13 @@ class StructLMM2:
             𝜇 = 𝔼[𝑘]
             c = √(Var[𝑘] - Var[ξ])/√Var[𝑘].
         """
+        if permute is None:
+            E1 = self._E
+        else:
+            random = RandomState(permute)
+            idx = random.permutation(self._E.shape[0])
+            E1 = self._E[idx, :]
+
         # K0 = self._null_lmm_assoc["cov"]
         qscov = self._null_lmm_assoc["qscov"]
 
@@ -248,14 +257,17 @@ class StructLMM2:
         # H1 vs H0 via score test
         for gr in G.T:
             # D = diag(g)
-            g = gr[:, newaxis]
+            if permute:
+                g = gr[:, idx]
+            else:
+                g = gr[:, newaxis]
 
             weights = []
             liu_params = []
             for rho0 in self._rho0:
                 # dK = (1 - rho0) * g @ g.T + rho0 * D @ self._EE @ D
                 hdK = concatenate(
-                    [sqrt(1 - rho0) * g, sqrt(rho0) * ddot(gr, self._E)], axis=1
+                    [sqrt(1 - rho0) * g, sqrt(rho0) * ddot(gr, E1)], axis=1
                 )
                 ss = ScoreStatistic(Pmat, qscov, hdK)
                 Q = ss.statistic(self._y)
@@ -264,7 +276,6 @@ class StructLMM2:
 
             T = min(i["pv"] for i in liu_params)
             q = qmin(liu_params)
-            E = self._E
 
             # 3. Calculate quantities that occur in null distribution
             # g has to be a column-vector
@@ -273,11 +284,11 @@ class StructLMM2:
             Pg = Pmat.dot(g)
             m = (g.T @ Pg)[0, 0]
             # M = 1 / m * (sqrtm(P) @ g @ g.T @ sqrtm(P))
-            DE = ddot(gr, E)
+            DE = ddot(gr, E1)
             # H1 = E.T @ D.T @ P @ D @ E
             H1 = DE.T @ Pmat.dot(DE)
             # H2 = E.T @ D.T @ sqrtm(P) @ M @ sqrtm(P) @ D @ E
-            H2 = 1 / m * multi_dot([DE.T, Pg, Pg.T, ddot(gr, E)])
+            H2 = 1 / m * multi_dot([DE.T, Pg, Pg.T, ddot(gr, E1)])
             H = H1 - H2
             lambdas = eigvalsh(H / 2)
 
@@ -289,7 +300,7 @@ class StructLMM2:
             eta_left = (
                 ddot(Pmat.dot(DE).T, gr) - multi_dot([DE.T, Pg, ddot(Pg.T, gr)]) / m
             )
-            eta_right = multi_dot([E, DE.T, Pg, Pg.T, DE]) / m
+            eta_right = multi_dot([E1, DE.T, Pg, Pg.T, DE]) / m
             # eta = eta_left @ eta_right
             vareta = 4 * trace2(eta_left, eta_right)
 
@@ -323,7 +334,7 @@ class StructLMM2:
             #         pvalue = pliumod[:, 0][idx].min()
             return pvalue
 
-    def scan_interaction(self, G):
+    def scan_interaction(self, G, permute: Optional[int] = None):
         # TODO: make sure G is nxp
         from chiscore import davies_pvalue
 
@@ -367,7 +378,13 @@ class StructLMM2:
             # We have ∂K/∂b² = diag(𝐠)⋅Σ⋅diag(𝐠)
             # The score test statistics is given by
             # Q = ½𝐲ᵀP₀⋅∂K⋅P₀𝐲
-            ss = ScoreStatistic(P, qscov, ddot(g.ravel(), self._E))
+            if permute is None:
+                E1 = self._E
+            else:
+                random = RandomState(permute)
+                idx = random.permutation(self._E.shape[0])
+                E1 = self._E[idx, :]
+            ss = ScoreStatistic(P, qscov, ddot(g.ravel(), E1))
             Q = ss.statistic(self._y)
 
             # Q is the score statistic for our interaction test and follows a linear combination
