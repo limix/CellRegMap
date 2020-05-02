@@ -1,13 +1,12 @@
-import pytest
 from numpy.linalg import cholesky
-from numpy import ones, stack, concatenate, asarray, eye, median, min
-from numpy.testing import assert_
+from numpy import ones, asarray, eye, median, min
+from numpy.testing import assert_, assert_allclose
 from struct_lmm2 import StructLMM2
-from struct_lmm import StructLMM
 from numpy.random import RandomState
 from struct_lmm2 import sample_phenotype, create_variances
 
 
+# from struct_lmm import StructLMM
 # @pytest.mark.skip
 def test_struct_lmm2_assoc():
     random = RandomState(0)
@@ -191,3 +190,41 @@ def test_struct_lmm2_inter_kinship_permute():
     pvals = slmm2.scan_interaction(s.G, 1)
     assert_(median(pvals) > 0.4)
     assert_(min(pvals) > 0.04)
+
+
+def test_struct_lmm2_inter_kinship_predict():
+    random = RandomState(0)
+
+    n_samples = 100
+    maf_min = 0.05
+    maf_max = 0.45
+    n_snps = 20
+    n_rep = 1
+    offset = 0.3
+    r0 = 0.5
+    v0 = 0.5
+    g_causals = [5, 6]
+    gxe_causals = [10, 11]
+
+    v = create_variances(r0, v0)
+
+    s = sample_phenotype(
+        offset=offset,
+        n_samples=n_samples,
+        n_snps=n_snps,
+        n_rep=n_rep,
+        maf_min=maf_min,
+        maf_max=maf_max,
+        g_causals=g_causals,
+        gxe_causals=gxe_causals,
+        variances=v,
+        random=random,
+    )
+
+    M = ones((n_samples, 1))
+
+    G_kinship = cholesky(s.K + eye(n_samples) * 1e-7)
+    E = random.randn(n_samples, 2)
+    slmm2 = StructLMM2(s.y, M, E, G_kinship)
+    beta_stars = slmm2.predict_interaction(s.G)
+    assert_allclose(beta_stars.mean(), -0.04958238193404309)

@@ -1,38 +1,40 @@
 from typing import Optional
-from glimix_core.lmm import LMM
-from glimix_core.lmm import Kron2Sum
+
+from chiscore import optimal_davies_pvalue
+from glimix_core.lmm import LMM, Kron2Sum
 from numpy import (
     asarray,
     concatenate,
     diag,
     empty,
+    eye,
     inf,
+    newaxis,
     ones,
     sqrt,
     stack,
     trace,
-    eye,
-    newaxis,
+    vstack,
 )
 from numpy.linalg import eigvalsh, inv, lstsq, multi_dot
 from numpy.random import RandomState
-from numpy_sugar import ddot
-from numpy_sugar.linalg import trace2
-from chiscore import optimal_davies_pvalue
-from ._math import economic_qs_linear
 from scipy.linalg import sqrtm
 
+from numpy_sugar import ddot
+from numpy_sugar.linalg import trace2
+
 from ._math import (
+    P_matrix,
     PMat,
     QSCov,
-    rsolve,
-    P_matrix,
+    ScoreStatistic,
+    economic_qs_linear,
     qmin,
+    rsolve,
     score_statistic,
     score_statistic_distr_weights,
     score_statistic_liu_params,
     score_statistic_qs,
-    ScoreStatistic,
 )
 
 
@@ -165,6 +167,7 @@ class StructLMM2:
         }
 
     def scan_association(self, G):
+        # WARNING: this method is not working yet
         """
         Association test.
 
@@ -325,6 +328,51 @@ class StructLMM2:
             #         pvalue = pliumod[:, 0][idx].min()
             return pvalue
 
+    def predict_interaction(self, G):
+        G = asarray(G, float)
+        Y = self._y[:, newaxis]
+        E = self._E
+        W = self._W
+        n_snps = G.shape[1]
+        beta_stars = []
+        for i in range(n_snps):
+            g = G[:, [i]]
+            # mean(𝐲) = W𝛂 + 𝐠𝛽₁ + 𝙴𝝲 = 𝙼𝛃
+            M = concatenate((W, g, E), axis=1)
+            gE = g * E
+            best = {"lml": -inf, "rho1": 0}
+            hSigma_p = {}
+            for rho1 in self._rho1:
+                # Σₚ = ρ₁(𝐠⊙𝙴)(𝐠⊙𝙴)ᵀ + (1-ρ₁)𝙺
+                hSigma_p[rho1] = concatenate(
+                    (sqrt(rho1) * gE, sqrt(1 - rho1) * self._G), axis=1
+                )
+                # cov(𝐲) = 𝓋₁Σₚ + 𝓋₂𝙸
+                lmm = Kron2Sum(Y, [[1]], M, hSigma_p[rho1], restricted=True)
+                lmm.fit(verbose=False)
+                if lmm.lml() > best["lml"]:
+                    best["lml"] = lmm.lml()
+                    best["rho1"] = rho1
+                    best["lmm"] = lmm
+
+            lmm = best["lmm"]
+            # yadj = 𝐲 - 𝙼𝛃
+            yadj = self._y - lmm.mean()
+            rho1 = best["rho1"]
+            v1 = lmm.C0[0, 0]
+            v2 = lmm.C1[0, 0]
+            # beta_g = 𝛽₁
+            beta_g = lmm.beta[W.shape[1]]
+            hSigma_p_qs = economic_qs_linear(hSigma_p[rho1])
+            qscov = QSCov(hSigma_p_qs, v1, v2)
+            # v = cov(𝐲)⁻¹(𝐲 - 𝙼𝛃)
+            v = qscov.solve(yadj)
+            Estar = vstack([E, E])
+            sig2_ge = v1 * rho1
+            beta_star = beta_g + sig2_ge * multi_dot([Estar, gE.T, v])
+            beta_stars.append(beta_star)
+        return asarray(beta_stars, float).T
+
     def scan_interaction(self, G, permute: Optional[int] = None):
         # TODO: make sure G is nxp
         from chiscore import davies_pvalue
@@ -342,7 +390,7 @@ class StructLMM2:
             for a in self._rho1:
                 # QS = self._Sigma_qs[a]
                 halfSigma = self._halfSigma[a]
-                # cov(y) = v0*(aΣ + (1-a)K) + v1*Is
+                # cov(y) = v0*(aΣ + (1-a)K) + v1*I
                 # lmm2 = LMM(self._y, Wg, QS, restricted=True)
                 # lmm2.fit(verbose=False)
                 lmm = Kron2Sum(
