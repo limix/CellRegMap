@@ -1,5 +1,5 @@
 import pytest
-from numpy import logical_and, ones, zeros
+from numpy import logical_and, ones, zeros, tile
 from numpy.linalg import matrix_rank
 from numpy.random import RandomState
 from numpy.testing import assert_, assert_allclose, assert_equal
@@ -58,12 +58,6 @@ def test_column_normalize():
     assert_allclose(G.std(0), ones(n_snps))
 
 
-def test_create_environment_matrix():
-    n_samples = 5
-    E = create_environment_matrix(n_samples)
-    assert_equal(E, [[1.0, 0.0], [1.0, 0.0], [0.0, 1.0], [0.0, 1.0], [0.0, 1.0]])
-
-
 def test_sample_covariance_matrix():
     random = RandomState(0)
     n_samples = 5
@@ -113,14 +107,17 @@ def test_sample_gxe_effects():
     random = RandomState(0)
     n_samples = 10
     n_snps = 30
+    n_rep = 2
     maf_min = 0.2
     maf_max = 0.3
     mafs = sample_maf(n_snps, maf_min, maf_max, random)
 
     G = sample_genotype(n_samples, mafs, random)
+    G = tile(G, (n_rep, 1))
     G = column_normalize(G)
 
-    E = create_environment_matrix(n_samples)
+    E = random.randn(5, 5)
+    E = create_environment_matrix(E, n_samples, n_rep, 3, random)
     E = column_normalize(E)
 
     causal_indices = [3, 5, 8]
@@ -135,7 +132,8 @@ def test_sample_environment_effects():
     random = RandomState(0)
     n_samples = 10
 
-    E = create_environment_matrix(n_samples)
+    E = random.randn(5, 5)
+    E = create_environment_matrix(E, n_samples, 2, 3, random)
     E = column_normalize(E)
 
     variance = 0.3
@@ -177,12 +175,19 @@ def test_sample_phenotype():
     v0 = 0.5
     v = create_variances(r0, v0)
 
+    E = random.randn(30, 10)
+
     offset = 0.3
+    n_samples = 500
+    n_rep = 2
+    n_env = 3
     s = sample_phenotype(
         offset=offset,
-        n_samples=500,
+        E=E,
+        n_samples=n_samples,
         n_snps=300,
-        n_rep=1,
+        n_rep=n_rep,
+        n_env=n_env,
         maf_min=0.1,
         maf_max=0.4,
         g_causals=[3, 4],
@@ -209,15 +214,5 @@ def test_sample_phenotype():
     assert_allclose(s.y, offset + s.y_g + s.y_gxe + s.y_n + s.y_e + s.y_k)
     assert_allclose(s.y.mean(), offset)
 
-    s = sample_phenotype(
-        offset=offset,
-        n_samples=500,
-        n_snps=300,
-        n_rep=2,
-        maf_min=0.1,
-        maf_max=0.4,
-        g_causals=[3, 4],
-        gxe_causals=[4, 5],
-        variances=v,
-        random=random,
-    )
+    assert_(s.E.shape[0] == n_samples * n_rep)
+    assert_(s.E.shape[1] == n_env)

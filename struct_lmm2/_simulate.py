@@ -33,18 +33,14 @@ def column_normalize(X):
         return (X - X.mean(0)) / X.std(0)
 
 
-def create_environment_matrix(n_samples: int):
+def create_environment_matrix(E, n_samples: int, n_rep: int, n_env: int, random):
     """
     The created matrix 𝙴 will represent two environments.
     """
-    from numpy import zeros
-
-    group_size = n_samples // 2
-    E = zeros((n_samples, 2))
-    E[:group_size, 0] = 1
-    E[group_size:, 1] = 1
-
-    return E
+    n = n_samples * n_rep
+    rows = random.choice(E.shape[0], n, replace=True)
+    cols = random.choice(E.shape[1], n_env, replace=True)
+    return E[rows, :][:, cols]
 
 
 def sample_covariance_matrix(n_samples: int, random, n_rep: int = 1):
@@ -255,9 +251,11 @@ def sample_noise_effects(n_samples: int, variance: float, random):
 
 def sample_phenotype(
     offset: float,
+    E,
     n_samples: int,
     n_snps: int,
     n_rep: int,
+    n_env: int,
     maf_min: float,
     maf_max: float,
     g_causals: list,
@@ -272,9 +270,13 @@ def sample_phenotype(
     G = sample_genotype(n_samples, mafs, random)
     G = tile(G, (n_rep, 1))
     G = column_normalize(G)
-
-    E = create_environment_matrix(n_samples)
-    E = tile(E, (n_rep, 1))
+    E = create_environment_matrix(E, n_samples, n_rep, n_env, random)
+    #E = tile(E, (n_rep, 1))
+    
+    #E[n_samples:n_samples*n_rep,:] = -E[n_samples:n_samples*n_rep,:]
+    #k = 10
+    #n = n_samples*n_rep
+    #E = random.randn(n, k)
     E = column_normalize(E)
 
     K = sample_covariance_matrix(n_samples, random, n_rep)
