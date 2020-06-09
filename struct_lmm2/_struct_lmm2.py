@@ -16,19 +16,20 @@ from numpy import (
     trace,
     vstack,
 )
+
 from numpy.linalg import eigvalsh, inv, lstsq, multi_dot
 from numpy.random import RandomState
 from scipy.linalg import sqrtm
 
 from numpy_sugar import ddot
-from numpy_sugar.linalg import trace2
+from numpy_sugar.linalg import trace2, economic_qs_linear
 
 from ._math import (
     P_matrix,
     PMat,
     QSCov,
     ScoreStatistic,
-    economic_qs_linear,
+   # economic_qs_linear,
     qmin,
     rsolve,
     score_statistic,
@@ -373,41 +374,46 @@ class StructLMM2:
             beta_stars.append(beta_star)
         return asarray(beta_stars, float).T
 
-    def scan_interaction(self, G, permute: Optional[int] = None):
+    def scan_interaction(self, G, idx_E: Optional[any] = None, idx_G: Optional[any] = None):
         # TODO: make sure G is nxp
         from chiscore import davies_pvalue
 
-        if permute is not None:
-            random = RandomState(permute)
-
+        #breakpoint()
         G = asarray(G, float)
         n_snps = G.shape[1]
         pvalues = []
+        from time import time
+        start = time()
         for i in range(n_snps):
             g = G[:, [i]]
             Wg = concatenate((self._W, g), axis=1)
             best = {"lml": -inf, "a": 0, "v0": 0, "v1": 0, "beta": 0}
             for a in self._rho1:
                 # QS = self._Sigma_qs[a]
+                start = time()
                 halfSigma = self._halfSigma[a]
                 # cov(y) = v0*(aΣ + (1-a)K) + v1*I
-                # lmm2 = LMM(self._y, Wg, QS, restricted=True)
-                # lmm2.fit(verbose=False)
-                lmm = Kron2Sum(
-                    self._y[:, newaxis], [[1]], Wg, halfSigma, restricted=True
-                )
+                QS = economic_qs_linear(halfSigma, False)
+                lmm = LMM(self._y, Wg, QS, restricted=True)
+                # lmm = Kron2Sum(
+                #     self._y[:, newaxis], [[1]], Wg, halfSigma, restricted=True
+                # ) 
                 lmm.fit(verbose=False)
+                print(f"Elapsed: {time() - start}")
                 if lmm.lml() > best["lml"]:
                     best["lml"] = lmm.lml()
                     best["rho1"] = a
                     best["lmm"] = lmm
-
+                #print(f"Elapsed: {time() - start}")
+            print(f"Elapsed: {time() - start}")    
             lmm = best["lmm"]
             # H1 via score test
             # Let K₀ = g²K + e²Σ + 𝜀²I
             # with optimal values e² and 𝜀² found above.
-            # qscov = QSCov(self._Sigma_qs[best["rho1"]], lmm.v0, lmm.v1)
-            qscov = QSCov(self._Sigma_qs[best["rho1"]], lmm.C0[0, 0], lmm.C1[0, 0])
+            qscov = QSCov(self._Sigma_qs[best["rho1"]], lmm.v0, lmm.v1)
+            #start = time()
+            # qscov = QSCov(self._Sigma_qs[best["rho1"]], lmm.C0[0, 0], lmm.C1[0, 0])
+            #print(f"Elapsed: {time() - start}")
             X = concatenate((self._E, g), axis=1)
 
             # Let P₀ = K⁻¹ - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹.
@@ -416,25 +422,33 @@ class StructLMM2:
             # P₀𝐲 = K⁻¹𝐲 - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹𝐲.
             # P0y = Pmat.dot(self._y)
 
-            if permute is None:
+            if idx_E is None:
                 E1 = self._E
             else:
-                idx = random.permutation(self._E.shape[0])
-                E1 = self._E[idx, :]
+                E1 = self._E[idx_E, :]
 
             # The covariance matrix of H1 is K = K₀ + b²diag(𝐠)⋅Σ⋅diag(𝐠)
             # We have ∂K/∂b² = diag(𝐠)⋅Σ⋅diag(𝐠)
             # The score test statistics is given by
             # Q = ½𝐲ᵀP₀⋅∂K⋅P₀𝐲
-            ss = ScoreStatistic(P, qscov, ddot(g.ravel(), E1))
-            Q = ss.statistic(self._y)
+            #start = time()
 
+            if idx_G is None:
+                gtest = g.ravel()
+            else:
+                gtest = g.ravel()[idx_G]
+
+            ss = ScoreStatistic(P, qscov, ddot(gtest, E1))
+            Q = ss.statistic(self._y)
+            #print(f"Elapsed: {time() - start}")
             # Q is the score statistic for our interaction test and follows a linear combination
             # of chi-squared (df=1) distributions:
             # Q ∼ ∑λχ², where λᵢ are the non-zero eigenvalues of ½√P₀⋅∂K⋅√P₀.
             # Since eigenvals(𝙰𝙰ᵀ) = eigenvals(𝙰ᵀ𝙰) (TODO: find citation),
             # we can compute ½(√∂K)P₀(√∂K) instead.
+            #start = time()
             pval = davies_pvalue(Q, ss.matrix_for_dist_weights())
             pvalues.append(pval)
+            #print(f"Elapsed: {time() - start}")
 
         return asarray(pvalues, float)
