@@ -18,7 +18,6 @@ from numpy import (
 )
 
 from numpy.linalg import eigvalsh, inv, lstsq, multi_dot
-from numpy.random import RandomState
 from scipy.linalg import sqrtm
 
 from numpy_sugar import ddot
@@ -29,7 +28,7 @@ from ._math import (
     PMat,
     QSCov,
     ScoreStatistic,
-   # economic_qs_linear,
+    # economic_qs_linear,
     qmin,
     rsolve,
     score_statistic,
@@ -112,7 +111,7 @@ class StructLMM2:
             self._rho0 = [1.0]
             self._rho1 = [1.0]
             self._halfSigma[1.0] = self._E
-            self._Sigma_qs[1.0] = economic_qs_linear(self._E)
+            self._Sigma_qs[1.0] = economic_qs_linear(self._E, return_q1=False)
         else:
             self._rho0 = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
             self._rho1 = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
@@ -123,7 +122,9 @@ class StructLMM2:
                 # self._Sigma_qs[rho1] = economic_qs(self._Sigma[rho1])
                 hS = concatenate((sqrt(rho1) * self._E, sqrt(1 - rho1) * G), axis=1)
                 self._halfSigma[rho1] = hS
-                self._Sigma_qs[rho1] = economic_qs_linear(self._halfSigma[rho1])
+                self._Sigma_qs[rho1] = economic_qs_linear(
+                    self._halfSigma[rho1], return_q1=False
+                )
 
     @property
     def _n_samples(self):
@@ -156,7 +157,12 @@ class StructLMM2:
                 best["rho1"] = rho1
 
         rho1 = best["rho1"]
-        qscov = QSCov(self._Sigma_qs[rho1], best["lmm"].C0[0, 0], best["lmm"].C1[0, 0])
+        qscov = QSCov(
+            self._Sigma_qs[rho1][0][0],
+            self._Sigma_qs[rho1][1],
+            best["lmm"].C0[0, 0],
+            best["lmm"].C1[0, 0],
+        )
 
         self._null_lmm_assoc = {
             "lml": best["lml"],
@@ -364,8 +370,8 @@ class StructLMM2:
             v2 = lmm.C1[0, 0]
             # beta_g = 𝛽₁
             beta_g = lmm.beta[W.shape[1]]
-            hSigma_p_qs = economic_qs_linear(hSigma_p[rho1])
-            qscov = QSCov(hSigma_p_qs, v1, v2)
+            hSigma_p_qs = economic_qs_linear(hSigma_p[rho1], return_q1=False)
+            qscov = QSCov(hSigma_p_qs[0][0], hSigma_p_qs[1], v1, v2)
             # v = cov(𝐲)⁻¹(𝐲 - 𝙼𝛃)
             v = qscov.solve(yadj)
             Estar = vstack([E, E])
@@ -374,15 +380,18 @@ class StructLMM2:
             beta_stars.append(beta_star)
         return asarray(beta_stars, float).T
 
-    def scan_interaction(self, G, idx_E: Optional[any] = None, idx_G: Optional[any] = None):
+    def scan_interaction(
+        self, G, idx_E: Optional[any] = None, idx_G: Optional[any] = None
+    ):
         # TODO: make sure G is nxp
         from chiscore import davies_pvalue
 
-        #breakpoint()
+        # breakpoint()
         G = asarray(G, float)
         n_snps = G.shape[1]
         pvalues = []
         from time import time
+
         start = time()
         for i in range(n_snps):
             g = G[:, [i]]
@@ -397,23 +406,28 @@ class StructLMM2:
                 lmm = LMM(self._y, Wg, QS, restricted=True)
                 # lmm = Kron2Sum(
                 #     self._y[:, newaxis], [[1]], Wg, halfSigma, restricted=True
-                # ) 
+                # )
                 lmm.fit(verbose=False)
                 print(f"Elapsed: {time() - start}")
                 if lmm.lml() > best["lml"]:
                     best["lml"] = lmm.lml()
                     best["rho1"] = a
                     best["lmm"] = lmm
-                #print(f"Elapsed: {time() - start}")
-            print(f"Elapsed: {time() - start}")    
+                # print(f"Elapsed: {time() - start}")
+            print(f"Elapsed: {time() - start}")
             lmm = best["lmm"]
             # H1 via score test
             # Let K₀ = g²K + e²Σ + 𝜀²I
             # with optimal values e² and 𝜀² found above.
-            qscov = QSCov(self._Sigma_qs[best["rho1"]], lmm.v0, lmm.v1)
-            #start = time()
+            qscov = QSCov(
+                self._Sigma_qs[best["rho1"]][0][0],
+                self._Sigma_qs[best["rho1"]][1],
+                lmm.v0,
+                lmm.v1,
+            )
+            # start = time()
             # qscov = QSCov(self._Sigma_qs[best["rho1"]], lmm.C0[0, 0], lmm.C1[0, 0])
-            #print(f"Elapsed: {time() - start}")
+            # print(f"Elapsed: {time() - start}")
             X = concatenate((self._E, g), axis=1)
 
             # Let P₀ = K⁻¹ - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹.
@@ -431,7 +445,7 @@ class StructLMM2:
             # We have ∂K/∂b² = diag(𝐠)⋅Σ⋅diag(𝐠)
             # The score test statistics is given by
             # Q = ½𝐲ᵀP₀⋅∂K⋅P₀𝐲
-            #start = time()
+            # start = time()
 
             if idx_G is None:
                 gtest = g.ravel()
@@ -440,15 +454,15 @@ class StructLMM2:
 
             ss = ScoreStatistic(P, qscov, ddot(gtest, E1))
             Q = ss.statistic(self._y)
-            #print(f"Elapsed: {time() - start}")
+            # print(f"Elapsed: {time() - start}")
             # Q is the score statistic for our interaction test and follows a linear combination
             # of chi-squared (df=1) distributions:
             # Q ∼ ∑λχ², where λᵢ are the non-zero eigenvalues of ½√P₀⋅∂K⋅√P₀.
             # Since eigenvals(𝙰𝙰ᵀ) = eigenvals(𝙰ᵀ𝙰) (TODO: find citation),
             # we can compute ½(√∂K)P₀(√∂K) instead.
-            #start = time()
+            # start = time()
             pval = davies_pvalue(Q, ss.matrix_for_dist_weights())
             pvalues.append(pval)
-            #print(f"Elapsed: {time() - start}")
+            # print(f"Elapsed: {time() - start}")
 
         return asarray(pvalues, float)

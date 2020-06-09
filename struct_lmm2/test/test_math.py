@@ -41,13 +41,12 @@ def test_QSCov(data):
     K = data["K"][:, :rank] @ data["K"][:, :rank].T
     n_samples = K.shape[0]
     QS = economic_qs(K)
-    QS = (QS[0][0], QS[1])
     a = 0.2
     b = 0.3
 
     finalK = a * K + b * eye(n_samples)
 
-    qscov = QSCov(QS, a, b)
+    qscov = QSCov(QS[0][0], QS[1], a, b)
     v = array([0.3, -0.2, 0.19])
 
     assert_allclose(finalK @ v, qscov.dot(v))

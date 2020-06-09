@@ -48,10 +48,9 @@ class QSCov:
     𝙺 matrix is defined by its eigen decomposition, `QS`.
     """
 
-    def __init__(self, QS, a=1.0, b=1.0):
-        self._Q0 = QS[0]
-        # self._Q1 = QS[0][1]
-        self._S0 = QS[1]
+    def __init__(self, Q0, S0, a=1.0, b=1.0):
+        self._Q0 = Q0
+        self._S0 = S0
         self._a = a
         self._b = b
 

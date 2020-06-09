@@ -4,6 +4,7 @@ from numpy.testing import assert_, assert_allclose
 from struct_lmm2 import StructLMM2
 from numpy.random import RandomState
 from struct_lmm2 import sample_phenotype, create_variances
+from numpy.random import RandomState
 
 
 # from struct_lmm import StructLMM
@@ -204,8 +205,10 @@ def test_struct_lmm2_inter_kinship_permute():
 
     G_kinship = cholesky(s.K + eye(n_samples) * 1e-7)
     slmm2 = StructLMM2(s.y, M, s.E, G_kinship)
-    pvals = slmm2.scan_interaction(s.G, 1)
-    assert_(median(pvals) > 0.4)
+    random = RandomState(1)
+    idx = random.permutation(s.E.shape[0])
+    pvals = slmm2.scan_interaction(s.G, idx_E=idx)
+    assert_(median(pvals) > 0.3)
     assert_(min(pvals) > 0.04)
 
 
