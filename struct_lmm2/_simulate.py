@@ -271,12 +271,6 @@ def sample_phenotype(
     G = tile(G, (n_rep, 1))
     G = column_normalize(G)
     E = create_environment_matrix(E, n_samples, n_rep, n_env, random)
-    #E = tile(E, (n_rep, 1))
-    
-    #E[n_samples:n_samples*n_rep,:] = -E[n_samples:n_samples*n_rep,:]
-    #k = 10
-    #n = n_samples*n_rep
-    #E = random.randn(n, k)
     E = column_normalize(E)
 
     K = sample_covariance_matrix(n_samples, random, n_rep)
