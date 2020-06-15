@@ -402,7 +402,7 @@ class StructLMM2:
                 start = time()
                 halfSigma = self._halfSigma[a]
                 # cov(y) = v0*(aΣ + (1-a)K) + v1*I
-                QS = economic_qs_linear(halfSigma, False)
+                QS = self._Sigma_qs[a]
                 lmm = LMM(self._y, Wg, QS, restricted=True)
                 # lmm = Kron2Sum(
                 #     self._y[:, newaxis], [[1]], Wg, halfSigma, restricted=True
