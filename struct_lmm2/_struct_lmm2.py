@@ -383,10 +383,21 @@ class StructLMM2:
     def scan_interaction(
         self, G, idx_E: Optional[any] = None, idx_G: Optional[any] = None
     ):
+        """
+        𝐲 = W𝛂 + 𝐠𝛽₁ + 𝐠⊙𝛃₂ + 𝐞 + 𝐮 + 𝛆
+           [fixed=X]   [H1]
+
+        𝛃₂ ~ 𝓝(𝟎, 𝓋₃𝙴𝙴ᵀ),
+        𝐞 ~ 𝓝(𝟎, 𝓋₁ρ₁𝙴𝙴ᵀ),
+        𝐮 ~ 𝓝(𝟎, 𝓋₁(1-ρ₁)𝙺), and
+        𝛆 ~ 𝓝(𝟎, 𝓋₂𝙸).
+
+        𝓗₀: 𝓋₃ = 0
+        𝓗₁: 𝓋₃ > 0
+        """
         # TODO: make sure G is nxp
         from chiscore import davies_pvalue
 
-        # breakpoint()
         G = asarray(G, float)
         n_snps = G.shape[1]
         pvalues = []
@@ -395,64 +406,74 @@ class StructLMM2:
         start = time()
         for i in range(n_snps):
             g = G[:, [i]]
-            Wg = concatenate((self._W, g), axis=1)
-            best = {"lml": -inf, "a": 0, "v0": 0, "v1": 0, "beta": 0}
-            for a in self._rho1:
-                # QS = self._Sigma_qs[a]
+            X = concatenate((self._W, g), axis=1)
+            best = {"lml": -inf, "rho1": 0}
+            # Null model fitting: find best (𝛂, 𝛽₁, 𝓋₁, 𝓋₂, ρ₁)
+            for rho1 in self._rho1:
+                # QS = self._Sigma_qs[rho1]
                 start = time()
-                halfSigma = self._halfSigma[a]
-                # cov(y) = v0*(aΣ + (1-a)K) + v1*I
-                QS = self._Sigma_qs[a]
-                lmm = LMM(self._y, Wg, QS, restricted=True)
-                # lmm = Kron2Sum(
-                #     self._y[:, newaxis], [[1]], Wg, halfSigma, restricted=True
-                # )
+                # halfSigma = self._halfSigma[rho1]
+                # Σ = ρ₁𝙴𝙴ᵀ + (1-ρ₁)𝙺
+                # cov(y₀) = 𝓋₁Σ + 𝓋₂I
+                QS = self._Sigma_qs[rho1]
+                lmm = LMM(self._y, X, QS, restricted=True)
                 lmm.fit(verbose=False)
                 print(f"Elapsed: {time() - start}")
                 if lmm.lml() > best["lml"]:
                     best["lml"] = lmm.lml()
-                    best["rho1"] = a
+                    best["rho1"] = rho1
                     best["lmm"] = lmm
                 # print(f"Elapsed: {time() - start}")
             print(f"Elapsed: {time() - start}")
             lmm = best["lmm"]
             # H1 via score test
-            # Let K₀ = g²K + e²Σ + 𝜀²I
-            # with optimal values e² and 𝜀² found above.
+            # Let K₀ = e²Σ + g²K + 𝜀²I
+            # e²=𝓋₁ρ₁
+            # g²=𝓋₁(1-ρ₁)
+            # 𝜀²=𝓋₂
+            # with optimal values 𝓋₁ and 𝓋₂ found above.
+            # QS = economic_decomp( Σ(ρ₁) )
+            Q0 = self._Sigma_qs[best["rho1"]][0][0]
+            S0 = self._Sigma_qs[best["rho1"]][1]
+            # TODO: test if QSCov.dot(b) = K₀⋅b
             qscov = QSCov(
-                self._Sigma_qs[best["rho1"]][0][0],
-                self._Sigma_qs[best["rho1"]][1],
-                lmm.v0,
-                lmm.v1,
+                Q0,
+                S0,
+                lmm.v0,  # 𝓋₁
+                lmm.v1,  # 𝓋₂
             )
             # start = time()
             # qscov = QSCov(self._Sigma_qs[best["rho1"]], lmm.C0[0, 0], lmm.C1[0, 0])
             # print(f"Elapsed: {time() - start}")
-            X = concatenate((self._E, g), axis=1)
+            # X = concatenate((self._E, g), axis=1)
+            X = concatenate((self._W, g), axis=1)
 
-            # Let P₀ = K⁻¹ - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹.
+            # Let P₀ = K₀⁻¹ - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹.
+            # TODO: check if this is really equal to above
             P = PMat(qscov, X)
 
-            # P₀𝐲 = K⁻¹𝐲 - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹𝐲.
-            # P0y = Pmat.dot(self._y)
+            # P₀𝐲 = K₀⁻¹𝐲 - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹𝐲.
 
+            # Useful for permutation
             if idx_E is None:
                 E1 = self._E
             else:
                 E1 = self._E[idx_E, :]
 
-            # The covariance matrix of H1 is K = K₀ + b²diag(𝐠)⋅Σ⋅diag(𝐠)
-            # We have ∂K/∂b² = diag(𝐠)⋅Σ⋅diag(𝐠)
+            # The covariance matrix of H1 is K = K₀ + 𝓋₃diag(𝐠)⋅Σ⋅diag(𝐠)
+            # We have ∂K/∂𝓋₃ = diag(𝐠)⋅Σ⋅diag(𝐠)
             # The score test statistics is given by
             # Q = ½𝐲ᵀP₀⋅∂K⋅P₀𝐲
             # start = time()
 
+            # Useful for permutation
             if idx_G is None:
                 gtest = g.ravel()
             else:
                 gtest = g.ravel()[idx_G]
 
             ss = ScoreStatistic(P, qscov, ddot(gtest, E1))
+            # TODO: check if the below Q is equal to the one defined above
             Q = ss.statistic(self._y)
             # print(f"Elapsed: {time() - start}")
             # Q is the score statistic for our interaction test and follows a linear combination
@@ -461,6 +482,7 @@ class StructLMM2:
             # Since eigenvals(𝙰𝙰ᵀ) = eigenvals(𝙰ᵀ𝙰) (TODO: find citation),
             # we can compute ½(√∂K)P₀(√∂K) instead.
             # start = time()
+            # TODO: compare with Liu approximation, maybe try a computational intensive method
             pval = davies_pvalue(Q, ss.matrix_for_dist_weights())
             pvalues.append(pval)
             # print(f"Elapsed: {time() - start}")
