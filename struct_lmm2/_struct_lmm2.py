@@ -106,6 +106,8 @@ class StructLMM2:
 
         self._halfSigma = {}
         self._Sigma_qs = {}
+        # TODO: remove it after debugging
+        self._Sigma = {}
 
         if G is None:
             self._rho0 = [1.0]
@@ -125,6 +127,7 @@ class StructLMM2:
                 self._Sigma_qs[rho1] = economic_qs_linear(
                     self._halfSigma[rho1], return_q1=False
                 )
+                self._Sigma[rho1] = rho1 * self._E @ self._E.T + (1 - rho1) * G @ G.T
 
     @property
     def _n_samples(self):
@@ -419,12 +422,15 @@ class StructLMM2:
                 lmm = LMM(self._y, X, QS, restricted=True)
                 lmm.fit(verbose=False)
                 print(f"Elapsed: {time() - start}")
+                print(f"lml: {lmm.lml()}")
                 if lmm.lml() > best["lml"]:
                     best["lml"] = lmm.lml()
                     best["rho1"] = rho1
                     best["lmm"] = lmm
                 # print(f"Elapsed: {time() - start}")
             print(f"Elapsed: {time() - start}")
+            print(best["lml"])
+            print(best["rho1"])
             lmm = best["lmm"]
             # H1 via score test
             # Let K₀ = e²Σ + g²K + 𝜀²I

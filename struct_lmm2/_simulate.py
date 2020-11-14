@@ -2,7 +2,7 @@ from collections import namedtuple
 
 Variances = namedtuple("Variances", "g gxe k e n")
 Simulation = namedtuple(
-    "Simulation", "mafs y offset beta_g y_g y_gxe y_k y_e y_n variances G E K"
+    "Simulation", "mafs y offset beta_g y_g y_gxe y_k y_e y_n variances G E Lk K M"
 )
 
 
@@ -33,30 +33,47 @@ def column_normalize(X):
         return (X - X.mean(0)) / X.std(0)
 
 
-def create_environment_matrix(E, n_samples: int, n_rep: int, n_env: int, random):
-    """
-    The created matrix 𝙴 will represent two environments.
-    """
+def create_environment_matrix(
+    n_samples: int, n_rep: int, n_env: int, n_env_groups: int, random
+):
+    from numpy.linalg import cholesky
+
     n = n_samples * n_rep
-    rows = random.choice(E.shape[0], n, replace=True)
-    cols = random.choice(E.shape[1], n_env, replace=True)
-    return E[rows, :][:, cols]
+    E = random.randn(n, n_env)
+    E = column_normalize(E)
+    EE = E @ E.T
+    EE /= EE.diagonal().mean()
+    H = sample_covariance_matrix(E.shape[0], n_env_groups)[1]
+    M = EE + H
+    M /= M.diagonal().mean()
+    jitter(M)
+    return cholesky(M)
 
 
-def sample_covariance_matrix(n_samples: int, random, n_rep: int = 1):
-    """
-    Sample a full-rank covariance matrix.
-    """
-    from numpy import tile, errstate, eye
+def sample_covariance_matrix(n_samples: int, n_groups: int):
+    from numpy import array_split, zeros
+    from numpy.linalg import cholesky
 
-    G = random.rand(n_samples, n_samples)
-    G = tile(G, (n_rep, 1))
+    G = zeros((n_samples, n_groups))
+    groups = array_split(range(n_samples), n_groups)
+
+    for i, idx in enumerate(groups):
+        G[idx, i] = 1.0
+
     G = column_normalize(G)
     K = G @ G.T
+    K /= K.diagonal().mean()
+    jitter(K)
+
+    return (cholesky(K), K)
+
+
+def jitter(K):
+    from numpy import errstate, eye
 
     with errstate(divide="raise", invalid="raise"):
         # This small diagonal offset is to guarantee the full-rankness.
-        K /= K.diagonal().mean() + 1e-8 * eye(n_samples * n_rep)
+        K += 1e-8 * eye(K.shape[0])
 
     return K
 
@@ -147,7 +164,7 @@ def sample_persistent_effsizes(
     variance : float
         Correspond to 𝓋.
     """
-    from numpy import zeros, errstate, sqrt
+    from numpy import errstate, sqrt, zeros
 
     n_causals = len(causal_indices)
 
@@ -191,7 +208,7 @@ def sample_gxe_effects(G, E, causal_indices: list, variance: float, random):
 
     We also assume that 𝔼[𝜖ⱼ]=0 and 𝔼[𝜖ⱼ²]=1/𝑛ₑ for every environment 𝚓.
     """
-    from numpy import zeros, sqrt
+    from numpy import sqrt, zeros
 
     n_samples = G.shape[0]
     n_envs = E.shape[1]
@@ -218,26 +235,26 @@ def sample_gxe_effects(G, E, causal_indices: list, variance: float, random):
     return y2
 
 
-def sample_environment_effects(E, variance: float, random):
-    from numpy import sqrt
+# def sample_environment_effects(E, variance: float, random):
+#     from numpy import sqrt
 
-    n_envs = E.shape[1]
-    effsizes = sqrt(variance) * random.randn(n_envs)
-    y3 = E @ effsizes
+#     n_envs = E.shape[1]
+#     effsizes = sqrt(variance) * random.randn(n_envs)
+#     y3 = E @ effsizes
 
-    _ensure_moments(y3, 0, variance)
+#     _ensure_moments(y3, 0, variance)
 
-    return y3
+#     return y3
 
 
-def sample_population_effects(K, variance: float, random):
+def sample_random_effect(K, variance: float, random):
     from numpy import zeros
 
-    y4 = random.multivariate_normal(zeros(K.shape[0]), K)
+    y = random.multivariate_normal(zeros(K.shape[0]), K)
 
-    _ensure_moments(y4, 0, variance)
+    _ensure_moments(y, 0, variance)
 
-    return y4
+    return y
 
 
 def sample_noise_effects(n_samples: int, variance: float, random):
@@ -251,11 +268,11 @@ def sample_noise_effects(n_samples: int, variance: float, random):
 
 def sample_phenotype(
     offset: float,
-    E,
     n_samples: int,
     n_snps: int,
     n_rep: int,
     n_env: int,
+    n_env_groups: int,
     maf_min: float,
     maf_max: float,
     g_causals: list,
@@ -263,25 +280,25 @@ def sample_phenotype(
     variances: Variances,
     random,
 ) -> Simulation:
-    from numpy import tile
+    from numpy import ones, tile
 
     mafs = sample_maf(n_snps, maf_min, maf_max, random)
 
     G = sample_genotype(n_samples, mafs, random)
     G = tile(G, (n_rep, 1))
     G = column_normalize(G)
-    E = create_environment_matrix(E, n_samples, n_rep, n_env, random)
-    E = column_normalize(E)
+    E = create_environment_matrix(n_samples, n_rep, n_env, n_env_groups, random)
 
-    K = sample_covariance_matrix(n_samples, random, n_rep)
+    Lk, K = sample_covariance_matrix(E.shape[0], n_samples)
 
     beta_g = sample_persistent_effsizes(n_snps, g_causals, variances.g, random)
     y_g = sample_persistent_effects(G, beta_g, variances.g)
     y_gxe = sample_gxe_effects(G, E, gxe_causals, variances.gxe, random)
-    y_k = sample_population_effects(K, variances.k, random)
-    y_e = sample_environment_effects(E, variances.e, random)
+    y_k = sample_random_effect(K, variances.k, random)
+    y_e = sample_random_effect(E @ E.T, variances.e, random)
     y_n = sample_noise_effects(n_samples * n_rep, variances.n, random)
 
+    M = ones((K.shape[0], 1))
     y = offset + y_g + y_gxe + y_k + y_e + y_n
 
     simulation = Simulation(
@@ -295,9 +312,11 @@ def sample_phenotype(
         y_n=y_n,
         y=y,
         variances=variances,
+        Lk=Lk,
         K=K,
         E=E,
         G=G,
+        M=M,
     )
 
     return simulation
