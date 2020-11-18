@@ -169,6 +169,9 @@ def sample_persistent_effsizes(
     n_causals = len(causal_indices)
 
     effsizes = zeros(n_effects)
+    if variance == 0.0:
+        return effsizes
+
     effsizes[causal_indices] = random.choice([+1, -1], size=len(causal_indices))
     with errstate(divide="raise", invalid="raise"):
         effsizes *= sqrt(variance / n_causals)
@@ -178,7 +181,8 @@ def sample_persistent_effsizes(
 
 def sample_persistent_effects(G, effsizes, variance: float):
     y_g = G @ effsizes
-    _ensure_moments(y_g, 0, variance)
+    if variance > 0:
+        _ensure_moments(y_g, 0, variance)
     return y_g
 
 
@@ -216,6 +220,9 @@ def sample_gxe_effects(G, E, causal_indices: list, variance: float, random):
     vi = variance / n_causals
 
     y2 = zeros(n_samples)
+    if variance == 0.0:
+        return y2
+
     for causal in causal_indices:
         # 𝜶ᵢ ∼ 𝓝(𝟎, 𝜎ᵢ²I)
         alpha = sqrt(vi) * random.randn(n_envs)

@@ -428,12 +428,12 @@ class StructLMM2:
                     best["rho1"] = rho1
                     best["lmm"] = lmm
                 # print(f"Elapsed: {time() - start}")
-            print(f"Elapsed: {time() - start}")
-            print(best["lml"])
-            print(best["rho1"])
+            # print(f"Elapsed: {time() - start}")
+            # print(best["lml"])
+            # print(best["rho1"])
             lmm = best["lmm"]
             # H1 via score test
-            # Let K₀ = e²Σ + g²K + 𝜀²I
+            # Let K₀ = e²𝙴𝙴ᵀ + g²𝙺 + 𝜀²I
             # e²=𝓋₁ρ₁
             # g²=𝓋₁(1-ρ₁)
             # 𝜀²=𝓋₂
@@ -441,7 +441,12 @@ class StructLMM2:
             # QS = economic_decomp( Σ(ρ₁) )
             Q0 = self._Sigma_qs[best["rho1"]][0][0]
             S0 = self._Sigma_qs[best["rho1"]][1]
-            # TODO: test if QSCov.dot(b) = K₀⋅b
+            # e2 = best["lmm"].v0 * best["rho1"]
+            # g2 = best["lmm"].v0 * (1 - best["rho1"])
+            # eps2 = best["lmm"].v1
+            # EE = self._E @ self._E.T
+            # K = self._G @ self._G.T
+            # K0 = e2 * EE + g2 * K + eps2 * eye(K.shape[0])
             qscov = QSCov(
                 Q0,
                 S0,
@@ -455,8 +460,8 @@ class StructLMM2:
             X = concatenate((self._W, g), axis=1)
 
             # Let P₀ = K₀⁻¹ - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹.
-            # TODO: check if this is really equal to above
             P = PMat(qscov, X)
+            # P0 = inv(K0) - inv(K0) @ X @ inv(X.T @ inv(K0) @ X) @ X.T @ inv(K0)
 
             # P₀𝐲 = K₀⁻¹𝐲 - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹𝐲.
 
@@ -466,8 +471,8 @@ class StructLMM2:
             else:
                 E1 = self._E[idx_E, :]
 
-            # The covariance matrix of H1 is K = K₀ + 𝓋₃diag(𝐠)⋅Σ⋅diag(𝐠)
-            # We have ∂K/∂𝓋₃ = diag(𝐠)⋅Σ⋅diag(𝐠)
+            # The covariance matrix of H1 is K = K₀ + 𝓋₃diag(𝐠)⋅𝙴𝙴ᵀ⋅diag(𝐠)
+            # We have ∂K/∂𝓋₃ = diag(𝐠)⋅𝙴𝙴ᵀ⋅diag(𝐠)
             # The score test statistics is given by
             # Q = ½𝐲ᵀP₀⋅∂K⋅P₀𝐲
             # start = time()
@@ -479,8 +484,11 @@ class StructLMM2:
                 gtest = g.ravel()[idx_G]
 
             ss = ScoreStatistic(P, qscov, ddot(gtest, E1))
-            # TODO: check if the below Q is equal to the one defined above
             Q = ss.statistic(self._y)
+            # import numpy as np
+
+            # deltaK = np.diag(gtest) @ EE @ np.diag(gtest)
+            # Q_ = 0.5 * self._y.T @ P0 @ deltaK @ P0 @ self._y
             # print(f"Elapsed: {time() - start}")
             # Q is the score statistic for our interaction test and follows a linear combination
             # of chi-squared (df=1) distributions:
@@ -488,6 +496,10 @@ class StructLMM2:
             # Since eigenvals(𝙰𝙰ᵀ) = eigenvals(𝙰ᵀ𝙰) (TODO: find citation),
             # we can compute ½(√∂K)P₀(√∂K) instead.
             # start = time()
+            # import scipy as sp
+            # sqrtm = sp.linalg.sqrtm
+            # np.linalg.eigvalsh(0.5 * sqrtm(P0) @ deltaK @ sqrtm(P0))
+            # np.linalg.eigvalsh(0.5 * sqrtm(deltaK) @ P0 @ sqrtm(deltaK))
             # TODO: compare with Liu approximation, maybe try a computational intensive method
             pval = davies_pvalue(Q, ss.matrix_for_dist_weights())
             pvalues.append(pval)

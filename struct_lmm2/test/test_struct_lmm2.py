@@ -213,7 +213,7 @@ def test_struct_lmm2_inter_kinship_permute():
 
 
 def test_struct_lmm2_inter_kinship_repetition():
-    random = RandomState(16)
+    random = RandomState(20)
 
     n_samples = 100
     maf_min = 0.05
@@ -247,8 +247,9 @@ def test_struct_lmm2_inter_kinship_repetition():
 
     slmm2 = StructLMM2(s.y, s.M, s.E, s.Lk)
     random = RandomState(1)
-    idx = random.permutation(s.E.shape[0])
-    pvals = slmm2.scan_interaction(s.G, idx_E=idx)
+    # idx = random.permutation(s.E.shape[0])
+    # pvals = slmm2.scan_interaction(s.G, idx_E=idx)
+    pvals = slmm2.scan_interaction(s.G)
     assert_(median(pvals) > 0.3)
     assert_(min(pvals) > 0.04)
 
