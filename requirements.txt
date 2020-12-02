@@ -1,0 +1,7 @@
+chiscore
+glimix-core
+numpy
+numpy-sugar
+pytest
+scipy
+struct-lmm
