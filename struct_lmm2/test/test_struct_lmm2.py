@@ -1,10 +1,9 @@
+from numpy import asarray, eye, median, min, ones, arange, asarray
 from numpy.linalg import cholesky
-from numpy import ones, asarray, eye, median, min
+from numpy.random import RandomState, default_rng
 from numpy.testing import assert_, assert_allclose
-from struct_lmm2 import StructLMM2
-from numpy.random import RandomState
-from struct_lmm2 import sample_phenotype, create_variances
-from numpy.random import RandomState
+
+from struct_lmm2 import StructLMM2, create_variances, sample_phenotype
 
 
 # from struct_lmm import StructLMM
@@ -25,7 +24,7 @@ def test_struct_lmm2_assoc():
     gxe_causals = [10, 11]
 
     v = create_variances(r0, v0)
-    E = random.randn(n_samples, n_env)
+    E = random.normal(size=[n_samples, n_env])
 
     s = sample_phenotype(
         offset=offset,
@@ -76,7 +75,7 @@ def test_struct_lmm2_inter():
     v0 = 0.5
     g_causals = [5, 6]
     gxe_causals = [10, 11]
-    E = random.randn(n_samples, 2)
+    E = random.normal(size=[n_samples, 2])
 
     v = create_variances(r0, v0)
 
@@ -134,7 +133,7 @@ def test_struct_lmm2_inter_kinship():
     v0 = 0.5
     g_causals = [5, 6]
     gxe_causals = [10, 11]
-    E = random.randn(n_samples, 2)
+    E = random.normal(size=[n_samples, 2])
 
     v = create_variances(r0, v0)
 
@@ -182,7 +181,7 @@ def test_struct_lmm2_inter_kinship_permute():
     v0 = 0.5
     g_causals = [5, 6]
     gxe_causals = [10, 11]
-    E = random.randn(n_samples, 2)
+    E = random.normal(size=[n_samples, 2])
 
     v = create_variances(r0, v0)
 
@@ -213,13 +212,26 @@ def test_struct_lmm2_inter_kinship_permute():
 
 
 def test_struct_lmm2_inter_kinship_repetition():
-    random = RandomState(20)
+    import numpy as np
 
-    n_samples = 100
-    maf_min = 0.05
+    random = default_rng(20)
+
+    n_individuals = 100
+    # n_individuals = 200
+    # n_individuals = 500
+    # n_individuals = 250
+    maf_min = 0.20
+    # maf_min = 0.05
     maf_max = 0.45
-    n_snps = 20
-    n_rep = 10
+    # n_snps = 250
+    n_snps = 100
+    # n_snps = 50
+    # n_snps = 20
+    # n_cells = 100
+    # n_cells = 10
+    # n_cells = 2
+    n_cells = arange(n_individuals) + 1
+    # n_cells = 1
     n_env = 2
     n_env_groups = 3
     offset = 0.3
@@ -232,9 +244,9 @@ def test_struct_lmm2_inter_kinship_repetition():
 
     s = sample_phenotype(
         offset=offset,
-        n_samples=n_samples,
+        n_individuals=n_individuals,
         n_snps=n_snps,
-        n_rep=n_rep,
+        n_cells=n_cells,
         n_env=n_env,
         n_env_groups=n_env_groups,
         maf_min=maf_min,
@@ -246,10 +258,23 @@ def test_struct_lmm2_inter_kinship_repetition():
     )
 
     slmm2 = StructLMM2(s.y, s.M, s.E, s.Lk)
-    random = RandomState(1)
     # idx = random.permutation(s.E.shape[0])
     # pvals = slmm2.scan_interaction(s.G, idx_E=idx)
-    pvals = slmm2.scan_interaction(s.G)
+    from scipy.stats.stats import pearsonr
+
+    corr = {}
+    corr_pvals = {}
+
+    corr["y_e"] = [pearsonr(s.y_e, s.G[:, i])[0] for i in range(s.G.shape[1])]
+    corr_pvals["y_e"] = [pearsonr(s.y_e, s.G[:, i])[1] for i in range(s.G.shape[1])]
+
+    corr["y_n"] = [pearsonr(s.y_n, s.G[:, i])[0] for i in range(s.G.shape[1])]
+    corr_pvals["y_n"] = [pearsonr(s.y_n, s.G[:, i])[1] for i in range(s.G.shape[1])]
+
+    pvals, info = slmm2.scan_interaction(s.G)
+    breakpoint()
+    print(pearsonr(pvals, np.abs(corr["y_e"])))
+    print(pearsonr(pvals, np.abs(corr["y_n"])))
     assert_(median(pvals) > 0.3)
     assert_(min(pvals) > 0.04)
 
@@ -268,7 +293,7 @@ def test_struct_lmm2_inter_kinship_predict():
     v0 = 0.5
     g_causals = [5, 6]
     gxe_causals = [10, 11]
-    E = random.randn(n_samples, 2)
+    E = random.normal(size=[n_samples, 2])
 
     v = create_variances(r0, v0)
 
@@ -290,7 +315,7 @@ def test_struct_lmm2_inter_kinship_predict():
     M = ones((n_samples, 1))
 
     G_kinship = cholesky(s.K + eye(n_samples) * 1e-7)
-    E = random.randn(n_samples, 2)
+    E = random.normal(size=[n_samples, 2])
     slmm2 = StructLMM2(s.y, M, E, G_kinship)
     beta_stars = slmm2.predict_interaction(s.G)
     assert_allclose(beta_stars.mean(), 0.030532771936166866)

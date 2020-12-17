@@ -1,5 +1,6 @@
 from typing import Optional
 
+from tqdm import tqdm
 from chiscore import optimal_davies_pvalue
 from glimix_core.lmm import LMM, Kron2Sum
 from numpy import (
@@ -404,10 +405,11 @@ class StructLMM2:
         G = asarray(G, float)
         n_snps = G.shape[1]
         pvalues = []
+        info = {"rho1": [], "e2": [], "g2": [], "eps2": []}
         from time import time
 
         start = time()
-        for i in range(n_snps):
+        for i in tqdm(range(n_snps)):
             g = G[:, [i]]
             X = concatenate((self._W, g), axis=1)
             best = {"lml": -inf, "rho1": 0}
@@ -438,6 +440,10 @@ class StructLMM2:
             # g²=𝓋₁(1-ρ₁)
             # 𝜀²=𝓋₂
             # with optimal values 𝓋₁ and 𝓋₂ found above.
+            info["rho1"].append(best["rho1"])
+            info["e2"].append(lmm.v0 * best["rho1"])
+            info["g2"].append(lmm.v0 * (1 - best["rho1"]))
+            info["eps2"].append(lmm.v1)
             # QS = economic_decomp( Σ(ρ₁) )
             Q0 = self._Sigma_qs[best["rho1"]][0][0]
             S0 = self._Sigma_qs[best["rho1"]][1]
@@ -505,4 +511,5 @@ class StructLMM2:
             pvalues.append(pval)
             # print(f"Elapsed: {time() - start}")
 
-        return asarray(pvalues, float)
+        info = {key: asarray(v, float) for key, v in info.items()}
+        return asarray(pvalues, float), info

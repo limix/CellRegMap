@@ -1,4 +1,21 @@
 from collections import namedtuple
+from typing import List, Union
+
+from numpy import (
+    array_split,
+    asarray,
+    errstate,
+    eye,
+    ones,
+    repeat,
+    sqrt,
+    stack,
+    zeros,
+    inf,
+)
+from numpy_sugar import epsilon
+from numpy.random import Generator
+from sklearn.decomposition import PCA
 
 Variances = namedtuple("Variances", "g gxe k e n")
 Simulation = namedtuple(
@@ -6,14 +23,12 @@ Simulation = namedtuple(
 )
 
 
-def sample_maf(n_snps: int, maf_min: float, maf_max: float, random):
+def sample_maf(n_snps: int, maf_min: float, maf_max: float, random: Generator):
     assert maf_min <= maf_max and maf_min >= 0 and maf_max <= 1
-    return random.rand(n_snps) * (maf_max - maf_min) + maf_min
+    return random.random(n_snps) * (maf_max - maf_min) + maf_min
 
 
 def sample_genotype(n_samples: int, mafs, random):
-    from numpy import asarray, stack
-
     G = []
     mafs = asarray(mafs, float)
     for maf in mafs:
@@ -25,8 +40,6 @@ def sample_genotype(n_samples: int, mafs, random):
 
 
 def column_normalize(X):
-    from numpy import asarray, errstate
-
     X = asarray(X, float)
 
     with errstate(divide="raise", invalid="raise"):
@@ -34,28 +47,21 @@ def column_normalize(X):
 
 
 def create_environment_matrix(
-    n_samples: int, n_rep: int, n_env: int, n_env_groups: int, random
+    n_samples: int, n_env: int, groups: List[List[int]], random: Generator
 ):
-    from numpy.linalg import cholesky
-
-    n = n_samples * n_rep
-    E = random.randn(n, n_env)
+    E = random.normal(size=[n_samples, n_env])
     E = column_normalize(E)
     EE = E @ E.T
     EE /= EE.diagonal().mean()
-    H = sample_covariance_matrix(E.shape[0], n_env_groups)[1]
+    H = sample_covariance_matrix(n_samples, groups)[1]
     M = EE + H
     M /= M.diagonal().mean()
     jitter(M)
-    return cholesky(M)
+    return _symmetric_decomp(M)
 
 
-def sample_covariance_matrix(n_samples: int, n_groups: int):
-    from numpy import array_split, zeros
-    from numpy.linalg import cholesky
-
-    G = zeros((n_samples, n_groups))
-    groups = array_split(range(n_samples), n_groups)
+def sample_covariance_matrix(n_samples: int, groups: List[List[int]]):
+    G = zeros((n_samples, len(groups)))
 
     for i, idx in enumerate(groups):
         G[idx, i] = 1.0
@@ -65,12 +71,10 @@ def sample_covariance_matrix(n_samples: int, n_groups: int):
     K /= K.diagonal().mean()
     jitter(K)
 
-    return (cholesky(K), K)
+    return (_symmetric_decomp(K), K)
 
 
 def jitter(K):
-    from numpy import errstate, eye
-
     with errstate(divide="raise", invalid="raise"):
         # This small diagonal offset is to guarantee the full-rankness.
         K += 1e-8 * eye(K.shape[0])
@@ -135,7 +139,7 @@ def create_variances(r0, v0, has_kinship=True) -> Variances:
 
 
 def sample_persistent_effsizes(
-    n_effects: int, causal_indices: list, variance: float, random
+    n_effects: int, causal_indices: list, variance: float, random: Generator
 ):
     """
     Let 𝚓 denote a sample index and 𝚔 denote a SNP index. Let 𝚟ⱼ = 𝐠ⱼᵀ𝛃.
@@ -164,8 +168,6 @@ def sample_persistent_effsizes(
     variance : float
         Correspond to 𝓋.
     """
-    from numpy import errstate, sqrt, zeros
-
     n_causals = len(causal_indices)
 
     effsizes = zeros(n_effects)
@@ -186,7 +188,7 @@ def sample_persistent_effects(G, effsizes, variance: float):
     return y_g
 
 
-def sample_gxe_effects(G, E, causal_indices: list, variance: float, random):
+def sample_gxe_effects(G, E, causal_indices: list, variance: float, random: Generator):
     """
     Let 𝚒 denote a SNP index and 𝚓 denote an environment.
     Let 𝑦₂ = ∑ᵢ(𝑔ᵢ⋅𝛜ᵀ𝜶ᵢ) be the total GxE effect with
@@ -212,8 +214,6 @@ def sample_gxe_effects(G, E, causal_indices: list, variance: float, random):
 
     We also assume that 𝔼[𝜖ⱼ]=0 and 𝔼[𝜖ⱼ²]=1/𝑛ₑ for every environment 𝚓.
     """
-    from numpy import sqrt, zeros
-
     n_samples = G.shape[0]
     n_envs = E.shape[1]
     n_causals = len(causal_indices)
@@ -225,7 +225,7 @@ def sample_gxe_effects(G, E, causal_indices: list, variance: float, random):
 
     for causal in causal_indices:
         # 𝜶ᵢ ∼ 𝓝(𝟎, 𝜎ᵢ²I)
-        alpha = sqrt(vi) * random.randn(n_envs)
+        alpha = sqrt(vi) * random.normal(size=n_envs)
 
         # Make the sample statistics close to population
         # statistics
@@ -254,20 +254,25 @@ def sample_gxe_effects(G, E, causal_indices: list, variance: float, random):
 #     return y3
 
 
-def sample_random_effect(K, variance: float, random):
-    from numpy import zeros
+# def sample_random_effect(K, variance: float, random: Generator):
+#     y = random.multivariate_normal(zeros(K.shape[0]), K, method="cholesky")
 
-    y = random.multivariate_normal(zeros(K.shape[0]), K)
+#     _ensure_moments(y, 0, variance)
+
+#     return y
+
+
+def sample_random_effect(X, variance: float, random: Generator):
+    u = sqrt(variance) * random.normal(size=X.shape[1])
+    y = X @ u
 
     _ensure_moments(y, 0, variance)
 
     return y
 
 
-def sample_noise_effects(n_samples: int, variance: float, random):
-    from numpy import sqrt
-
-    y5 = sqrt(variance) * random.randn(n_samples)
+def sample_noise_effects(n_samples: int, variance: float, random: Generator):
+    y5 = sqrt(variance) * random.normal(size=n_samples)
     _ensure_moments(y5, 0, variance)
 
     return y5
@@ -275,9 +280,9 @@ def sample_noise_effects(n_samples: int, variance: float, random):
 
 def sample_phenotype(
     offset: float,
-    n_samples: int,
+    n_individuals: int,
     n_snps: int,
-    n_rep: int,
+    n_cells: Union[int, List[int]],
     n_env: int,
     n_env_groups: int,
     maf_min: float,
@@ -285,25 +290,41 @@ def sample_phenotype(
     g_causals: list,
     gxe_causals: list,
     variances: Variances,
-    random,
+    random: Generator,
 ) -> Simulation:
-    from numpy import ones, tile
-
+    """
+    Parameters
+    ----------
+    n_cells
+         Integer number of array of integers.
+    """
     mafs = sample_maf(n_snps, maf_min, maf_max, random)
 
-    G = sample_genotype(n_samples, mafs, random)
-    G = tile(G, (n_rep, 1))
+    G = sample_genotype(n_individuals, mafs, random)
+    G = repeat(G, n_cells, axis=0)
     G = column_normalize(G)
-    E = create_environment_matrix(n_samples, n_rep, n_env, n_env_groups, random)
 
-    Lk, K = sample_covariance_matrix(E.shape[0], n_samples)
+    n_samples = G.shape[0]
+    individual_groups = array_split(range(n_samples), n_individuals)
+
+    env_groups = array_split(random.permutation(range(n_samples)), n_env)
+    E = create_environment_matrix(n_samples, n_env, env_groups, random)
+
+    Lk, K = sample_covariance_matrix(n_samples, individual_groups)
 
     beta_g = sample_persistent_effsizes(n_snps, g_causals, variances.g, random)
+    # TODO: debugging
     y_g = sample_persistent_effects(G, beta_g, variances.g)
+
     y_gxe = sample_gxe_effects(G, E, gxe_causals, variances.gxe, random)
-    y_k = sample_random_effect(K, variances.k, random)
-    y_e = sample_random_effect(E @ E.T, variances.e, random)
-    y_n = sample_noise_effects(n_samples * n_rep, variances.n, random)
+
+    # y_k = sample_random_effect(K, variances.k, random)
+    y_k = sample_random_effect(Lk, variances.k, random)
+
+    # y_e = sample_random_effect(E @ E.T, variances.e, random)
+    y_e = sample_random_effect(E, variances.e, random)
+
+    y_n = sample_noise_effects(n_samples, variances.n, random)
 
     M = ones((K.shape[0], 1))
     y = offset + y_g + y_gxe + y_k + y_e + y_n
@@ -330,9 +351,22 @@ def sample_phenotype(
 
 
 def _ensure_moments(arr, mean: float, variance: float):
-    from numpy import errstate, sqrt
-
     arr -= arr.mean(0) + mean
     with errstate(divide="raise", invalid="raise"):
         arr /= arr.std(0)
     arr *= sqrt(variance)
+
+
+def _symmetric_decomp(H):
+    n = min((2,) + H.shape)
+    last_expl_var = inf
+    while last_expl_var > epsilon.tiny:
+        pca = PCA(n_components=n).fit(H)
+        if n == min(H.shape):
+            break
+
+        last_expl_var = pca.explained_variance_[-1]
+        n = min((n * 2,) + H.shape)
+
+    L = pca.components_.T * sqrt(pca.singular_values_)
+    return L
