@@ -125,7 +125,7 @@ class StructLMM2:
                 # concatenate((sqrt(rho1) * self._E, sqrt(1 - rho1) * G1), axis=1)
                 # self._Sigma[rho1] = rho1 * self._EE + (1 - rho1) * self._K
                 # self._Sigma_qs[rho1] = economic_qs(self._Sigma[rho1])
-                hS = concatenate((sqrt(rho1) * self._E, sqrt(1 - rho1) * Ge___), axis=1)
+                hS = concatenate((sqrt(rho1) * self._E, sqrt(1 - rho1) * G), axis=1)
                 self._halfSigma[rho1] = hS
                 self._Sigma_qs[rho1] = economic_qs_linear(
                     self._halfSigma[rho1], return_q1=False
