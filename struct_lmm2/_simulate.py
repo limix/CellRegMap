@@ -25,7 +25,8 @@ Simulation = namedtuple(
     "Simulation", "mafs y offset beta_g y_g y_gxe y_k y_e y_n variances G E Lk K M"
 )
 SimulationFixedGxE = namedtuple(
-    "Simulation", "mafs y offset beta_g beta_gxe beta_e y_g y_gxe y_k y_e y_n variances G E Lk K M"
+    "Simulation",
+    "mafs y offset beta_g beta_gxe beta_e y_g y_gxe y_k y_e y_n variances G E Lk K M",
 )
 
 
@@ -65,6 +66,7 @@ def create_environment_matrix(
     jitter(M)
     return _symmetric_decomp(M)
 
+
 def create_environment_vector(
     n_samples: int, groups: List[List[int]], random: Generator
 ):
@@ -83,7 +85,7 @@ def sample_covariance_matrix(n_samples: int, groups: List[List[int]]):
     for i, idx in enumerate(groups):
         G[idx, i] = 1.0
 
-    #G = column_normalize(G)
+    # G = column_normalize(G)
     K = G @ G.T
     K /= K.diagonal().mean()
     jitter(K)
@@ -295,6 +297,81 @@ def sample_noise_effects(n_samples: int, variance: float, random: Generator):
     return y5
 
 
+def sample_phenotype_gxe(
+    offset: float,
+    n_individuals: int,
+    n_snps: int,
+    n_cells: Union[int, List[int]],
+    n_env: int,
+    n_env_groups: int,
+    maf_min: float,
+    maf_max: float,
+    g_causals: list,
+    gxe_causals: list,
+    variances: Variances,
+    random: Generator,
+) -> Simulation:
+    """
+    Parameters
+    ----------
+    n_cells
+         Integer number of array of integers.
+    """
+    mafs = sample_maf(n_snps, maf_min, maf_max, random)
+
+    G = sample_genotype(n_individuals, mafs, random)
+    G = repeat(G, n_cells, axis=0)
+    G = column_normalize(G)
+
+    n_samples = G.shape[0]
+    individual_groups = array_split(range(n_samples), n_individuals)
+
+    env_groups = array_split(random.permutation(range(n_samples)), n_env_groups)
+    E = create_environment_matrix(n_samples, n_env, env_groups, random)
+
+    Lk, K = sample_covariance_matrix(n_samples, individual_groups)
+
+    breakpoint()
+    H2 = E @ E.T
+    Lk = sqrt(H2) * Lk
+    K = Lk @ Lk.T
+
+    beta_g = sample_persistent_effsizes(n_snps, g_causals, variances.g, random)
+
+    y_g = sample_persistent_effects(G, beta_g, variances.g)
+
+    y_gxe = sample_gxe_effects(G, E, gxe_causals, variances.gxe, random)
+
+    y_k = sample_random_effect(Lk, variances.k, random)
+
+    y_e = sample_random_effect(E, variances.e, random)
+
+    y_n = sample_noise_effects(n_samples, variances.n, random)
+
+    M = ones((K.shape[0], 1))
+    y = offset + y_g + y_gxe + y_k + y_e + y_n
+
+    simulation = Simulation(
+        mafs=mafs,
+        offset=offset,
+        beta_g=beta_g,
+        y_g=y_g,
+        y_gxe=y_gxe,
+        y_k=y_k,
+        y_e=y_e,
+        y_n=y_n,
+        y=y,
+        variances=variances,
+        Lk=Lk,
+        K=K,
+        E=E,
+        G=G,
+        M=M,
+    )
+
+    return simulation
+
+
 def sample_phenotype(
     offset: float,
     n_individuals: int,
@@ -391,12 +468,12 @@ def sample_phenotype_fixed_gxe(
     G = column_normalize(G)
 
     n_samples = G.shape[0]
-    
-    if (isscalar(n_cells)):
+
+    if isscalar(n_cells):
         individual_groups = array_split(range(n_samples), n_individuals)
     else:
         individual_groups = asarray(split(range(n_samples), cumsum(n_cells)))
-    #individual_groups = array_split(range(n_samples), n_individuals)
+    # individual_groups = array_split(range(n_samples), n_individuals)
 
     env_groups = array_split(random.permutation(range(n_samples)), n_env_groups)
     E = create_environment_vector(n_samples, env_groups, random)
@@ -450,6 +527,8 @@ def _ensure_moments(arr, mean: float, variance: float):
 
 
 def _symmetric_decomp(H):
+    # H = L @ L.T
+    # Returns L
     n = min((2,) + H.shape)
     last_expl_var = inf
     while last_expl_var > epsilon.tiny:

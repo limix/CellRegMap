@@ -118,14 +118,14 @@ class StructLMM2:
             self._Sigma_qs[1.0] = economic_qs_linear(self._E, return_q1=False)
         else:
             self._rho0 = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-            #self._rho1 = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+            # self._rho1 = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
             self._rho1 = linspace(0, 1)
             for rho1 in self._rho1:
                 # Σ = ρ₁𝙴𝙴ᵀ + (1-ρ₁)𝙺
                 # concatenate((sqrt(rho1) * self._E, sqrt(1 - rho1) * G1), axis=1)
                 # self._Sigma[rho1] = rho1 * self._EE + (1 - rho1) * self._K
                 # self._Sigma_qs[rho1] = economic_qs(self._Sigma[rho1])
-                hS = concatenate((sqrt(rho1) * self._E, sqrt(1 - rho1) * G), axis=1)
+                hS = concatenate((sqrt(rho1) * self._E, sqrt(1 - rho1) * Ge___), axis=1)
                 self._halfSigma[rho1] = hS
                 self._Sigma_qs[rho1] = economic_qs_linear(
                     self._halfSigma[rho1], return_q1=False
@@ -510,7 +510,6 @@ class StructLMM2:
             # np.linalg.eigvalsh(0.5 * sqrtm(deltaK) @ P0 @ sqrtm(deltaK))
             # TODO: compare with Liu approximation, maybe try a computational intensive method
             pval, pinfo = davies_pvalue(Q, ss.matrix_for_dist_weights(), True)
-            breakpoint()
             pvalues.append(pval)
             # print(f"Elapsed: {time() - start}")
 
