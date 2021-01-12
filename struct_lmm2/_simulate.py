@@ -12,6 +12,9 @@ from numpy import (
     stack,
     zeros,
     inf,
+    split,
+    cumsum,
+    isscalar,
 )
 from numpy_sugar import epsilon
 from numpy.random import Generator
@@ -80,7 +83,7 @@ def sample_covariance_matrix(n_samples: int, groups: List[List[int]]):
     for i, idx in enumerate(groups):
         G[idx, i] = 1.0
 
-    G = column_normalize(G)
+    #G = column_normalize(G)
     K = G @ G.T
     K /= K.diagonal().mean()
     jitter(K)
@@ -388,7 +391,12 @@ def sample_phenotype_fixed_gxe(
     G = column_normalize(G)
 
     n_samples = G.shape[0]
-    individual_groups = array_split(range(n_samples), n_individuals)
+    
+    if (isscalar(n_cells)):
+        individual_groups = array_split(range(n_samples), n_individuals)
+    else:
+        individual_groups = asarray(split(range(n_samples), cumsum(n_cells)))
+    #individual_groups = array_split(range(n_samples), n_individuals)
 
     env_groups = array_split(random.permutation(range(n_samples)), n_env_groups)
     E = create_environment_vector(n_samples, env_groups, random)

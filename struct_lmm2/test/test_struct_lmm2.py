@@ -220,7 +220,8 @@ def test_struct_lmm2_inter_kinship_repetition():
     # n_individuals = 200
     # n_individuals = 500
     # n_individuals = 250
-    maf_min = 0.20
+    maf_min = 0.40
+    #maf_min = 0.20
     # maf_min = 0.05
     maf_max = 0.45
     # n_snps = 250
