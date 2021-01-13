@@ -72,7 +72,7 @@ def create_environment_vector(
 ):
     E = zeros((n_samples, 1))
 
-    values = random.choice([0, 1], 2, False)
+    values = random.choice([-1, 1], 2, False)
     for value, group in zip(values, groups):
         E[group, 0] = value
 
@@ -324,17 +324,20 @@ def sample_phenotype_gxe(
     G = column_normalize(G)
 
     n_samples = G.shape[0]
-    individual_groups = array_split(range(n_samples), n_individuals)
+
+    if isscalar(n_cells):
+        individual_groups = array_split(range(n_samples), n_individuals)
+    else:
+        individual_groups = asarray(split(range(n_samples), cumsum(n_cells)))
 
     env_groups = array_split(random.permutation(range(n_samples)), n_env_groups)
-    E = create_environment_matrix(n_samples, n_env, env_groups, random)
+    # E = create_environment_vector(n_samples, env_groups, random)
+    E = sample_covariance_matrix(n_samples, env_groups)[0]
+    # E = create_environment_matrix(n_samples, n_env, env_groups, random)
 
     Lk, K = sample_covariance_matrix(n_samples, individual_groups)
-
-    breakpoint()
-    H2 = E @ E.T
-    Lk = sqrt(H2) * Lk
-    K = Lk @ Lk.T
+    K = K * (E @ E.T)
+    Lk = _symmetric_decomp(K)
 
     beta_g = sample_persistent_effsizes(n_snps, g_causals, variances.g, random)
 

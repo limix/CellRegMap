@@ -119,7 +119,7 @@ class StructLMM2:
         else:
             self._rho0 = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
             # self._rho1 = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-            self._rho1 = linspace(0, 1)
+            self._rho1 = linspace(0, 1, 10)
             for rho1 in self._rho1:
                 # Σ = ρ₁𝙴𝙴ᵀ + (1-ρ₁)𝙺
                 # concatenate((sqrt(rho1) * self._E, sqrt(1 - rho1) * G1), axis=1)
@@ -425,8 +425,8 @@ class StructLMM2:
                 QS = self._Sigma_qs[rho1]
                 lmm = LMM(self._y, X, QS, restricted=True)
                 lmm.fit(verbose=False)
-                print(f"Elapsed: {time() - start}")
-                print(f"lml: {lmm.lml()}")
+                #print(f"Elapsed: {time() - start}")
+                #print(f"lml: {lmm.lml()}")
                 if lmm.lml() > best["lml"]:
                     best["lml"] = lmm.lml()
                     best["rho1"] = rho1
