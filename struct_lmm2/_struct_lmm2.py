@@ -94,7 +94,7 @@ class StructLMM2:
         𝓗₁: 𝓋₃ > 0
     """
 
-    def __init__(self, y, W, E, G=None):
+    def __init__(self, y, W, E, G=[]):
         # TODO: convert y to nx0
         # TODO: convert W to nxp
         # TODO: convert to array of floats
@@ -111,26 +111,29 @@ class StructLMM2:
         # TODO: remove it after debugging
         self._Sigma = {}
 
-        if G is None:
+        if len(G) == 0:
             self._rho0 = [1.0]
             self._rho1 = [1.0]
             self._halfSigma[1.0] = self._E
             self._Sigma_qs[1.0] = economic_qs_linear(self._E, return_q1=False)
         else:
             self._rho0 = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-            # self._rho1 = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
             self._rho1 = linspace(0, 1, 10)
             for rho1 in self._rho1:
                 # Σ = ρ₁𝙴𝙴ᵀ + (1-ρ₁)𝙺
                 # concatenate((sqrt(rho1) * self._E, sqrt(1 - rho1) * G1), axis=1)
                 # self._Sigma[rho1] = rho1 * self._EE + (1 - rho1) * self._K
                 # self._Sigma_qs[rho1] = economic_qs(self._Sigma[rho1])
-                hS = concatenate((sqrt(rho1) * self._E, sqrt(1 - rho1) * G), axis=1)
+                a = sqrt(rho1)
+                b = sqrt(1 - rho1)
+                hS = concatenate([a * self._E] + [b * Gi for Gi in G], axis=1)
                 self._halfSigma[rho1] = hS
                 self._Sigma_qs[rho1] = economic_qs_linear(
                     self._halfSigma[rho1], return_q1=False
                 )
-                self._Sigma[rho1] = rho1 * self._E @ self._E.T + (1 - rho1) * G @ G.T
+                # TODO: remove me, it is for debugging
+                tmp = sum([Gi @ Gi.T for Gi in G])
+                self._Sigma[rho1] = rho1 * self._E @ self._E.T + (1 - rho1) * tmp
 
     @property
     def _n_samples(self):

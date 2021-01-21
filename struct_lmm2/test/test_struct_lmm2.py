@@ -311,6 +311,12 @@ def test_struct_lmm2_inter_kinship_repetition_gxe():
 
     v = create_variances(r0, v0)
 
+    # Timing:
+    # - n_individuals
+    # - n_env_groups
+    # - n_samples
+
+    breakpoint()
     s = sample_phenotype_gxe(
         offset=offset,
         n_individuals=n_individuals,
@@ -326,8 +332,7 @@ def test_struct_lmm2_inter_kinship_repetition_gxe():
         random=random,
     )
 
-    breakpoint()
-    slmm2 = StructLMM2(s.y, s.M, s.E, s.Lk)
+    slmm2 = StructLMM2(s.y, s.M, s.E, s.Ls)
     # idx = random.permutation(s.E.shape[0])
     # pvals = slmm2.scan_interaction(s.G, idx_E=idx)
     from scipy.stats.stats import pearsonr
@@ -341,6 +346,7 @@ def test_struct_lmm2_inter_kinship_repetition_gxe():
     corr["y_n"] = [pearsonr(s.y_n, s.G[:, i])[0] for i in range(s.G.shape[1])]
     corr_pvals["y_n"] = [pearsonr(s.y_n, s.G[:, i])[1] for i in range(s.G.shape[1])]
 
+    breakpoint()
     pvals, info = slmm2.scan_interaction(s.G)
     breakpoint()
     print(pearsonr(pvals, np.abs(corr["y_e"])))

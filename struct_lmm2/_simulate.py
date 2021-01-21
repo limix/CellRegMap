@@ -16,13 +16,14 @@ from numpy import (
     cumsum,
     isscalar,
 )
-from numpy_sugar import epsilon
+from numpy_sugar import epsilon, ddot
+from numpy_sugar.linalg import economic_svd
 from numpy.random import Generator
 from sklearn.decomposition import PCA
 
 Variances = namedtuple("Variances", "g gxe k e n")
 Simulation = namedtuple(
-    "Simulation", "mafs y offset beta_g y_g y_gxe y_k y_e y_n variances G E Lk K M"
+    "Simulation", "mafs y offset beta_g y_g y_gxe y_k y_e y_n variances G E Lk Ls K M"
 )
 SimulationFixedGxE = namedtuple(
     "Simulation",
@@ -336,8 +337,13 @@ def sample_phenotype_gxe(
     # E = create_environment_matrix(n_samples, n_env, env_groups, random)
 
     Lk, K = sample_covariance_matrix(n_samples, individual_groups)
-    K = K * (E @ E.T)
-    Lk = _symmetric_decomp(K)
+
+    KEE  = K * (E @ E.T)
+    [U, S, _] = economic_svd(E)
+    us = U * S
+    Ls = [ddot(us[:,i], Lk) for i in range(us.shape[1])]
+
+    L = _symmetric_decomp(K * (E @ E.T))
 
     beta_g = sample_persistent_effsizes(n_snps, g_causals, variances.g, random)
 
@@ -366,6 +372,7 @@ def sample_phenotype_gxe(
         y=y,
         variances=variances,
         Lk=Lk,
+        Ls=Ls,
         K=K,
         E=E,
         G=G,
@@ -530,17 +537,19 @@ def _ensure_moments(arr, mean: float, variance: float):
 
 
 def _symmetric_decomp(H):
+    [U, S, _] = economic_svd(H)
+    return ddot(U, sqrt(S))
     # H = L @ L.T
     # Returns L
-    n = min((2,) + H.shape)
-    last_expl_var = inf
-    while last_expl_var > epsilon.tiny:
-        pca = PCA(n_components=n).fit(H)
-        if n == min(H.shape):
-            break
+    # n = min((2,) + H.shape)
+    # last_expl_var = inf
+    # while last_expl_var > epsilon.tiny:
+    #     pca = PCA(n_components=n).fit(H)
+    #     if n == min(H.shape):
+    #         break
 
-        last_expl_var = pca.explained_variance_[-1]
-        n = min((n * 2,) + H.shape)
+    #     last_expl_var = pca.explained_variance_[-1]
+    #     n = min((n * 2,) + H.shape)
 
-    L = pca.components_.T * sqrt(pca.singular_values_)
-    return L
+    # L = pca.components_.T * sqrt(pca.singular_values_)
+    # return L
