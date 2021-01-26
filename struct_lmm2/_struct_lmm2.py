@@ -132,8 +132,8 @@ class StructLMM2:
                     self._halfSigma[rho1], return_q1=False
                 )
                 # TODO: remove me, it is for debugging
-                tmp = sum([Gi @ Gi.T for Gi in G])
-                self._Sigma[rho1] = rho1 * self._E @ self._E.T + (1 - rho1) * tmp
+                #tmp = sum([Gi @ Gi.T for Gi in G])
+                #self._Sigma[rho1] = rho1 * self._E @ self._E.T + (1 - rho1) * tmp
 
     @property
     def _n_samples(self):
