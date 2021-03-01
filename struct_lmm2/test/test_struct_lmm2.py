@@ -1,9 +1,14 @@
-from numpy import asarray, eye, median, min, ones, arange, asarray
+from numpy import arange, asarray, eye, median, min, ones
 from numpy.linalg import cholesky
 from numpy.random import RandomState, default_rng
 from numpy.testing import assert_, assert_allclose
 
-from struct_lmm2 import StructLMM2, create_variances, sample_phenotype, sample_phenotype_gxe
+from struct_lmm2 import (
+    StructLMM2,
+    create_variances,
+    sample_phenotype,
+    sample_phenotype_gxe,
+)
 
 
 # from struct_lmm import StructLMM
@@ -221,7 +226,7 @@ def test_struct_lmm2_inter_kinship_repetition():
     # n_individuals = 500
     # n_individuals = 250
     maf_min = 0.40
-    #maf_min = 0.20
+    # maf_min = 0.20
     # maf_min = 0.05
     maf_max = 0.45
     # n_snps = 250
@@ -279,6 +284,7 @@ def test_struct_lmm2_inter_kinship_repetition():
     assert_(median(pvals) > 0.3)
     assert_(min(pvals) > 0.04)
 
+
 def test_struct_lmm2_inter_kinship_repetition_gxe():
     import numpy as np
 
@@ -289,7 +295,7 @@ def test_struct_lmm2_inter_kinship_repetition_gxe():
     # n_individuals = 500
     # n_individuals = 250
     maf_min = 0.40
-    #maf_min = 0.20
+    # maf_min = 0.20
     # maf_min = 0.05
     maf_max = 0.45
     # n_snps = 250
@@ -395,3 +401,60 @@ def test_struct_lmm2_inter_kinship_predict():
     slmm2 = StructLMM2(s.y, M, E, G_kinship)
     beta_stars = slmm2.predict_interaction(s.G)
     assert_allclose(beta_stars.mean(), 0.030532771936166866)
+
+
+def test_struct_lmm2_estimate_aggregate_environment():
+    import numpy as np
+
+    random = default_rng(20)
+
+    n_individuals = 100
+    # n_individuals = 200
+    # n_individuals = 500
+    # n_individuals = 250
+    maf_min = 0.40
+    # maf_min = 0.20
+    # maf_min = 0.05
+    maf_max = 0.45
+    # n_snps = 250
+    n_snps = 100
+    # n_snps = 50
+    # n_snps = 20
+    # n_cells = 100
+    # n_cells = 10
+    # n_cells = 2
+    n_cells = arange(n_individuals) + 1
+    # n_cells = 1
+    n_env = 2
+    n_env_groups = 3
+    offset = 0.3
+    r0 = 0.5
+    v0 = 0.5
+    g_causals = [5, 6]
+    gxe_causals = [10, 11]
+
+    v = create_variances(r0, v0)
+
+    # Timing:
+    # - n_individuals
+    # - n_env_groups
+    # - n_samples
+
+    s = sample_phenotype_gxe(
+        offset=offset,
+        n_individuals=n_individuals,
+        n_snps=n_snps,
+        n_cells=n_cells,
+        n_env=n_env,
+        n_env_groups=n_env_groups,
+        maf_min=maf_min,
+        maf_max=maf_max,
+        g_causals=g_causals,
+        gxe_causals=gxe_causals,
+        variances=v,
+        random=random,
+    )
+
+    slmm2 = StructLMM2(s.y, s.M, s.E, s.Ls)
+    slmm2.estimate_aggregate_environment(s.G[:, 10])
+    pass

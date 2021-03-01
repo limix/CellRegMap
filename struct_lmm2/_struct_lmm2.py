@@ -1,10 +1,11 @@
 from typing import Optional
 
 from glimix_core.lmm import LMM, Kron2Sum
-from numpy import asarray, concatenate, inf, linspace, newaxis, sqrt, vstack
+from numpy import asarray, atleast_2d, concatenate, inf, linspace, newaxis, sqrt, vstack
 from numpy.linalg import multi_dot
 from numpy_sugar import ddot
 from numpy_sugar.linalg import economic_qs_linear
+from optimix import OptimixError
 from tqdm import tqdm
 
 from ._math import PMat, QSCov, ScoreStatistic
@@ -201,6 +202,46 @@ class StructLMM2:
             beta_star = beta_g + sig2_ge * multi_dot([Estar, gE.T, v])
             beta_stars.append(beta_star)
         return asarray(beta_stars, float).T
+
+    def estimate_aggregate_environment(self, g):
+        g = atleast_2d(g).reshape((g.size, 1))
+        E = self._E
+        gE = g * E
+        W = self._W
+        M = concatenate((W, g, E), axis=1)
+        Y = self._y[:, newaxis]
+        best = {"lml": -inf, "rho1": 0}
+        hSigma_p = {}
+        breakpoint()
+        for rho1 in self._rho1:
+            # Σₚ = ρ₁(𝐠⊙𝙴)(𝐠⊙𝙴)ᵀ + (1-ρ₁)𝙺⊙E
+            a = sqrt(rho1)
+            b = sqrt(1 - rho1)
+            hSigma_p[rho1] = concatenate([a * gE] + [b * Gi for Gi in self._G], axis=1)
+            # cov(𝐲) = 𝓋₁Σₚ + 𝓋₂𝙸
+            lmm = Kron2Sum(Y, [[1]], M, hSigma_p[rho1], restricted=True)
+            try:
+                lmm.fit(verbose=False)
+            except OptimixError:
+                continue
+            if lmm.lml() > best["lml"]:
+                best["lml"] = lmm.lml()
+                best["rho1"] = rho1
+                best["lmm"] = lmm
+
+        lmm = best["lmm"]
+        yadj = self._y - lmm.mean()
+        # rho1 = best["rho1"]
+        v1 = lmm.C0[0, 0]
+        v2 = lmm.C1[0, 0]
+        rho1 = best["rho1"]
+        sigma2_gxe = rho1 * v1
+        hSigma_p_qs = economic_qs_linear(hSigma_p[rho1], return_q1=False)
+        qscov = QSCov(hSigma_p_qs[0][0], hSigma_p_qs[1], v1, v2)
+        # v = cov(𝐲)⁻¹yadj
+        v = qscov.solve(yadj)
+        beta_gxe = sigma2_gxe * gE.T @ v
+        return E @ beta_gxe
 
     def scan_interaction(
         self, G, idx_E: Optional[any] = None, idx_G: Optional[any] = None
