@@ -4,21 +4,21 @@ from typing import List, Union
 from numpy import (
     array_split,
     asarray,
+    cumsum,
     errstate,
     eye,
+    inf,
+    isscalar,
     ones,
     repeat,
+    split,
     sqrt,
     stack,
     zeros,
-    inf,
-    split,
-    cumsum,
-    isscalar,
 )
-from numpy_sugar import epsilon, ddot
-from numpy_sugar.linalg import economic_svd
 from numpy.random import Generator
+from numpy_sugar import ddot, epsilon
+from numpy_sugar.linalg import economic_svd
 from sklearn.decomposition import PCA
 
 Variances = namedtuple("Variances", "g gxe k e n")
@@ -338,12 +338,10 @@ def sample_phenotype_gxe(
 
     Lk, K = sample_covariance_matrix(n_samples, individual_groups)
 
-    KEE  = K * (E @ E.T)
+    KEE = K * (E @ E.T)
     [U, S, _] = economic_svd(E)
     us = U * S
-    Ls = [ddot(us[:,i], Lk) for i in range(us.shape[1])]
-
-    L = _symmetric_decomp(K * (E @ E.T))
+    Ls = [ddot(us[:, i], Lk) for i in range(us.shape[1])]
 
     beta_g = sample_persistent_effsizes(n_snps, g_causals, variances.g, random)
 

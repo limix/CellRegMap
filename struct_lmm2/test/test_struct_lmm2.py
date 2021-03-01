@@ -404,8 +404,6 @@ def test_struct_lmm2_inter_kinship_predict():
 
 
 def test_struct_lmm2_estimate_aggregate_environment():
-    import numpy as np
-
     random = default_rng(20)
 
     n_individuals = 100
@@ -422,8 +420,8 @@ def test_struct_lmm2_estimate_aggregate_environment():
     # n_snps = 20
     # n_cells = 100
     # n_cells = 10
-    # n_cells = 2
-    n_cells = arange(n_individuals) + 1
+    n_cells = 2
+    # n_cells = arange(n_individuals) + 1
     # n_cells = 1
     n_env = 2
     n_env_groups = 3

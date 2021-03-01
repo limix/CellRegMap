@@ -155,7 +155,6 @@ class StructLMM2:
 
     def predict_interaction(self, G):
         G = asarray(G, float)
-        Y = self._y[:, newaxis]
         E = self._E
         W = self._W
         n_snps = G.shape[1]
@@ -178,8 +177,11 @@ class StructLMM2:
                 #     (a * gE, b * self._G), axis=1
                 # )
                 # cov(𝐲) = 𝓋₁Σₚ + 𝓋₂𝙸
-                lmm = Kron2Sum(Y, [[1]], M, hSigma_p[rho1], restricted=True)
+                # lmm = Kron2Sum(Y, [[1]], M, hSigma_p[rho1], restricted=True)
+                QS = self._Sigma_qs[rho1]
+                lmm = LMM(self._y, M, QS, restricted=True)
                 lmm.fit(verbose=False)
+
                 if lmm.lml() > best["lml"]:
                     best["lml"] = lmm.lml()
                     best["rho1"] = rho1
@@ -209,21 +211,19 @@ class StructLMM2:
         gE = g * E
         W = self._W
         M = concatenate((W, g, E), axis=1)
-        Y = self._y[:, newaxis]
         best = {"lml": -inf, "rho1": 0}
         hSigma_p = {}
-        breakpoint()
         for rho1 in self._rho1:
             # Σₚ = ρ₁(𝐠⊙𝙴)(𝐠⊙𝙴)ᵀ + (1-ρ₁)𝙺⊙E
             a = sqrt(rho1)
             b = sqrt(1 - rho1)
             hSigma_p[rho1] = concatenate([a * gE] + [b * Gi for Gi in self._G], axis=1)
             # cov(𝐲) = 𝓋₁Σₚ + 𝓋₂𝙸
-            lmm = Kron2Sum(Y, [[1]], M, hSigma_p[rho1], restricted=True)
-            try:
-                lmm.fit(verbose=False)
-            except OptimixError:
-                continue
+            # lmm = Kron2Sum(Y, [[1]], M, hSigma_p[rho1], restricted=True)
+            QS = self._Sigma_qs[rho1]
+            lmm = LMM(self._y, M, QS, restricted=True)
+            lmm.fit(verbose=False)
+
             if lmm.lml() > best["lml"]:
                 best["lml"] = lmm.lml()
                 best["rho1"] = rho1
@@ -232,8 +232,8 @@ class StructLMM2:
         lmm = best["lmm"]
         yadj = self._y - lmm.mean()
         # rho1 = best["rho1"]
-        v1 = lmm.C0[0, 0]
-        v2 = lmm.C1[0, 0]
+        v1 = lmm.v0
+        v2 = lmm.v1
         rho1 = best["rho1"]
         sigma2_gxe = rho1 * v1
         hSigma_p_qs = economic_qs_linear(hSigma_p[rho1], return_q1=False)
