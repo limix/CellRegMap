@@ -8,12 +8,12 @@ A preprint for this work can be found at ...
 
 From your command line, enter
 
-    python setup.py develop
+    pip install -e .
 
 to install it in development mode.
 Otherwise, enter
 
-    python setup.py install
+    pip install .
 
 ## Running tests
 
