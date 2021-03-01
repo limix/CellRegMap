@@ -90,7 +90,7 @@ class StructLMM2:
             self._rho0 = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
             self._rho1 = linspace(0, 1, 10)
             for rho1 in self._rho1:
-                # Σ = ρ₁𝙴𝙴ᵀ + (1-ρ₁)𝙺
+                # Σ = ρ₁𝙴𝙴ᵀ + (1-ρ₁)𝙺⊙E
                 # concatenate((sqrt(rho1) * self._E, sqrt(1 - rho1) * G1), axis=1)
                 # self._Sigma[rho1] = rho1 * self._EE + (1 - rho1) * self._K
                 # self._Sigma_qs[rho1] = economic_qs(self._Sigma[rho1])
@@ -167,10 +167,15 @@ class StructLMM2:
             best = {"lml": -inf, "rho1": 0}
             hSigma_p = {}
             for rho1 in self._rho1:
-                # Σₚ = ρ₁(𝐠⊙𝙴)(𝐠⊙𝙴)ᵀ + (1-ρ₁)𝙺
+                # Σₚ = ρ₁(𝐠⊙𝙴)(𝐠⊙𝙴)ᵀ + (1-ρ₁)𝙺⊙E
+                a = sqrt(rho1)
+                b = sqrt(1 - rho1)
                 hSigma_p[rho1] = concatenate(
-                    (sqrt(rho1) * gE, sqrt(1 - rho1) * self._G), axis=1
+                    [a * gE] + [b * Gi for Gi in self._G], axis=1
                 )
+                # (
+                #     (a * gE, b * self._G), axis=1
+                # )
                 # cov(𝐲) = 𝓋₁Σₚ + 𝓋₂𝙸
                 lmm = Kron2Sum(Y, [[1]], M, hSigma_p[rho1], restricted=True)
                 lmm.fit(verbose=False)
