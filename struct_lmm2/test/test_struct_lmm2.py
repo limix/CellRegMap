@@ -454,5 +454,12 @@ def test_struct_lmm2_estimate_aggregate_environment():
     )
 
     slmm2 = StructLMM2(s.y, s.M, s.E, s.Ls)
-    slmm2.estimate_aggregate_environment(s.G[:, 10])
+    import numpy as np
+    for i in range(5):
+        a = slmm2.estimate_aggregate_environment(s.G[:, i])
+        print(np.var(a))
+    b = slmm2.estimate_aggregate_environment(s.G[:, 10])
+    c = slmm2.estimate_aggregate_environment(s.G[:, 11])
+    print(np.var(b))
+    print(np.var(c))
     pass
