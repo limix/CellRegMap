@@ -8,6 +8,8 @@ A preprint for this work can be found at ...
 
 From your command line, enter
 
+    git clone https://github.com/limix/struct-lmm2.git
+    cd struct-lmm2
     pip install -e .
 
 to install it in development mode.

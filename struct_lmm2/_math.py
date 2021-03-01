@@ -26,12 +26,10 @@ References
    variant effects in sequencing association studies." Biostatistics 13.4 (2012):
    762-775.
 """
-from numpy.linalg import eigvalsh, inv, lstsq, solve
+from numpy import finfo, logical_not, sqrt
+from numpy.linalg import eigh, eigvalsh, inv, lstsq, solve, svd
 from numpy_sugar import ddot
 from scipy.linalg import sqrtm
-
-from numpy import finfo, logical_not, sqrt
-from numpy.linalg import eigh, svd
 
 
 def rsolve(a, b):
@@ -121,7 +119,7 @@ class ScoreStatistic:
         return Py.T @ self._sqrt_dK @ self._sqrt_dK.T @ Py / 2
 
     def matrix_for_dist_weights(self):
-        """ Compute ½(√∂𝙺)𝙿(√∂𝙺).
+        """Compute ½(√∂𝙺)𝙿(√∂𝙺).
 
         The returned matrix has its eigenvalues equal to the eigenvalues of ½√𝙿(∂𝙺)√𝙿.
         """
@@ -174,18 +172,19 @@ def score_statistic_liu_params(q, weights):
 
     n = len(weights)
     # We use the Liu survival function to approximate the distribution followed by a
-    # linear combination of noncentral chi-squared variables (Q) using only three parameters
-    # of such distribution: the weights, degrees of freedom, and noncentrality (Qh).
-    #   𝑄 ∼ ∑λᵢχ²(hᵢ, 𝛿ᵢ),
-    # where λᵢ, hᵢ, and 𝛿ᵢ are the weights, degrees of freedom (1), and noncentrality (0)
-    # parameters. By setting the last input to True we use the modified version [REF].
+    # linear combination of noncentral chi-squared variables (Q) using only three
+    # parameters  of such distribution: the weights, degrees of freedom, and
+    # noncentrality (Qh).  𝑄 ∼ ∑λᵢχ²(hᵢ, 𝛿ᵢ),
+    # where λᵢ, hᵢ, and 𝛿ᵢ are the weights, degrees of freedom (1), and noncentral
+    # (0) parameters. By setting the last input to True we use the modified version
+    # [REF].
     (pv, dof_x, _, info) = liu_sf(q, weights, [1] * n, [0] * n, True)
     return {"pv": pv, "mu_q": info["mu_q"], "sigma_q": info["sigma_q"], "dof_x": dof_x}
 
 
 def qmin(liu_params):
-    from numpy import zeros
     import scipy.stats as st
+    from numpy import zeros
 
     n = len(liu_params)
 
