@@ -1,7 +1,7 @@
 from typing import Optional
 
 from glimix_core.lmm import LMM, Kron2Sum
-from numpy import asarray, atleast_2d, concatenate, inf, linspace, newaxis, sqrt, vstack
+from numpy import asarray, atleast_2d, concatenate, inf, linspace, newaxis, sqrt, vstack, stack, ones, zeros
 from numpy.linalg import multi_dot
 from numpy_sugar import ddot
 from numpy_sugar.linalg import economic_qs_linear
@@ -140,11 +140,16 @@ class StructLMM2:
         }
 
     def predict_interaction(self, G):
+        """
+        Share screen.
+        """
         G = asarray(G, float)
         E = self._E
         W = self._W
         n_snps = G.shape[1]
-        beta_stars = []
+        beta_g_s = []
+        beta_gxe_s = []
+
         for i in range(n_snps):
             g = G[:, [i]]
             # mean(𝐲) = W𝛂 + 𝐠𝛽₁ + 𝙴𝝲 = 𝙼𝛃
@@ -153,7 +158,7 @@ class StructLMM2:
             best = {"lml": -inf, "rho1": 0}
             hSigma_p = {}
             for rho1 in self._rho1:
-                # Σₚ = ρ₁(𝐠⊙𝙴)(𝐠⊙𝙴)ᵀ + (1-ρ₁)𝙺⊙E
+                # Σ[ρ₁] = ρ₁(𝐠⊙𝙴)(𝐠⊙𝙴)ᵀ + (1-ρ₁)𝙺⊙EEᵀ
                 a = sqrt(rho1)
                 b = sqrt(1 - rho1)
                 hSigma_p[rho1] = concatenate(
@@ -162,7 +167,7 @@ class StructLMM2:
                 # (
                 #     (a * gE, b * self._G), axis=1
                 # )
-                # cov(𝐲) = 𝓋₁Σₚ + 𝓋₂𝙸
+                # cov(𝐲) = 𝓋₁Σ[ρ₁] + 𝓋₂𝙸
                 # lmm = Kron2Sum(Y, [[1]], M, hSigma_p[rho1], restricted=True)
                 QS = self._Sigma_qs[rho1]
                 lmm = LMM(self._y, M, QS, restricted=True)
@@ -185,11 +190,50 @@ class StructLMM2:
             qscov = QSCov(hSigma_p_qs[0][0], hSigma_p_qs[1], v1, v2)
             # v = cov(𝐲)⁻¹(𝐲 - 𝙼𝛃)
             v = qscov.solve(yadj)
-            Estar = vstack([E, E])
-            sig2_ge = v1 * rho1
-            beta_star = beta_g + sig2_ge * multi_dot([Estar, gE.T, v])
-            beta_stars.append(beta_star)
-        return asarray(beta_stars, float).T
+
+            # Setting 𝐠'=[0 ... 0]
+            # Compute h0 = cov(𝐲,𝐲') v = (𝓋₁(1-ρ₁)𝙺⊙EEᵀ + 𝓋₂𝙸) v
+            b = sqrt(1 - rho1)
+            hSigma_pstar0 = concatenate(
+                [b * Gi for Gi in self._G], axis=1
+            )
+            hSigma_pstar0_qs = economic_qs_linear(hSigma_pstar0, return_q1=False)
+            qscov_star0 = QSCov(hSigma_pstar0_qs[0][0], hSigma_pstar0_qs[1], v1, v2)
+            h0 = qscov_star0.dot(v)
+            # Compute mean(𝐲') = W𝛂 + 𝐠'𝛽₁ + 𝙴𝝲
+            # Setting 𝐠'=[0 ... 0]
+            # Compute W𝛂 + 𝙴𝝲
+            Mstar0 = concatenate((W, zeros((W.shape[0], 1)), E), axis=1)
+            mstar0 = Mstar0 @ lmm.beta
+            # W𝛂 + 𝙴𝝲 + (𝓋₁(1-ρ₁)𝙺⊙EEᵀ + 𝓋₂𝙸)cov(𝐲)⁻¹(𝐲 - 𝙼𝛃)
+            y_star_ref = mstar0 + h0
+
+            # Setting 𝐠'=[1 ... 1]
+            # Compute h1 = cov(𝐲,𝐲') v = (𝓋₁ρ₁(𝙴𝙴ᵀ) + 𝓋₁(1-ρ₁)𝙺⊙EEᵀ + 𝓋₂𝙸) v
+            a = sqrt(rho1)
+            b = sqrt(1 - rho1)
+            hSigma_pstar1 = concatenate(
+                [a * E] + [b * Gi for Gi in self._G], axis=1
+            )
+            hSigma_pstar1_qs = economic_qs_linear(hSigma_pstar1, return_q1=False)
+            qscov_star1 = QSCov(hSigma_pstar1_qs[0][0], hSigma_pstar1_qs[1], v1, v2)
+            h1 = qscov_star1.dot(v)
+            # Compute mean(𝐲') = W'𝛂 + 𝐠'𝛽₁ + 𝙴𝝲
+            # Setting 𝐠'=[1 ... 1]
+            # Compute W𝛂 + 1ᵀ𝛽₁ + 𝙴𝝲
+            Mstar1 = concatenate((W, ones((W.shape[0], 1)), E), axis=1)
+            mstar1 = Mstar1 @ lmm.beta
+            # W𝛂 + 1ᵀ𝛽 + 𝙴𝝲 + (𝓋₁ρ₁(𝙴𝙴ᵀ) + 𝓋₁(1-ρ₁)𝙺⊙EEᵀ + 𝓋₂𝙸)cov(𝐲)⁻¹(𝐲 - 𝙼𝛃)
+            y_star_alt = mstar1 + h1
+
+            # beta_star = beta_g + beta_gxe
+            beta_star = y_star_alt - y_star_ref
+            beta_gxe = beta_star - beta_g
+
+            beta_g_s.append(beta_g)
+            beta_gxe_s.append(beta_gxe)
+
+        return (asarray(beta_g_s), stack(beta_gxe_s))
 
     def estimate_aggregate_environment(self, g):
         g = atleast_2d(g).reshape((g.size, 1))
@@ -360,3 +404,4 @@ class StructLMM2:
 
         info = {key: asarray(v, float) for key, v in info.items()}
         return asarray(pvalues, float), info
+
