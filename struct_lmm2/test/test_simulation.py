@@ -15,7 +15,6 @@ from struct_lmm2._simulate import (
     sample_noise_effects,
     sample_persistent_effsizes,
     sample_phenotype,
-    sample_population_effects,
 )
 
 
@@ -143,16 +142,16 @@ def test_sample_gxe_effects():
 #     assert_allclose(y3.var(), variance)
 
 
-def test_sample_population_effects():
-    random = RandomState(0)
-    n_samples = 10
-    variance = 0.4
-    n_rep = 1
-    K = sample_covariance_matrix(n_samples, random, n_rep)
-    y4 = sample_population_effects(K, variance, random)
+# def test_sample_population_effects():
+#     random = RandomState(0)
+#     n_samples = 10
+#     variance = 0.4
+#     n_rep = 1
+#     K = sample_covariance_matrix(n_samples, random, n_rep)
+#     y4 = sample_population_effects(K, variance, random)
 
-    assert_allclose(y4.mean(), 0.0, atol=1e-7)
-    assert_allclose(y4.var(), variance)
+#     assert_allclose(y4.mean(), 0.0, atol=1e-7)
+#     assert_allclose(y4.var(), variance)
 
 
 def test_sample_noise_effects():
