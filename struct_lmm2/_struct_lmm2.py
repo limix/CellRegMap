@@ -182,8 +182,8 @@ class StructLMM2:
             # yadj = 𝐲 - 𝙼𝛃
             yadj = self._y - lmm.mean()
             rho1 = best["rho1"]
-            v1 = lmm.C0[0, 0]
-            v2 = lmm.C1[0, 0]
+            v1 = lmm.v0
+            v2 = lmm.v1
             # beta_g = 𝛽₁
             beta_g = lmm.beta[W.shape[1]]
             hSigma_p_qs = economic_qs_linear(hSigma_p[rho1], return_q1=False)
@@ -233,7 +233,7 @@ class StructLMM2:
             beta_g_s.append(beta_g)
             beta_gxe_s.append(beta_gxe)
 
-        return (asarray(beta_g_s), stack(beta_gxe_s))
+        return (asarray(beta_g_s), stack(beta_gxe_s).T)
 
     def estimate_aggregate_environment(self, g):
         g = atleast_2d(g).reshape((g.size, 1))
