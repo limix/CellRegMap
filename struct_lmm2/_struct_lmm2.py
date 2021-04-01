@@ -15,54 +15,40 @@ class StructLMM2:
     """
     Mixed-model with genetic effect heterogeneity.
 
-    The extended StructLMM model (two random effects) is:
+    The sc-StructLMM model can be cast as:
 
-        𝐲 = W𝛂 + 𝐠⊙𝛃 + 𝐞 + 𝐮 + 𝛆,                                              (1)
-
-    where:
-
-        𝛃 ~ 𝓝(𝟎, 𝓋₀((1-ρ₀)𝟏𝟏ᵀ + ρ₀𝙴𝙴ᵀ)),
-        𝐞 ~ 𝓝(𝟎, 𝓋₁ρ₁𝙴𝙴ᵀ),
-        𝐮 ~ 𝓝(𝟎, 𝓋₁(1-ρ₁)𝙺), and
-        𝛆 ~ 𝓝(𝟎, 𝓋₂𝙸).
-
-    𝐠⊙𝛃 is made of two components: the persistent genotype effect and the GxE effect. 𝐞 is the
-    environment effect, 𝐮 is the population structure effect, and 𝛆 is the iid noise. The full
-    covariance of 𝐲 is therefore given by:
-
-        cov(𝐲) = 𝓋₀(1-ρ₀)𝙳𝟏𝟏ᵀ𝙳 + 𝓋₀ρ₀𝙳𝙴𝙴ᵀ𝙳 + 𝓋₁ρ₁𝙴𝙴ᵀ + 𝓋₁(1-ρ₁)𝙺 + 𝓋₂𝙸,
-
-    where 𝙳 = diag(𝐠). Its marginalised form is given by:
-
-        𝐲 ~ 𝓝(W𝛂, 𝓋₀𝙳((1-ρ₀)𝟏𝟏ᵀ + ρ₀𝙴𝙴ᵀ)𝙳 + 𝓋₁(ρ₁𝙴𝙴ᵀ + (1-ρ₁)𝙺) + 𝓋₂𝙸).
-
-    StructLMM method is used to perform two types of statistical tests.
-
-    1. The association test compares the following hypotheses (from Eq. 1):
-
-        𝓗₀: 𝓋₀ = 0
-        𝓗₁: 𝓋₀ > 0
-
-    𝓗₀ denotes no genetic association, while 𝓗₁ models any genetic association. In particular, 𝓗₁
-    includes genotype-environment interaction as part of genetic association.
-
-    2. The interaction test is slighlty different as the persistent genotype effect is now
-    considered to be a fixed effect, and added to the model as an additional covariate term:
-
-        𝐲 = W𝛂 + 𝐠𝛽₁ + 𝐠⊙𝛃₂ + 𝐞 + 𝐮 + 𝛆,                                       (2)
+       𝐲 = W𝛂 + 𝐠𝛽₁ + 𝐠⊙𝛃₂ + 𝐞 + 𝐮 + 𝛆,                                             (1)
 
     where:
 
         𝛃₂ ~ 𝓝(𝟎, 𝓋₃𝙴𝙴ᵀ),
-        𝐞  ~ 𝓝(𝟎, 𝓋₁ρ₁𝙴𝙴ᵀ),
-        𝐮  ~ 𝓝(𝟎, 𝓋₁(1-ρ₁)𝙺), and
-        𝛆  ~ 𝓝(𝟎, 𝓋₂𝙸).
+        𝐞 ~ 𝓝(𝟎, 𝓋₁ρ₁𝙴𝙴ᵀ),
+        𝐮 ~ 𝓝(𝟎, 𝓋₁(1-ρ₁)𝙺⊙𝙴𝙴ᵀ), and
+        𝛆 ~ 𝓝(𝟎, 𝓋₂𝙸).
 
-    We refer to this modified model as the interaction model. The compared hypotheses in this case
-    are:
+    𝐠⊙𝛃 is a randome effect term which models the GxE effect. 
+    Additionally, W𝛂 models additive covariates and 𝐠𝛽₁ models persistent genetic effects. 
+    Both are modelled as fixed effects.
+    On the other hand, 𝐞, 𝐮 and 𝛆 are modelled as random effects
+    𝐞 is the environment effect, 𝐮 is a background term accounting for interactions between population structure 
+    and environmental structure, and 𝛆 is the iid noise. 
+    The full covariance of 𝐲 is therefore given by:
+
+        cov(𝐲) = 𝓋₃𝙳𝙴𝙴ᵀ𝙳 + 𝓋₁ρ₁𝙴𝙴ᵀ + 𝓋₁(1-ρ₁)𝙺⊙𝙴𝙴ᵀ + 𝓋₂𝙸,
+
+    where 𝙳 = diag(𝐠). Its marginalised form is given by:
+
+        𝐲 ~ 𝓝(W𝛂 + 𝐠𝛽₁, 𝓋₃𝙳𝙴𝙴ᵀ𝙳 + 𝓋₁(ρ₁𝙴𝙴ᵀ + (1-ρ₁)𝙺⊙𝙴𝙴ᵀ) + 𝓋₂𝙸).
+
+    sc-StructLMM method is used to perform an interaction test:
+
+    The interaction test compares the following hypotheses (from Eq. 1):
 
         𝓗₀: 𝓋₃ = 0
         𝓗₁: 𝓋₃ > 0
+
+    𝓗₀ denotes no GxE effects, while 𝓗₁ models the presence of GxE effects. 
+
     """
 
     def __init__(self, y, W, E, G=[]):
