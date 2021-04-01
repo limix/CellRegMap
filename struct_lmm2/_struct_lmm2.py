@@ -139,7 +139,7 @@ class StructLMM2:
             "qscov": qscov,
         }
 
-    def predict_interaction(self, G):
+    def predict_interaction(self, G, MAF):
         """
         Share screen.
         """
@@ -227,7 +227,8 @@ class StructLMM2:
             y_star_alt = mstar1 + h1
 
             # beta_star = beta_g + beta_gxe
-            beta_star = y_star_alt - y_star_ref
+            p=MAF[i]
+            beta_star = (y_star_alt - y_star_ref)/sqrt(2*p*(1-p))
             beta_gxe = beta_star - beta_g
 
             beta_g_s.append(beta_g)
