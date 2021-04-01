@@ -364,28 +364,28 @@ def test_struct_lmm2_inter_kinship_repetition_gxe():
 def test_struct_lmm2_inter_kinship_predict():
     random = RandomState(0)
 
-    n_samples = 100
+    n_individuals = 100
     maf_min = 0.05
     maf_max = 0.45
     n_snps = 20
-    n_rep = 1
+    n_cells = 2
+    n_env_groups = 3
     n_env = 3
     offset = 0.3
     r0 = 0.5
     v0 = 0.5
     g_causals = [5, 6]
     gxe_causals = [10, 11]
-    E = random.normal(size=[n_samples, 2])
 
     v = create_variances(r0, v0)
 
-    s = sample_phenotype(
+    s = sample_phenotype_gxe(
         offset=offset,
-        E=E,
-        n_samples=n_samples,
+        n_individuals=n_individuals,
         n_snps=n_snps,
-        n_rep=n_rep,
+        n_cells=n_cells,
         n_env=n_env,
+        n_env_groups=n_env_groups,
         maf_min=maf_min,
         maf_max=maf_max,
         g_causals=g_causals,
@@ -394,13 +394,12 @@ def test_struct_lmm2_inter_kinship_predict():
         random=random,
     )
 
-    M = ones((n_samples, 1))
-
-    G_kinship = cholesky(s.K + eye(n_samples) * 1e-7)
-    E = random.normal(size=[n_samples, 2])
-    slmm2 = StructLMM2(s.y, M, E, G_kinship)
-    beta_stars = slmm2.predict_interaction(s.G)
-    assert_allclose(beta_stars.mean(), 0.030532771936166866)
+    slmm2 = StructLMM2(s.y, s.M, s.E, s.Ls)
+    beta_g_s, beta_gxe_s = slmm2.predict_interaction(s.G)
+    assert_allclose(beta_g_s[3], -0.06486639945658473)
+    assert_allclose(beta_g_s[-1], -0.030213703471315415)
+    assert_allclose(beta_gxe_s[1, 1], -0.028492432283437272)
+    assert_allclose(beta_gxe_s[13, -1], 0.012189149677892867)
 
 
 def test_struct_lmm2_estimate_aggregate_environment():
