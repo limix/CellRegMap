@@ -278,7 +278,6 @@ def test_struct_lmm2_inter_kinship_repetition():
     corr_pvals["y_n"] = [pearsonr(s.y_n, s.G[:, i])[1] for i in range(s.G.shape[1])]
 
     pvals, info = slmm2.scan_interaction(s.G)
-    breakpoint()
     print(pearsonr(pvals, np.abs(corr["y_e"])))
     print(pearsonr(pvals, np.abs(corr["y_n"])))
     assert_(median(pvals) > 0.3)
@@ -322,7 +321,6 @@ def test_struct_lmm2_inter_kinship_repetition_gxe():
     # - n_env_groups
     # - n_samples
 
-    breakpoint()
     s = sample_phenotype_gxe(
         offset=offset,
         n_individuals=n_individuals,
@@ -352,9 +350,7 @@ def test_struct_lmm2_inter_kinship_repetition_gxe():
     corr["y_n"] = [pearsonr(s.y_n, s.G[:, i])[0] for i in range(s.G.shape[1])]
     corr_pvals["y_n"] = [pearsonr(s.y_n, s.G[:, i])[1] for i in range(s.G.shape[1])]
 
-    breakpoint()
     pvals, info = slmm2.scan_interaction(s.G)
-    breakpoint()
     print(pearsonr(pvals, np.abs(corr["y_e"])))
     print(pearsonr(pvals, np.abs(corr["y_n"])))
     assert_(median(pvals) > 0.3)
@@ -395,11 +391,11 @@ def test_struct_lmm2_inter_kinship_predict():
     )
 
     slmm2 = StructLMM2(s.y, s.M, s.E, s.Ls)
-    beta_g_s, beta_gxe_s = slmm2.predict_interaction(s.G)
-    assert_allclose(beta_g_s[3], -0.06486639945658473)
-    assert_allclose(beta_g_s[-1], -0.030213703471315415)
-    assert_allclose(beta_gxe_s[1, 1], -0.028492432283437272)
-    assert_allclose(beta_gxe_s[13, -1], 0.012189149677892867)
+    beta_g_s, beta_gxe_s = slmm2.predict_interaction(s.G, s.mafs)
+    assert_allclose(beta_g_s[3], -0.07720025290188615)
+    assert_allclose(beta_g_s[-1], 0.022415332334122483)
+    assert_allclose(beta_gxe_s[1, 1], 0.010062608120425824)
+    assert_allclose(beta_gxe_s[13, -1], -0.05566938579548831)
 
 
 def test_struct_lmm2_estimate_aggregate_environment():

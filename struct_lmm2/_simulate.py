@@ -281,11 +281,24 @@ def sample_gxe_effects(G, E, causal_indices: list, variance: float, random: Gene
 
 #     return y
 
-
-def sample_random_effect(X, variance: float, random: Generator):
+def _sample_random_effect(X, variance: float, random: Generator):
     u = sqrt(variance) * random.normal(size=X.shape[1])
     y = X @ u
 
+    _ensure_moments(y, 0, variance)
+
+    return y
+
+
+def sample_random_effect(X, variance: float, random: Generator):
+    if not isinstance(X, tuple):
+        return _sample_random_effect(X, variance, random)
+
+    n = X[0].shape[0]
+    y = zeros(n)
+    for L in X:
+        u = sqrt(variance) * random.normal(size=L.shape[1])
+        y += L @ u
     _ensure_moments(y, 0, variance)
 
     return y
@@ -332,16 +345,11 @@ def sample_phenotype_gxe(
         individual_groups = asarray(split(range(n_samples), cumsum(n_cells)))
 
     env_groups = array_split(random.permutation(range(n_samples)), n_env_groups)
-    # E = create_environment_vector(n_samples, env_groups, random)
     E = sample_covariance_matrix(n_samples, env_groups)[0]
-    # E = create_environment_matrix(n_samples, n_env, env_groups, random)
-
     Lk, K = sample_covariance_matrix(n_samples, individual_groups)
-
-    KEE = K * (E @ E.T)
     [U, S, _] = economic_svd(E)
     us = U * S
-    Ls = [ddot(us[:, i], Lk) for i in range(us.shape[1])]
+    Ls = tuple([ddot(us[:, i], Lk) for i in range(us.shape[1])])
 
     beta_g = sample_persistent_effsizes(n_snps, g_causals, variances.g, random)
 
@@ -349,7 +357,7 @@ def sample_phenotype_gxe(
 
     y_gxe = sample_gxe_effects(G, E, gxe_causals, variances.gxe, random)
 
-    y_k = sample_random_effect(Lk, variances.k, random)
+    y_k = sample_random_effect(Ls, variances.k, random)
 
     y_e = sample_random_effect(E, variances.e, random)
 

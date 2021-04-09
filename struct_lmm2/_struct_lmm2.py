@@ -26,12 +26,12 @@ class StructLMM2:
         𝐮 ~ 𝓝(𝟎, 𝓋₁(1-ρ₁)𝙺⊙𝙴𝙴ᵀ), and
         𝛆 ~ 𝓝(𝟎, 𝓋₂𝙸).
 
-    𝐠⊙𝛃 is a randome effect term which models the GxE effect. 
-    Additionally, W𝛂 models additive covariates and 𝐠𝛽₁ models persistent genetic effects. 
+    𝐠⊙𝛃 is a randome effect term which models the GxE effect.
+    Additionally, W𝛂 models additive covariates and 𝐠𝛽₁ models persistent genetic effects.
     Both are modelled as fixed effects.
     On the other hand, 𝐞, 𝐮 and 𝛆 are modelled as random effects
-    𝐞 is the environment effect, 𝐮 is a background term accounting for interactions between population structure 
-    and environmental structure, and 𝛆 is the iid noise. 
+    𝐞 is the environment effect, 𝐮 is a background term accounting for interactions between population structure
+    and environmental structure, and 𝛆 is the iid noise.
     The full covariance of 𝐲 is therefore given by:
 
         cov(𝐲) = 𝓋₃𝙳𝙴𝙴ᵀ𝙳 + 𝓋₁ρ₁𝙴𝙴ᵀ + 𝓋₁(1-ρ₁)𝙺⊙𝙴𝙴ᵀ + 𝓋₂𝙸,
@@ -47,7 +47,7 @@ class StructLMM2:
         𝓗₀: 𝓋₃ = 0
         𝓗₁: 𝓋₃ > 0
 
-    𝓗₀ denotes no GxE effects, while 𝓗₁ models the presence of GxE effects. 
+    𝓗₀ denotes no GxE effects, while 𝓗₁ models the presence of GxE effects.
 
     """
 
@@ -93,51 +93,8 @@ class StructLMM2:
                 # self._Sigma[rho1] = rho1 * self._E @ self._E.T + (1 - rho1) * tmp
 
     @property
-    def _n_samples(self):
+    def n_samples(self):
         return self._y.shape[0]
-
-    def fit_null_association(self):
-        """
-        Fit p(𝐲) of Eq. (1) under the null hypothesis, 𝓋₀ = 0.
-
-        Estimates the parameters 𝛂, 𝓋₁, ρ₁, and 𝓋₂ of:
-
-            𝐲 ~ 𝓝(W𝛂, 𝓋₁(ρ₁𝙴𝙴ᵀ + (1-ρ₁)𝙺) + 𝓋₂𝙸),
-
-        using the restricted maximum likelihood approach.
-        """
-        best = {"lml": -inf, "lmm": None, "rho1": -1.0}
-        for rho1, halfSigma in self._halfSigma.items():
-            # for rho1, Sigma_qs in self._Sigma_qs.items():
-            # Sigma_qs = self._Sigma_qs[rho1]
-            # lmm2 = LMM(self._y, self._W, Sigma_qs, restricted=True)
-            # lmm2.fit(verbose=False)
-            lmm = Kron2Sum(
-                self._y[:, newaxis], [[1]], self._W, halfSigma, restricted=True
-            )
-            lmm.fit(verbose=True)
-            lml = lmm.lml()
-            if lml > best["lml"]:
-                best["lml"] = lml
-                best["lmm"] = lmm
-                best["rho1"] = rho1
-
-        rho1 = best["rho1"]
-        qscov = QSCov(
-            self._Sigma_qs[rho1][0][0],
-            self._Sigma_qs[rho1][1],
-            best["lmm"].C0[0, 0],
-            best["lmm"].C1[0, 0],
-        )
-
-        self._null_lmm_assoc = {
-            "lml": best["lml"],
-            "alpha": best["lmm"].beta,
-            "v1": best["lmm"].C0[0, 0],
-            "rho1": best["rho1"],
-            "v2": best["lmm"].C1[0, 0],
-            "qscov": qscov,
-        }
 
     def predict_interaction(self, G, MAF):
         """
@@ -149,6 +106,9 @@ class StructLMM2:
         n_snps = G.shape[1]
         beta_g_s = []
         beta_gxe_s = []
+
+        p = MAF
+        normalization = 1 / sqrt(2 * p * (1 - p))
 
         for i in range(n_snps):
             g = G[:, [i]]
@@ -179,57 +139,21 @@ class StructLMM2:
                     best["lmm"] = lmm
 
             lmm = best["lmm"]
+            # beta_g = 𝛽₁
+            beta_g = lmm.beta[W.shape[1]]
             # yadj = 𝐲 - 𝙼𝛃
             yadj = self._y - lmm.mean()
             rho1 = best["rho1"]
             v1 = lmm.v0
             v2 = lmm.v1
-            # beta_g = 𝛽₁
-            beta_g = lmm.beta[W.shape[1]]
             hSigma_p_qs = economic_qs_linear(hSigma_p[rho1], return_q1=False)
             qscov = QSCov(hSigma_p_qs[0][0], hSigma_p_qs[1], v1, v2)
             # v = cov(𝐲)⁻¹(𝐲 - 𝙼𝛃)
             v = qscov.solve(yadj)
 
-            # Setting 𝐠'=[0 ... 0]
-            # Compute h0 = cov(𝐲,𝐲') v = (𝓋₁(1-ρ₁)𝙺⊙EEᵀ + 𝓋₂𝙸) v
-            b = sqrt(1 - rho1)
-            hSigma_pstar0 = concatenate(
-                [b * Gi for Gi in self._G], axis=1
-            )
-            hSigma_pstar0_qs = economic_qs_linear(hSigma_pstar0, return_q1=False)
-            qscov_star0 = QSCov(hSigma_pstar0_qs[0][0], hSigma_pstar0_qs[1], v1, v2)
-            h0 = qscov_star0.dot(v)
-            # Compute mean(𝐲') = W𝛂 + 𝐠'𝛽₁ + 𝙴𝝲
-            # Setting 𝐠'=[0 ... 0]
-            # Compute W𝛂 + 𝙴𝝲
-            Mstar0 = concatenate((W, zeros((W.shape[0], 1)), E), axis=1)
-            mstar0 = Mstar0 @ lmm.beta
-            # W𝛂 + 𝙴𝝲 + (𝓋₁(1-ρ₁)𝙺⊙EEᵀ + 𝓋₂𝙸)cov(𝐲)⁻¹(𝐲 - 𝙼𝛃)
-            y_star_ref = mstar0 + h0
-
-            # Setting 𝐠'=[1 ... 1]
-            # Compute h1 = cov(𝐲,𝐲') v = (𝓋₁ρ₁(𝙴𝙴ᵀ) + 𝓋₁(1-ρ₁)𝙺⊙EEᵀ + 𝓋₂𝙸) v
-            a = sqrt(rho1)
-            b = sqrt(1 - rho1)
-            hSigma_pstar1 = concatenate(
-                [a * E] + [b * Gi for Gi in self._G], axis=1
-            )
-            hSigma_pstar1_qs = economic_qs_linear(hSigma_pstar1, return_q1=False)
-            qscov_star1 = QSCov(hSigma_pstar1_qs[0][0], hSigma_pstar1_qs[1], v1, v2)
-            h1 = qscov_star1.dot(v)
-            # Compute mean(𝐲') = W'𝛂 + 𝐠'𝛽₁ + 𝙴𝝲
-            # Setting 𝐠'=[1 ... 1]
-            # Compute W𝛂 + 1ᵀ𝛽₁ + 𝙴𝝲
-            Mstar1 = concatenate((W, ones((W.shape[0], 1)), E), axis=1)
-            mstar1 = Mstar1 @ lmm.beta
-            # W𝛂 + 1ᵀ𝛽 + 𝙴𝝲 + (𝓋₁ρ₁(𝙴𝙴ᵀ) + 𝓋₁(1-ρ₁)𝙺⊙EEᵀ + 𝓋₂𝙸)cov(𝐲)⁻¹(𝐲 - 𝙼𝛃)
-            y_star_alt = mstar1 + h1
-
-            # beta_star = beta_g + beta_gxe
-            p=MAF[i]
-            beta_star = (y_star_alt - y_star_ref)/sqrt(2*p*(1-p))
-            beta_gxe = beta_star - beta_g
+            sigma2_gxe = v1 * rho1
+            beta_gxe = sigma2_gxe * E @ (gE.T @ v) * normalization[i]
+            # beta_star = (beta_g * normalization + beta_gxe)
 
             beta_g_s.append(beta_g)
             beta_gxe_s.append(beta_gxe)
@@ -405,4 +329,3 @@ class StructLMM2:
 
         info = {key: asarray(v, float) for key, v in info.items()}
         return asarray(pvalues, float), info
-
