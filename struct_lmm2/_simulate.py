@@ -316,7 +316,6 @@ def sample_phenotype_gxe(
     n_individuals: int,
     n_snps: int,
     n_cells: Union[int, List[int]],
-    n_env: int,
     n_env_groups: int,
     maf_min: float,
     maf_max: float,

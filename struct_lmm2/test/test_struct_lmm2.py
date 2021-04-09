@@ -366,7 +366,6 @@ def test_struct_lmm2_inter_kinship_predict():
     n_snps = 20
     n_cells = 2
     n_env_groups = 3
-    n_env = 3
     offset = 0.3
     r0 = 0.5
     v0 = 0.5
@@ -380,7 +379,6 @@ def test_struct_lmm2_inter_kinship_predict():
         n_individuals=n_individuals,
         n_snps=n_snps,
         n_cells=n_cells,
-        n_env=n_env,
         n_env_groups=n_env_groups,
         maf_min=maf_min,
         maf_max=maf_max,
@@ -418,7 +416,6 @@ def test_struct_lmm2_estimate_aggregate_environment():
     n_cells = 2
     # n_cells = arange(n_individuals) + 1
     # n_cells = 1
-    n_env = 2
     n_env_groups = 3
     offset = 0.3
     r0 = 0.5
@@ -438,7 +435,6 @@ def test_struct_lmm2_estimate_aggregate_environment():
         n_individuals=n_individuals,
         n_snps=n_snps,
         n_cells=n_cells,
-        n_env=n_env,
         n_env_groups=n_env_groups,
         maf_min=maf_min,
         maf_max=maf_max,
