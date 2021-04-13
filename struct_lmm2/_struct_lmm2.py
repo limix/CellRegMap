@@ -100,6 +100,7 @@ class StructLMM2:
         """
         Share screen.
         """
+        #breakpoint()
         G = asarray(G, float)
         E = self._E
         W = self._W
@@ -138,11 +139,12 @@ class StructLMM2:
                     best["rho1"] = rho1
                     best["lmm"] = lmm
 
+            #breakpoint()
             lmm = best["lmm"]
             # beta_g = 𝛽₁
             beta_g = lmm.beta[W.shape[1]]
             # yadj = 𝐲 - 𝙼𝛃
-            yadj = self._y - lmm.mean()
+            yadj = self._y - lmm.mean().reshape(lmm.mean().shape[0],1)
             rho1 = best["rho1"]
             v1 = lmm.v0
             v2 = lmm.v1
