@@ -81,13 +81,12 @@ def create_environment_vector(
 
 
 def sample_covariance_matrix(n_samples: int, groups: List[List[int]]):
-    G = zeros((n_samples, len(groups)))
+    X = zeros((n_samples, len(groups)))
 
     for i, idx in enumerate(groups):
-        G[idx, i] = 1.0
+        X[idx, i] = 1.0
 
-    # G = column_normalize(G)
-    K = G @ G.T
+    K = X @ X.T
     K /= K.diagonal().mean()
     jitter(K)
 
@@ -341,7 +340,7 @@ def sample_phenotype_gxe(
     if isscalar(n_cells):
         individual_groups = array_split(range(n_samples), n_individuals)
     else:
-        individual_groups = asarray(split(range(n_samples), cumsum(n_cells)))
+        individual_groups = split(range(n_samples), cumsum(n_cells))[:-1]
 
     env_groups = array_split(random.permutation(range(n_samples)), n_env_groups)
     E = sample_covariance_matrix(n_samples, env_groups)[0]

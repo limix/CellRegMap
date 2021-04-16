@@ -52,14 +52,19 @@ class StructLMM2:
     """
 
     def __init__(self, y, W, E, G=[]):
-        # TODO: convert y to nx0
-        # TODO: convert W to nxp
-        # TODO: convert to array of floats
-        self._y = y
-        self._W = W
-        self._E = E
-        self._G = G
-        # self._EE = E @ E.T
+        self._y = asarray(y, float).flatten()
+        self._W = asarray(W, float)
+        self._E = asarray(E, float)
+        self._G = list(asarray(g, float) for g in G)
+
+        assert self._W.ndim == 2
+        assert self._E.ndim == 2
+
+        assert self._y.shape[0] == self._W.shape[0]
+        assert self._y.shape[0] == self._E.shape[0]
+        for g in G:
+            assert self._y.shape[0] == g.shape[0]
+            assert g.ndim == 2
 
         self._null_lmm_assoc = {}
 
@@ -69,13 +74,13 @@ class StructLMM2:
         self._Sigma = {}
 
         if len(G) == 0:
-            self._rho0 = [1.0]
+            # self._rho0 = [1.0]
             self._rho1 = [1.0]
             self._halfSigma[1.0] = self._E
             self._Sigma_qs[1.0] = economic_qs_linear(self._E, return_q1=False)
         else:
-            self._rho0 = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-            self._rho1 = linspace(0, 1, 10)
+            # self._rho0 = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+            self._rho1 = linspace(0, 1, 11)
             for rho1 in self._rho1:
                 # Σ = ρ₁𝙴𝙴ᵀ + (1-ρ₁)𝙺⊙E
                 # concatenate((sqrt(rho1) * self._E, sqrt(1 - rho1) * G1), axis=1)
@@ -100,7 +105,7 @@ class StructLMM2:
         """
         Share screen.
         """
-        #breakpoint()
+        # breakpoint()
         G = asarray(G, float)
         E = self._E
         W = self._W
@@ -118,6 +123,7 @@ class StructLMM2:
             gE = g * E
             best = {"lml": -inf, "rho1": 0}
             hSigma_p = {}
+            Sigma_qs = {}
             for rho1 in self._rho1:
                 # Σ[ρ₁] = ρ₁(𝐠⊙𝙴)(𝐠⊙𝙴)ᵀ + (1-ρ₁)𝙺⊙EEᵀ
                 a = sqrt(rho1)
@@ -130,8 +136,10 @@ class StructLMM2:
                 # )
                 # cov(𝐲) = 𝓋₁Σ[ρ₁] + 𝓋₂𝙸
                 # lmm = Kron2Sum(Y, [[1]], M, hSigma_p[rho1], restricted=True)
-                QS = self._Sigma_qs[rho1]
-                lmm = LMM(self._y, M, QS, restricted=True)
+                Sigma_qs[rho1] = economic_qs_linear(
+                    hSigma_p[rho1], return_q1=False
+                )
+                lmm = LMM(self._y, M, Sigma_qs[rho1], restricted=True)
                 lmm.fit(verbose=False)
 
                 if lmm.lml() > best["lml"]:
@@ -139,12 +147,12 @@ class StructLMM2:
                     best["rho1"] = rho1
                     best["lmm"] = lmm
 
-            #breakpoint()
+            # breakpoint()
             lmm = best["lmm"]
             # beta_g = 𝛽₁
             beta_g = lmm.beta[W.shape[1]]
             # yadj = 𝐲 - 𝙼𝛃
-            yadj = self._y - lmm.mean().reshape(lmm.mean().shape[0],1)
+            yadj = (self._y - lmm.mean()).reshape(self._y.shape[0], 1)
             rho1 = best["rho1"]
             v1 = lmm.v0
             v2 = lmm.v1
