@@ -1,9 +1,9 @@
+from ._types import Term
 from ._struct_lmm2 import StructLMM2
 from ._simulate import (
     sample_phenotype,
     sample_phenotype_gxe,
     create_variances,
-    sample_phenotype_fixed_gxe,
 )
 
 __version__ = "0.0.2"
@@ -13,6 +13,6 @@ __all__ = [
     "StructLMM2",
     "sample_phenotype",
     "create_variances",
-    "sample_phenotype_fixed_gxe",
     "sample_phenotype_gxe",
+    "Term",
 ]

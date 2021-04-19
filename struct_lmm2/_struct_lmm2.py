@@ -1,7 +1,7 @@
 from typing import Optional
 
 from glimix_core.lmm import LMM, Kron2Sum
-from numpy import asarray, atleast_2d, concatenate, inf, linspace, newaxis, sqrt, vstack, stack, ones, zeros
+from numpy import asarray, atleast_2d, concatenate, inf, linspace, newaxis, sqrt, vstack, stack, ones, zeros, atleast_1d
 from numpy.linalg import multi_dot
 from numpy_sugar import ddot
 from numpy_sugar.linalg import economic_qs_linear
@@ -51,20 +51,20 @@ class StructLMM2:
 
     """
 
-    def __init__(self, y, W, E, G=[]):
+    def __init__(self, y, W, E, Ls=[]):
         self._y = asarray(y, float).flatten()
         self._W = asarray(W, float)
         self._E = asarray(E, float)
-        self._G = list(asarray(g, float) for g in G)
+        self._Ls = list(asarray(L, float) for L in Ls)
 
         assert self._W.ndim == 2
         assert self._E.ndim == 2
 
         assert self._y.shape[0] == self._W.shape[0]
         assert self._y.shape[0] == self._E.shape[0]
-        for g in G:
-            assert self._y.shape[0] == g.shape[0]
-            assert g.ndim == 2
+        for L in Ls:
+            assert self._y.shape[0] == L.shape[0]
+            assert L.ndim == 2
 
         self._null_lmm_assoc = {}
 
@@ -73,7 +73,7 @@ class StructLMM2:
         # TODO: remove it after debugging
         self._Sigma = {}
 
-        if len(G) == 0:
+        if len(Ls) == 0:
             # self._rho0 = [1.0]
             self._rho1 = [1.0]
             self._halfSigma[1.0] = self._E
@@ -88,14 +88,11 @@ class StructLMM2:
                 # self._Sigma_qs[rho1] = economic_qs(self._Sigma[rho1])
                 a = sqrt(rho1)
                 b = sqrt(1 - rho1)
-                hS = concatenate([a * self._E] + [b * Gi for Gi in G], axis=1)
+                hS = concatenate([a * self._E] + [b * L for L in Ls], axis=1)
                 self._halfSigma[rho1] = hS
                 self._Sigma_qs[rho1] = economic_qs_linear(
                     self._halfSigma[rho1], return_q1=False
                 )
-                # TODO: remove me, it is for debugging
-                # tmp = sum([Gi @ Gi.T for Gi in G])
-                # self._Sigma[rho1] = rho1 * self._E @ self._E.T + (1 - rho1) * tmp
 
     @property
     def n_samples(self):
@@ -113,7 +110,7 @@ class StructLMM2:
         beta_g_s = []
         beta_gxe_s = []
 
-        p = MAF
+        p = asarray(atleast_1d(MAF), float)
         normalization = 1 / sqrt(2 * p * (1 - p))
 
         for i in range(n_snps):
@@ -129,7 +126,7 @@ class StructLMM2:
                 a = sqrt(rho1)
                 b = sqrt(1 - rho1)
                 hSigma_p[rho1] = concatenate(
-                    [a * gE] + [b * Gi for Gi in self._G], axis=1
+                    [a * gE] + [b * L for L in self._Ls], axis=1
                 )
                 # (
                 #     (a * gE, b * self._G), axis=1
@@ -182,7 +179,7 @@ class StructLMM2:
             # Σₚ = ρ₁(𝐠⊙𝙴)(𝐠⊙𝙴)ᵀ + (1-ρ₁)𝙺⊙E
             a = sqrt(rho1)
             b = sqrt(1 - rho1)
-            hSigma_p[rho1] = concatenate([a * gE] + [b * Gi for Gi in self._G], axis=1)
+            hSigma_p[rho1] = concatenate([a * gE] + [b * L for L in self._Ls], axis=1)
             # cov(𝐲) = 𝓋₁Σₚ + 𝓋₂𝙸
             # lmm = Kron2Sum(Y, [[1]], M, hSigma_p[rho1], restricted=True)
             QS = self._Sigma_qs[rho1]
@@ -230,9 +227,7 @@ class StructLMM2:
         n_snps = G.shape[1]
         pvalues = []
         info = {"rho1": [], "e2": [], "g2": [], "eps2": []}
-        from time import time
 
-        start = time()
         for i in tqdm(range(n_snps)):
             g = G[:, [i]]
             X = concatenate((self._W, g), axis=1)
@@ -240,26 +235,19 @@ class StructLMM2:
             # Null model fitting: find best (𝛂, 𝛽₁, 𝓋₁, 𝓋₂, ρ₁)
             for rho1 in self._rho1:
                 # QS = self._Sigma_qs[rho1]
-                start = time()
                 # halfSigma = self._halfSigma[rho1]
-                # Σ = ρ₁𝙴𝙴ᵀ + (1-ρ₁)𝙺
+                # Σ = ρ₁𝙴𝙴ᵀ + (1-ρ₁)𝙺⊙E
                 # cov(y₀) = 𝓋₁Σ + 𝓋₂I
                 QS = self._Sigma_qs[rho1]
                 lmm = LMM(self._y, X, QS, restricted=True)
                 lmm.fit(verbose=False)
-                # print(f"Elapsed: {time() - start}")
-                # print(f"lml: {lmm.lml()}")
                 if lmm.lml() > best["lml"]:
                     best["lml"] = lmm.lml()
                     best["rho1"] = rho1
                     best["lmm"] = lmm
-                # print(f"Elapsed: {time() - start}")
-            # print(f"Elapsed: {time() - start}")
-            # print(best["lml"])
-            # print(best["rho1"])
             lmm = best["lmm"]
             # H1 via score test
-            # Let K₀ = e²𝙴𝙴ᵀ + g²𝙺 + 𝜀²I
+            # Let K₀ = e²𝙴𝙴ᵀ + g²𝙺⊙E + 𝜀²I
             # e²=𝓋₁ρ₁
             # g²=𝓋₁(1-ρ₁)
             # 𝜀²=𝓋₂

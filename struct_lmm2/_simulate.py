@@ -7,7 +7,6 @@ from numpy import (
     cumsum,
     errstate,
     eye,
-    inf,
     isscalar,
     ones,
     repeat,
@@ -16,10 +15,10 @@ from numpy import (
     stack,
     zeros,
 )
+from ._types import Term
 from numpy.random import Generator
-from numpy_sugar import ddot, epsilon
+from numpy_sugar import ddot
 from numpy_sugar.linalg import economic_svd
-from sklearn.decomposition import PCA
 
 Variances = namedtuple("Variances", "g gxe k e n")
 Simulation = namedtuple(
@@ -138,6 +137,7 @@ def create_variances(r0, v0, has_kinship=True) -> Variances:
     v_g = v0 * (1 - r0)
     v_gxe = v0 * r0
 
+    v_k = 0.0
     if has_kinship:
         v = (1 - v_gxe - v_g) / 3
         v_e = v
@@ -322,6 +322,7 @@ def sample_phenotype_gxe(
     gxe_causals: list,
     variances: Variances,
     random: Generator,
+    env_term: Term = Term.RANDOM,
 ) -> Simulation:
     """
     Parameters
@@ -343,21 +344,29 @@ def sample_phenotype_gxe(
         individual_groups = split(range(n_samples), cumsum(n_cells))[:-1]
 
     env_groups = array_split(random.permutation(range(n_samples)), n_env_groups)
+
     E = sample_covariance_matrix(n_samples, env_groups)[0]
+
     Lk, K = sample_covariance_matrix(n_samples, individual_groups)
     [U, S, _] = economic_svd(E)
     us = U * S
     Ls = tuple([ddot(us[:, i], Lk) for i in range(us.shape[1])])
 
     beta_g = sample_persistent_effsizes(n_snps, g_causals, variances.g, random)
-
     y_g = sample_persistent_effects(G, beta_g, variances.g)
 
     y_gxe = sample_gxe_effects(G, E, gxe_causals, variances.gxe, random)
 
     y_k = sample_random_effect(Ls, variances.k, random)
 
-    y_e = sample_random_effect(E, variances.e, random)
+    if env_term is Term.RANDOM:
+        y_e = sample_random_effect(E, variances.e, random)
+    elif env_term is Term.FIXED:
+        n = E.shape[1]
+        beta_e = sample_persistent_effsizes(n, list(range(n)), variances.e, random)
+        y_e = sample_persistent_effects(E, beta_e, variances.e)
+    else:
+        raise ValueError("Invalid term.")
 
     y_n = sample_noise_effects(n_samples, variances.n, random)
 
@@ -456,83 +465,6 @@ def sample_phenotype(
     return simulation
 
 
-def sample_phenotype_fixed_gxe(
-    offset: float,
-    n_individuals: int,
-    n_snps: int,
-    n_cells: Union[int, List[int]],
-    n_env_groups: int,
-    maf_min: float,
-    maf_max: float,
-    g_causals: list,
-    gxe_causals: list,
-    variances: Variances,
-    random: Generator,
-) -> SimulationFixedGxE:
-    """
-    Parameters
-    ----------
-    n_cells
-         Integer number of array of integers.
-    """
-    mafs = sample_maf(n_snps, maf_min, maf_max, random)
-
-    G = sample_genotype(n_individuals, mafs, random)
-    G = repeat(G, n_cells, axis=0)
-    G = column_normalize(G)
-
-    n_samples = G.shape[0]
-
-    if isscalar(n_cells):
-        individual_groups = array_split(range(n_samples), n_individuals)
-    else:
-        individual_groups = asarray(split(range(n_samples), cumsum(n_cells)))
-    # individual_groups = array_split(range(n_samples), n_individuals)
-
-    env_groups = array_split(random.permutation(range(n_samples)), n_env_groups)
-    E = create_environment_vector(n_samples, env_groups, random)
-
-    Lk, K = sample_covariance_matrix(n_samples, individual_groups)
-
-    beta_g = sample_persistent_effsizes(n_snps, g_causals, variances.g, random)
-    y_g = sample_persistent_effects(G, beta_g, variances.g)
-
-    beta_gxe = sample_persistent_effsizes(n_snps, gxe_causals, variances.gxe, random)
-    y_gxe = sample_persistent_effects(G * E, beta_gxe, variances.gxe)
-
-    y_k = sample_random_effect(Lk, variances.k, random)
-
-    beta_e = sample_persistent_effsizes(1, [0], variances.e, random)
-    y_e = sample_persistent_effects(E, beta_e, variances.e)
-
-    y_n = sample_noise_effects(n_samples, variances.n, random)
-
-    M = ones((K.shape[0], 1))
-    y = offset + y_g + y_gxe + y_k + y_e + y_n
-
-    simulation = SimulationFixedGxE(
-        mafs=mafs,
-        offset=offset,
-        beta_g=beta_g,
-        beta_gxe=beta_gxe,
-        beta_e=beta_e,
-        y_g=y_g,
-        y_gxe=y_gxe,
-        y_k=y_k,
-        y_e=y_e,
-        y_n=y_n,
-        y=y,
-        variances=variances,
-        Lk=Lk,
-        K=K,
-        E=E,
-        G=G,
-        M=M,
-    )
-
-    return simulation
-
-
 def _ensure_moments(arr, mean: float, variance: float):
     arr -= arr.mean(0) + mean
     with errstate(divide="raise", invalid="raise"):
@@ -543,17 +475,3 @@ def _ensure_moments(arr, mean: float, variance: float):
 def _symmetric_decomp(H):
     [U, S, _] = economic_svd(H)
     return ddot(U, sqrt(S))
-    # H = L @ L.T
-    # Returns L
-    # n = min((2,) + H.shape)
-    # last_expl_var = inf
-    # while last_expl_var > epsilon.tiny:
-    #     pca = PCA(n_components=n).fit(H)
-    #     if n == min(H.shape):
-    #         break
-
-    #     last_expl_var = pca.explained_variance_[-1]
-    #     n = min((n * 2,) + H.shape)
-
-    # L = pca.components_.T * sqrt(pca.singular_values_)
-    # return L
