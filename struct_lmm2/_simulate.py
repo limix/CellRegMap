@@ -248,7 +248,8 @@ def sample_gxe_effects(G, E, causal_indices: list, variance: float, random: Gene
 
         # Make the sample statistics close to population
         # statistics
-        _ensure_moments(alpha, 0, sqrt(vi))
+        if n_envs > 1:
+            _ensure_moments(alpha, 0, sqrt(vi))
 
         # 𝜷 = 𝛜ᵀ𝜶ᵢ
         beta = E @ alpha
