@@ -236,12 +236,12 @@ def sample_gxe_effects(G, E, causal_indices: list, variance: float, random: Gene
     n_samples = G.shape[0]
     n_envs = E.shape[1]
     n_causals = len(causal_indices)
-    vi = variance / n_causals
 
     y2 = zeros(n_samples)
     if variance == 0.0:
         return y2
 
+    vi = variance / n_causals
     for causal in causal_indices:
         # 𝜶ᵢ ∼ 𝓝(𝟎, 𝜎ᵢ²I)
         alpha = sqrt(vi) * random.normal(size=n_envs)
