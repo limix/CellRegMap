@@ -21,9 +21,9 @@ class StructLMM2:
 
     where:
 
-        𝛃₂ ~ 𝓝(𝟎, 𝓋₃𝙴𝙴ᵀ),
-        𝐞 ~ 𝓝(𝟎, 𝓋₁ρ₁𝙴𝙴ᵀ),
-        𝐮 ~ 𝓝(𝟎, 𝓋₁(1-ρ₁)𝙺⊙𝙴𝙴ᵀ), and
+        𝛃₂ ~ 𝓝(𝟎, 𝓋₃𝙴₀𝙴₀ᵀ),
+        𝐞 ~ 𝓝(𝟎, 𝓋₁ρ₁𝙴₁𝙴₁ᵀ),
+        𝐮 ~ 𝓝(𝟎, 𝓋₁(1-ρ₁)𝙺⊙𝙴₂𝙴₂ᵀ), and
         𝛆 ~ 𝓝(𝟎, 𝓋₂𝙸).
 
     𝐠⊙𝛃 is a randome effect term which models the GxE effect.
@@ -34,11 +34,11 @@ class StructLMM2:
     and environmental structure, and 𝛆 is the iid noise.
     The full covariance of 𝐲 is therefore given by:
 
-        cov(𝐲) = 𝓋₃𝙳𝙴𝙴ᵀ𝙳 + 𝓋₁ρ₁𝙴𝙴ᵀ + 𝓋₁(1-ρ₁)𝙺⊙𝙴𝙴ᵀ + 𝓋₂𝙸,
+        cov(𝐲) = 𝓋₃𝙳𝙴₀𝙴₀ᵀ𝙳 + 𝓋₁ρ₁𝙴₁𝙴₁ᵀ + 𝓋₁(1-ρ₁)𝙺⊙𝙴₂𝙴₂ᵀ + 𝓋₂𝙸,
 
     where 𝙳 = diag(𝐠). Its marginalised form is given by:
 
-        𝐲 ~ 𝓝(W𝛂 + 𝐠𝛽₁, 𝓋₃𝙳𝙴𝙴ᵀ𝙳 + 𝓋₁(ρ₁𝙴𝙴ᵀ + (1-ρ₁)𝙺⊙𝙴𝙴ᵀ) + 𝓋₂𝙸).
+        𝐲 ~ 𝓝(W𝛂 + 𝐠𝛽₁, 𝓋₃𝙳𝙴₀𝙴₀ᵀ𝙳 + 𝓋₁(ρ₁𝙴₁𝙴₁ᵀ + (1-ρ₁)𝙺⊙𝙴₂𝙴₂ᵀ) + 𝓋₂𝙸).
 
     sc-StructLMM method is used to perform an interaction test:
 
@@ -51,17 +51,27 @@ class StructLMM2:
 
     """
 
-    def __init__(self, y, W, E, Ls=[]):
+    def __init__(self, y, W, E, Ls=[], E0=None, E1=None):
         self._y = asarray(y, float).flatten()
         self._W = asarray(W, float)
-        self._E = asarray(E, float)
+
+        if E is None:
+            assert E0 is not None
+            assert E1 is not None
+            self._E0 = asarray(E0, float)
+            self._E1 = asarray(E1, float)
+        else:
+            self._E0 = asarray(E, float)
+            self._E1 = asarray(E, float)
         self._Ls = list(asarray(L, float) for L in Ls)
 
         assert self._W.ndim == 2
-        assert self._E.ndim == 2
+        assert self._E0.ndim == 2
+        assert self._E1.ndim == 2
 
         assert self._y.shape[0] == self._W.shape[0]
-        assert self._y.shape[0] == self._E.shape[0]
+        assert self._y.shape[0] == self._E0.shape[0]
+        assert self._y.shape[0] == self._E1.shape[0]
         for L in Ls:
             assert self._y.shape[0] == L.shape[0]
             assert L.ndim == 2
@@ -76,8 +86,8 @@ class StructLMM2:
         if len(Ls) == 0:
             # self._rho0 = [1.0]
             self._rho1 = [1.0]
-            self._halfSigma[1.0] = self._E
-            self._Sigma_qs[1.0] = economic_qs_linear(self._E, return_q1=False)
+            self._halfSigma[1.0] = self._E1
+            self._Sigma_qs[1.0] = economic_qs_linear(self._E1, return_q1=False)
         else:
             # self._rho0 = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
             self._rho1 = linspace(0, 1, 11)
@@ -88,7 +98,7 @@ class StructLMM2:
                 # self._Sigma_qs[rho1] = economic_qs(self._Sigma[rho1])
                 a = sqrt(rho1)
                 b = sqrt(1 - rho1)
-                hS = concatenate([a * self._E] + [b * L for L in Ls], axis=1)
+                hS = concatenate([a * self._E1] + [b * L for L in Ls], axis=1)
                 self._halfSigma[rho1] = hS
                 self._Sigma_qs[rho1] = economic_qs_linear(
                     self._halfSigma[rho1], return_q1=False
@@ -104,7 +114,7 @@ class StructLMM2:
         """
         # breakpoint()
         G = asarray(G, float)
-        E = self._E
+        E0 = self._E0
         W = self._W
         n_snps = G.shape[1]
         beta_g_s = []
@@ -116,8 +126,8 @@ class StructLMM2:
         for i in range(n_snps):
             g = G[:, [i]]
             # mean(𝐲) = W𝛂 + 𝐠𝛽₁ + 𝙴𝝲 = 𝙼𝛃
-            M = concatenate((W, g, E), axis=1)
-            gE = g * E
+            M = concatenate((W, g, E0), axis=1)
+            gE = g * E0
             best = {"lml": -inf, "rho1": 0}
             hSigma_p = {}
             Sigma_qs = {}
@@ -165,7 +175,7 @@ class StructLMM2:
             v = qscov.solve(yadj)
 
             sigma2_gxe = v1 * rho1
-            beta_gxe = sigma2_gxe * E @ (gE.T @ v) * normalization[i]
+            beta_gxe = sigma2_gxe * E0 @ (gE.T @ v) * normalization[i]
             # beta_star = (beta_g * normalization + beta_gxe)
 
             beta_g_s.append(beta_g)
@@ -177,10 +187,10 @@ class StructLMM2:
 
     def estimate_aggregate_environment(self, g):
         g = atleast_2d(g).reshape((g.size, 1))
-        E = self._E
-        gE = g * E
+        E0 = self._E0
+        gE = g * E0
         W = self._W
-        M = concatenate((W, g, E), axis=1)
+        M = concatenate((W, g, E0), axis=1)
         best = {"lml": -inf, "rho1": 0}
         hSigma_p = {}
         for rho1 in self._rho1:
@@ -219,7 +229,7 @@ class StructLMM2:
         beta_gxe = sigma2_gxe * gE.T @ v
 
         free_lmm(lmm)
-        return E @ beta_gxe
+        return E0 @ beta_gxe
 
     def scan_interaction(
         self, G, idx_E: Optional[any] = None, idx_G: Optional[any] = None
@@ -228,9 +238,9 @@ class StructLMM2:
         𝐲 = W𝛂 + 𝐠𝛽₁ + 𝐠⊙𝛃₂ + 𝐞 + 𝐮 + 𝛆
            [fixed=X]   [H1]
 
-        𝛃₂ ~ 𝓝(𝟎, 𝓋₃𝙴𝙴ᵀ),
-        𝐞 ~ 𝓝(𝟎, 𝓋₁ρ₁𝙴𝙴ᵀ),
-        𝐮 ~ 𝓝(𝟎, 𝓋₁(1-ρ₁)𝙺), and
+        𝛃₂ ~ 𝓝(𝟎, 𝓋₃𝙴₀𝙴₀ᵀ),
+        𝐞 ~ 𝓝(𝟎, 𝓋₁ρ₁𝙴₁𝙴₁ᵀ),
+        𝐮 ~ 𝓝(𝟎, 𝓋₁(1-ρ₁)𝙺⊙𝙴₂𝙴₂ᵀ), and
         𝛆 ~ 𝓝(𝟎, 𝓋₂𝙸).
 
         𝓗₀: 𝓋₃ = 0
@@ -310,9 +320,9 @@ class StructLMM2:
 
             # Useful for permutation
             if idx_E is None:
-                E1 = self._E
+                E0 = self._E0
             else:
-                E1 = self._E[idx_E, :]
+                E0 = self._E0[idx_E, :]
 
             # The covariance matrix of H1 is K = K₀ + 𝓋₃diag(𝐠)⋅𝙴𝙴ᵀ⋅diag(𝐠)
             # We have ∂K/∂𝓋₃ = diag(𝐠)⋅𝙴𝙴ᵀ⋅diag(𝐠)
@@ -326,7 +336,7 @@ class StructLMM2:
             else:
                 gtest = g.ravel()[idx_G]
 
-            ss = ScoreStatistic(P, qscov, ddot(gtest, E1))
+            ss = ScoreStatistic(P, qscov, ddot(gtest, E0))
             Q = ss.statistic(self._y)
             # import numpy as np
 
