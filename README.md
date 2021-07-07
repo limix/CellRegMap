@@ -1,6 +1,6 @@
-# scStruct-LMM
+# CellRegMap
 
-Single-cell Structured Linear Mixed Model, a linear mixed model approach to perform multi-context eQTL mapping leveraging single cell RNA sequencing (scRNA-seq) data.
+Cellular Regulatory Map, a linear mixed model approach to perform multi-context eQTL mapping leveraging single cell RNA sequencing (scRNA-seq) data.
 Similar to [StructLMM](https://www.nature.com/articles/s41588-018-0271-0) but importantly now accounting for sample structure, including population structure and repeated observations for the same samples, e.g. multiple cells for the same donor.
 
 ## Install from source
