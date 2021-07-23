@@ -15,10 +15,11 @@ from numpy import (
     stack,
     zeros,
 )
-from ._types import Term
 from numpy.random import Generator
 from numpy_sugar import ddot
 from numpy_sugar.linalg import economic_svd
+
+from ._types import Term
 
 Variances = namedtuple("Variances", "g gxe k e n")
 Simulation = namedtuple(

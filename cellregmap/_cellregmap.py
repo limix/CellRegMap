@@ -1,21 +1,28 @@
 from typing import Optional
 
-from glimix_core.lmm import LMM, Kron2Sum
-from numpy import asarray, atleast_2d, concatenate, inf, linspace, newaxis, sqrt, vstack, stack, ones, zeros, atleast_1d
-from numpy.linalg import multi_dot
+from glimix_core.lmm import LMM
+from numpy import (
+    asarray,
+    atleast_1d,
+    atleast_2d,
+    concatenate,
+    inf,
+    linspace,
+    sqrt,
+    stack,
+)
 from numpy_sugar import ddot
 from numpy_sugar.linalg import economic_qs_linear
-from optimix import OptimixError
 from tqdm import tqdm
 
 from ._math import PMat, QSCov, ScoreStatistic
 
 
-class StructLMM2:
+class CellRegMap:
     """
     Mixed-model with genetic effect heterogeneity.
 
-    The sc-StructLMM model can be cast as:
+    The CellRegMap model can be cast as:
 
        𝐲 = W𝛂 + 𝐠𝛽₁ + 𝐠⊙𝛃₂ + 𝐞 + 𝐮 + 𝛆,                                             (1)
 

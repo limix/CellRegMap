@@ -1,18 +1,17 @@
 import pytest
-from numpy_sugar.linalg import economic_qs
-from numpy import array, eye
-from numpy.random import RandomState
-from numpy.testing import assert_allclose
-
-from struct_lmm2._math import (
+from celregmap._math import (
     P_matrix,
-    rsolve,
+    QSCov,
     qmin,
+    rsolve,
     score_statistic,
     score_statistic_distr_weights,
     score_statistic_liu_params,
-    QSCov,
 )
+from numpy import array, eye
+from numpy.random import RandomState
+from numpy.testing import assert_allclose
+from numpy_sugar.linalg import economic_qs
 
 
 @pytest.fixture

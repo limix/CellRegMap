@@ -3,12 +3,7 @@ from numpy.linalg import cholesky
 from numpy.random import RandomState, default_rng
 from numpy.testing import assert_, assert_allclose
 
-from struct_lmm2 import (
-    StructLMM2,
-    create_variances,
-    sample_phenotype,
-    sample_phenotype_gxe,
-)
+from cellregmap import create_variances, sample_phenotype, sample_phenotype_gxe
 
 
 # from struct_lmm import StructLMM

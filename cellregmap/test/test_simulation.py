@@ -4,7 +4,7 @@ from numpy.linalg import matrix_rank
 from numpy.random import RandomState
 from numpy.testing import assert_, assert_allclose, assert_equal
 
-from struct_lmm2._simulate import (
+from cellregmap._simulate import (
     column_normalize,
     create_environment_matrix,
     create_variances,

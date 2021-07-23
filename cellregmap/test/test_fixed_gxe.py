@@ -1,13 +1,13 @@
 import numpy as np
-from numpy_sugar.linalg import economic_qs, economic_qs_linear
-from numpy.random import RandomState, default_rng
-from numpy import arange, concatenate, newaxis, median
 from glimix_core.lmm import LMM
-from scipy.stats import chi2
+from numpy import arange, asarray, clip, concatenate, inf, median, newaxis
+from numpy.random import RandomState, default_rng
 from numpy_sugar import epsilon
-from numpy import asarray, clip, inf
+from numpy_sugar.linalg import economic_qs, economic_qs_linear
+from scipy.stats import chi2
 
-from struct_lmm2 import StructLMM2, create_variances, sample_phenotype, sample_phenotype_fixed_gxe
+from cellregmap import create_variances, sample_phenotype_fixed_gxe
+
 
 def test_fixed_gxe():
     random = default_rng(20)
