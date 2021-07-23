@@ -9,8 +9,8 @@ The CellRegMap model and its applications to both real and simulated data are de
 
 From your command line, enter
 
-    git clone https://github.com/limix/struct-lmm2.git
-    cd struct-lmm2
+    git clone https://github.com/limix/CellRegMap.git
+    cd CellRegMap
     pip install -e .
 
 to install it in development mode.
@@ -28,7 +28,7 @@ From your command line, enter
 
     ├─ old_files/       old scripts
     ├─ references/      documents on the mathematical concepts
-    └─ struct_lmm2/     package implementation
+    └─ CellRegMap/      package implementation
        └─ test/         test file
 
 ## References
