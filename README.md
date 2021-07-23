@@ -5,18 +5,23 @@ Similar to [StructLMM](https://www.nature.com/articles/s41588-018-0271-0) but im
 
 The CellRegMap model and its applications to both real and simulated data are described in the CellRegMap manuscript.  
 
-## Install from source
+## Install
 
 From your command line, enter
+
+    pip install cellregmap
+
+in your command line.
+
+## Development
+
+To install it in development mode, enter
 
     git clone https://github.com/limix/CellRegMap.git
     cd CellRegMap
     pip install -e .
 
-to install it in development mode.
-Otherwise, enter
-
-    pip install .
+in your command line.
 
 ## Running tests
 
