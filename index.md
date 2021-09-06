@@ -1,3 +1,8 @@
+---
+layout: default
+title: CellRegMap
+---
+
 # CellRegMap
 
 Cellular Regulatory Map (CellRegMap) is a linear mixed model approach to test for and characterize context-specific eQTL variants across several cell contexts and states.
