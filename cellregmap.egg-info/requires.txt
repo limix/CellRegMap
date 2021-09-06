@@ -1,0 +1,7 @@
+chiscore>=0.2.3
+glimix-core>=3.1.12
+numpy-sugar>=1.5.1
+numpy>=1.17.5
+pytest>=5.4.3
+scipy>=1.2.3
+tqdm>=4.41.1
