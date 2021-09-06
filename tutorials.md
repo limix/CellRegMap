@@ -1,7 +1,6 @@
----
-layout: default
-title: Tutorials
----
+layout: page
+title: "Tutorials"
+permalink: /Tutorials/
 
 ## Running the model (simple simulated data)
 
