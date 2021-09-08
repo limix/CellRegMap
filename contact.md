@@ -1,9 +1,3 @@
-
----
-layout: default
-title: Contact
----
-
 ## Software maintainers
 
 <head>
@@ -33,20 +27,14 @@ title: Contact
   <div class="column">
     <figure align="center">
     <img src="images/danilo.jpg" alt='missing' width="250" height="250"/>
-    <figcaption> <b>Danilo Horta</b> <br> Postdoctoral Scientist <br> DKFZ <br> <a href="mailto:b.velten@dkfz-heidelberg.de">b.velten@dkfz-heidelberg.de</a></figcaption>
+    <figcaption> <b>Danilo Horta</b> <br> Software Developer <br> EBI <br> <a href="mailto:horta@ebi.ac.uk">horta@ebi.ac.uk</a></figcaption>
     </figure>
   </div>
 <div class="row">
   <div class="column">
     <figure align="center">
     <img src="images/tobi.jpg" alt='missing' width="250" height="250"/>
-    <figcaption> <b>Danila Bredikhin</b> <br> Predoctoral Scientist <br> EMBL <br> <a href="mailto:danila.bredikhin@embl.de">danila.bredikhin@embl.de</a> </figcaption>
-    </figure>
-  </div>
-  <div class="column">
-    <figure align="center">
-    <img src="images/danai.jpeg" alt='missing' width="250" height="250"/>
-    <figcaption> <b>Damien Arnol</b> <br> Director J2-Reliance Ltd  <br> EMBL-EBI <br> <a href="mailto:damien.arnol@gmail.com">damien.arnol@gmail.com</a> </figcaption>
+    <figcaption> <b>Tobias Heinen</b> <br> PhD Student <br> DKFZ <br> <a href="mailto:danila.bredikhin@embl.de">danila.bredikhin@embl.de</a> </figcaption>
     </figure>
   </div>
 </div>
