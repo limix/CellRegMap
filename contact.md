@@ -20,7 +20,7 @@
 <div class="row">
   <div class="column">
     <figure align="center">
-    <img src='images/anna.jpg' alt='missing' width="250" height="250" />
+    <img src='images/Cuomo_Anna.png' alt='missing' width="250" height="250" />
     <figcaption><b>Anna Cuomo</b> <br> Postdoctoral Scientist <br>  Wellcome Sanger Institute <br> <a href="mailto:acuomo@ebi.ac.uk">acuomo@ebi.ac.uk</a> </figcaption>
     </figure>
   </div>
