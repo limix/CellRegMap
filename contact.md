@@ -31,7 +31,7 @@ title: "Contact"
   </div>
   <div class="column">
     <figure align="center">
-    <img src="images/danilo.jpg" alt='missing' width="250" height="250"/>
+    <img src="images/Horta_Danilo.jpeg" alt='missing' width="250" height="250"/>
     <figcaption> <b>Danilo Horta</b> <br> Software Developer <br> EBI <br> <a href="mailto:horta@ebi.ac.uk">horta@ebi.ac.uk</a></figcaption>
     </figure>
   </div>
