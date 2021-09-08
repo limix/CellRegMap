@@ -11,16 +11,19 @@ title: "Usage"
     from cellregmap import CellRegMap
     
     random = RandomState(1)
-    n = 20
-    k = 4
-    y = random.randn(n, 1)
-    E = random.randn(n, k)
-    M = ones((n, 1))
-    g = 1.0 * (random.rand(n, 1) < 0.2)
+    n = 30                               # number of samples (cells)
+    p = 5                                # number of individuals
+    k = 4                                # number of contexts
+    y = random.randn(n, 1)               # outcome vector (expression phenotype)
+    E = random.randn(n, k)               # context matrix  
+    M = ones((n, 1))                     # intercept (covariate matrix)
+    Ls = random.randn(n, k)              # decomposition of kinship matrix (improve)
+    g = 1.0 * (random.rand(n, 1) < 0.2)  # SNP vector
     
     M = concatenate([M, g], axis=1)
-    lmm = CellRegMap(y, M, E)
-    lmm.fit(verbose=False)
+    
+    # fit null model
+    slmm2 = StructLMM2(y, M, E, Ls)
     # Interaction test
     pv = lmm.scan_interaction(g)
     
