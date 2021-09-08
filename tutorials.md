@@ -7,6 +7,11 @@ title: "Tutorials"
 
 ## Running the model (simple simulated data)
 
+```{python}
+    import numpy as np
+    from numpy.random import RandomState
+```
+
     import numpy as np
     from numpy.random import RandomState
     
