@@ -11,20 +11,26 @@
     <link rel="stylesheet" href="{{ '/assets/css/style.css?v=' | append: site.github.build_revision | relative_url }}">
   </head>
   <body>
-<!--     <a id="skip-to-content" href="#content">Skip to the content.</a> -->
+    <!-- <a id="skip-to-content" href="#content">Skip to the content.</a> -->
 
     <header class="page-header" role="banner">
       <h1 class="project-name">{{ page.title | default: site.title | default: site.github.repository_name }}</h1>
       <h2 class="project-tagline">{{ page.description | default: site.description | default: site.github.project_tagline }}</h2>
 
-      <a href="CellRegMap/index.html" class="btn">Home</a>
+      <a href="index.html" class="btn">Home</a>
       <a href="installation.html" class="btn">Installation</a>
       <a href="tutorials.html" class="btn">Tutorials</a>
+      <a href="http://www.ebi.ac.uk/shiny/mofa/" class="btn">Interactive web server</a>
       <a href="faq.html" class="btn">FAQ</a>
-<!--       <a href="NEWS.html" class="btn">News</a> -->
-<!--       <a href="contact.html" class="btn">Contact</a> -->
-<!--       <a href="citation.html" class="btn">Citation</a> -->
-<!--       {% if site./
+      <a href="troubleshooting.html" class="btn">Troubleshooting</a>
+      <a href="MEFISTO.html" class="btn">MEFISTO</a>
+      <a href="NEWS.html" class="btn">News</a>
+      <a href="https://github.com/bioFAM/MOFA2_tutorials/raw/master/documentation/documentation.pdf" class="btn">Documentation</a>
+      <a href="contact.html" class="btn">Contact</a>
+      <a href="citation.html" class="btn">Citation</a>
+      {% if site.github.is_project_page %}
+        <a href="{{ site.github.repository_url }}" class="btn">View on GitHub</a>
+      {% endif %}
     </header>
 
     <main id="content" class="main-content" role="main">
