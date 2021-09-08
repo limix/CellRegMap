@@ -7,11 +7,6 @@ title: "Tutorials"
 
 ## Running the model (simple simulated data)
 
-```{python}
-    import numpy as np
-    from numpy.random import RandomState
-```
-
     import numpy as np
     from numpy.random import RandomState
     
@@ -25,11 +20,11 @@ title: "Tutorials"
     M = ones((n, 1))
     g = 1.0 * (random.rand(n, 1) < 0.2)
     
-    M = concatenate([M, x], axis=1)
-    lmm = StructLMM(y, M, E)
+    M = concatenate([M, g], axis=1)
+    lmm = CellRegMap(y, M, E)
     lmm.fit(verbose=False)
     # Interaction test
-    pv = lmm.score_2dof_inter(x)
+    pv = lmm.scan_interaction(g)
     
     print(pv)
     0.6781100453132024
