@@ -34,7 +34,7 @@
   <div class="column">
     <figure align="center">
     <img src="images/tobi.jpg" alt='missing' width="250" height="250"/>
-    <figcaption> <b>Tobias Heinen</b> <br> PhD Student <br> DKFZ <br> <a href="mailto:danila.bredikhin@embl.de">danila.bredikhin@embl.de</a> </figcaption>
+    <figcaption> <b>Tobias Heinen</b> <br> PhD Student <br> DKFZ <br> <a href="mailto:t.heinen@dkfz.de">t.heinen@dkfz.de</a> </figcaption>
     </figure>
   </div>
 </div>
