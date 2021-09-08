@@ -5,7 +5,7 @@ title: "Installation"
 
 ## Install
 
-From your command line, enter
+To install CellRegMap, enter
 
     pip install cellregmap
 
