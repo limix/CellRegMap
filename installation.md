@@ -1,3 +1,8 @@
+---
+layout: default
+title: "Installation"
+---
+
 ## Install
 
 From your command line, enter
