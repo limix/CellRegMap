@@ -6,4 +6,7 @@ title: "Tutorials"
 For basic usage on simple simulated data, see the [Usage page](https://limix.github.io/CellRegMap/usage.html)
  
  
-For simulation from the paper, see [link](https://github.com/annacuomo/CellRegMap_analyses/tree/main/simulations)
+For applications of CellRegMap described in [our manuscript](), see 
+* [Application on simulated data & Simulation strategy](https://github.com/annacuomo/CellRegMap_analyses/tree/main/simulations)
+* [Application to single-cell dataset of iPSCs differentiating towards endoderm](https://github.com/annacuomo/CellRegMap_analyses/tree/main/endodiff)
+* [Application to single-cell dataset of iPSCs differentiating towards dopaminergic neurons](https://github.com/annacuomo/CellRegMap_analyses/tree/main/neuroseq)
