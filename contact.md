@@ -1,3 +1,8 @@
+---
+layout: default
+title: "Contact"
+---
+
 ## Software maintainers
 
 <head>
