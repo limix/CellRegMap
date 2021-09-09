@@ -19,7 +19,7 @@ title: "Usage"
     y = random.randn(n, 1)               # outcome vector (expression phenotype)
     E = random.randn(n, k)               # context matrix  
     M = ones((n, 1))                     # intercept (covariate matrix)
-    hK = random.randn(n, p)              # decomposition of kinship matrix (K=LLt)
+    hK = random.randn(n, p)              # decomposition of kinship matrix (K= hK @ hK.T)
     g = 1.0 * (random.rand(n, 1) < 0.2)  # SNP vector
     
     M = concatenate([M, g], axis=1)
