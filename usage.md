@@ -7,6 +7,8 @@ title: "Usage"
 
     import numpy as np
     from numpy.random import RandomState
+    from numpy_sugar import ddot
+    from numpy_sugar.linalg import economic_svd
     
     from cellregmap import CellRegMap
     
@@ -17,10 +19,15 @@ title: "Usage"
     y = random.randn(n, 1)               # outcome vector (expression phenotype)
     E = random.randn(n, k)               # context matrix  
     M = ones((n, 1))                     # intercept (covariate matrix)
-    Ls = random.randn(n, k)              # decomposition of kinship matrix (improve)
+    hK = random.randn(n, p)              # decomposition of kinship matrix (K=LLt)
     g = 1.0 * (random.rand(n, 1) < 0.2)  # SNP vector
     
     M = concatenate([M, g], axis=1)
+    # get eigendecomposition of EEt
+    [U, S, _] = economic_svd(E)
+    us = U * S
+    # get decomposition of K*EEt
+    Ls = [ddot(us[:,i], hK) for i in range(us.shape[1])]
     
     # fit null model
     slmm2 = StructLMM2(y, M, E, Ls)
