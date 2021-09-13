@@ -157,15 +157,9 @@ class CellRegMap:
                 lmm.fit(verbose=False)
 
                 if lmm.lml() > best["lml"]:
-                    try:
-                        free_lmm(best["lmm"])
-                    except KeyError:
-                        pass
                     best["lml"] = lmm.lml()
                     best["rho1"] = rho1
                     best["lmm"] = lmm
-                else:
-                    free_lmm(lmm)
 
             # breakpoint()
             lmm = best["lmm"]
@@ -188,7 +182,6 @@ class CellRegMap:
             beta_g_s.append(beta_g)
             beta_gxe_s.append(beta_gxe)
 
-            free_lmm(lmm)
 
         return (asarray(beta_g_s), stack(beta_gxe_s).T)
 
@@ -212,15 +205,9 @@ class CellRegMap:
             lmm.fit(verbose=False)
 
             if lmm.lml() > best["lml"]:
-                try:
-                    free_lmm(best["lmm"])
-                except KeyError:
-                    pass
                 best["lml"] = lmm.lml()
                 best["rho1"] = rho1
                 best["lmm"] = lmm
-            else:
-                free_lmm(lmm)
 
         lmm = best["lmm"]
         yadj = self._y - lmm.mean()
@@ -235,7 +222,6 @@ class CellRegMap:
         v = qscov.solve(yadj)
         beta_gxe = sigma2_gxe * gE.T @ v
 
-        free_lmm(lmm)
         return E0 @ beta_gxe
 
     def scan_interaction(
@@ -276,16 +262,9 @@ class CellRegMap:
                 lmm.fit(verbose=False)
 
                 if lmm.lml() > best["lml"]:
-                    try:
-                        free_lmm(best["lmm"])
-                    except KeyError:
-                        pass
-
                     best["lml"] = lmm.lml()
                     best["rho1"] = rho1
                     best["lmm"] = lmm
-                else:
-                    free_lmm(lmm)
 
             lmm = best["lmm"]
             # H1 via score test
@@ -367,20 +346,5 @@ class CellRegMap:
             pvalues.append(pval)
             # print(f"Elapsed: {time() - start}")
 
-            free_lmm(lmm)
-
         info = {key: asarray(v, float) for key, v in info.items()}
         return asarray(pvalues, float), info
-
-
-def free_lmm(lmm):
-    """Work-around to deal with memory leaks in LMM from glimix-core:
-
-    https://github.com/limix/glimix-core/issues/14
-    https://github.com/limix/glimix-core/issues/15
-
-    Calling this should allow an LMM instance to be garbage-collected.
-    """
-    del lmm._logistic
-    del lmm._variables
-    lmm._logdetXX.cache_clear()
