@@ -11,7 +11,7 @@ We are working on more instructions and tutorials to facilitate usage of the pac
 
 From your command line, enter
 
-    pip install cellregmap
+    python3 -m pip install cellregmap
 
 in your command line.
 
@@ -21,7 +21,7 @@ To install it in development mode, enter
 
     git clone https://github.com/limix/CellRegMap.git
     cd CellRegMap
-    pip install -e .
+    python3 -m pip install -e .
 
 in your command line.
 
@@ -29,7 +29,7 @@ in your command line.
 
 From your command line, enter
 
-    python setup.py test
+    python3 setup.py test
 
 ## Project layout
 
