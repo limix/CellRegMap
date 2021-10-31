@@ -224,6 +224,40 @@ class CellRegMap:
 
         return E0 @ beta_gxe
 
+    def scan_assoc0(self, G):
+        info = {"rho1": [], "e2": [], "g2": [], "eps2": []}
+
+        # NULL model
+        best = {"lml": -inf, "rho1": 0}
+        for rho1 in self._rho1:
+            QS = self._Sigma_qs[rho1]
+            lmm = LMM(self._y, self._W, QS, restricted=True)
+            lmm.fit(verbose=False)
+
+            if lmm.lml() > best["lml"]:
+                best["lml"] = lmm.lml()
+                best["rho1"] = rho1
+                best["lmm"] = lmm
+
+        null_lmm = best["lmm"]
+        info["rho1"].append(best["rho1"])
+        info["e2"].append(null_lmm.v0 * best["rho1"])
+        info["g2"].append(null_lmm.v0 * (1 - best["rho1"]))
+        info["eps2"].append(null_lmm.v1)
+
+        n_snps = G.shape[1]
+        alt_lmls = []
+        for i in tqdm(range(n_snps)):
+            g = G[:, [i]]
+            X = concatenate((self._W, g), axis=1)
+            QS = self._Sigma_qs[best["rho1"]]
+            alt_lmm = LMM(self._y, X, QS, restricted=True)
+            alt_lmm.fit(verbose=False)
+            alt_lmls.append(alt_lmm.lml())
+
+        pvalues = lrt_pvalues(null_lmm.lml(), alt_lmls, dof=1)
+
+
     def scan_interaction(
         self, G, idx_E: Optional[any] = None, idx_G: Optional[any] = None
     ):
@@ -348,3 +382,33 @@ class CellRegMap:
 
         info = {key: asarray(v, float) for key, v in info.items()}
         return asarray(pvalues, float), info
+
+
+def lrt_pvalues(null_lml, alt_lmls, dof=1):
+    """
+    Compute p-values from likelihood ratios.
+
+    These are likelihood ratio test p-values.
+
+    Parameters
+    ----------
+    null_lml : float
+        Log of the marginal likelihood under the null hypothesis.
+    alt_lmls : array_like
+        Log of the marginal likelihoods under the alternative hypotheses.
+    dof : int
+        Degrees of freedom.
+
+    Returns
+    -------
+    pvalues : ndarray
+        P-values.
+    """
+    from numpy import clip
+    from numpy_sugar import epsilon
+    from scipy.stats import chi2
+
+    lrs = clip(-2 * null_lml + 2 * asarray(alt_lmls, float), epsilon.super_tiny, inf)
+    pv = chi2(df=dof).sf(lrs)
+    return clip(pv, epsilon.super_tiny, 1 - epsilon.tiny)
+
