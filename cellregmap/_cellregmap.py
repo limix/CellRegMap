@@ -58,9 +58,10 @@ class CellRegMap:
 
     """
 
-    def __init__(self, y, W, E, Ls=[], E0=None, E1=None):
+    def __init__(self, y, W, E, Ls=None, E0=None, E1=None, G=None):
         self._y = asarray(y, float).flatten()
         self._W = asarray(W, float)
+        Ls = [] if Ls is None else Ls
 
         if E is None:
             assert E0 is not None
@@ -92,9 +93,20 @@ class CellRegMap:
 
         if len(Ls) == 0:
             # self._rho0 = [1.0]
-            self._rho1 = [1.0]
-            self._halfSigma[1.0] = self._E1
-            self._Sigma_qs[1.0] = economic_qs_linear(self._E1, return_q1=False)
+            if G is not None:
+                self._rho1 = [1.0]
+                self._halfSigma[1.0] = self._E1
+                self._Sigma_qs[1.0] = economic_qs_linear(self._E1, return_q1=False)
+            else:
+                self._rho1 = linspace(0, 1, 11)
+                for rho1 in self._rho1:
+                    a = sqrt(rho1)
+                    b = sqrt(1 - rho1)
+                    hS = concatenate([a * self._E1] + [b * G], axis=1)
+                    self._halfSigma[rho1] = hS
+                    self._Sigma_qs[rho1] = economic_qs_linear(
+                        self._halfSigma[rho1], return_q1=False
+                    )
         else:
             # self._rho0 = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
             self._rho1 = linspace(0, 1, 11)
