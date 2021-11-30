@@ -10,7 +10,7 @@ In the [usage page](https://limix.github.io/CellRegMap/usage.html) the input fil
 
 The CellRegMap can be cast as:
 
-<img src="https://render.githubusercontent.com/render/math?math=y = W\alpha + g\beta_G + g \odot \beta_{GxC} + c + u + \epsilon">
+<img src="https://render.githubusercontent.com/render/math?math=y = W\alpha %2B g\beta_G %2B g \odot \beta_{GxC} %2B c %2B u %2B \epsilon">
 
 
 * **Phenotype file (y)** - in the linear mixed model, this is the outcome variable. In eQTL mapping, this represents expression level of a given gene of interest, across samples. The main application of CellRegMap is using scRNA-seq data, in which case this will be a column vector, with length corresponding to the number of cells considered.
