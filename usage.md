@@ -43,11 +43,11 @@ For more details on the functions above I will refer the reader to the Supplemen
     k = 4                                # number of contexts
     y = random.randn(n, 1)               # outcome vector (expression phenotype)
     E = random.randn(n, k)               # context matrix  
-    M = ones((n, 1))                     # intercept (covariate matrix)
+    W = ones((n, 1))                     # intercept (covariate matrix)
     hK = random.randn(n, p)              # decomposition of kinship matrix (K= hK @ hK.T)
     g = 1.0 * (random.rand(n, 1) < 0.2)  # SNP vector
     
-    M = concatenate([M, g], axis=1)
+    W = concatenate([W, g], axis=1)
     # get eigendecomposition of EEt
     [U, S, _] = economic_svd(E)
     us = U * S
@@ -55,19 +55,19 @@ For more details on the functions above I will refer the reader to the Supplemen
     Ls = [ddot(us[:,i], hK) for i in range(us.shape[1])]
     
     # fit null model
-    slmm2 = StructLMM2(y, M, E, Ls)
+    crm = CellRegMap(y, W, E, Ls)
     # Interaction test
-    pv = lmm.scan_interaction(g)
+    pv = crm.scan_interaction(g)
     
     print(pv)
     0.6781100453132024
 
 
-## Downstream analysis (simple simulated data)
+<!-- ## Downstream analysis (simple simulated data)
 
 ## Interpreting the results
 
-## Required dependencies
+## Required dependencies -->
 
  
 
