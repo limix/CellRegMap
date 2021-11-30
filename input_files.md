@@ -12,6 +12,8 @@ The CellRegMap can be cast as:
 
 <img src="https://render.githubusercontent.com/render/math?math=e^{i \pi} = -1">
 
+<img src="https://render.githubusercontent.com/render/math?math=y = \exp\left( \sum_{i=1}^N w_n \log p_n \right), ~~~~ \text{where}~~ w_n = \frac{1}{n}">
+
 $ y = \exp\left( \sum_{i=1}^N w_n \log p_n \right), ~~~~ \text{where}~~ w_n = \frac{1}{n} $
 
 * **Phenotype file (y)** - in the linear mixed model, this is the outcome variable. In eQTL mapping, this represents expression level of a given gene of interest, across samples. The main application of CellRegMap is using scRNA-seq data, in which case this will be a column vector, with length corresponding to the number of cells considered.
