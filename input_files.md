@@ -34,8 +34,9 @@ The following terms should be provided as input files:
 
 The following terms will be estimated by the model:
 
-* SNP effect size, both due to persistent effects (<img src="https://render.githubusercontent.com/render/math?math=beta_G">) and to GxC interactions (<img src="https://render.githubusercontent.com/render/math?math=beta_{GxC}">) can be estimated using the predict_effect function
-* other paramters () are estimated by the model but not returned as values.
+* SNP effect size, both due to persistent effects (<img src="https://render.githubusercontent.com/render/math?math=\beta_G">) and to GxC interactions (<img src="https://render.githubusercontent.com/render/math?math=\beta_{GxC}">) can be estimated using the predict_interaction() function
+
+* other paramters (\alpha, \sigma^2 values) are estimated by the model but not returned as values.
 
 <!-- ## Preparing input files (general guidelines) -->
 
