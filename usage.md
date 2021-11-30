@@ -12,9 +12,21 @@ There are three main functions that can be run within the CellRegMap package:
 ## Association test
 The main functionality of CellRegMap is to investigate GxC interactions and identify context-specific effects (see Interaction test below). However, to improve scalability, we recommend running the main (and computationally more intensive) function only on a set of candidate eQTLs. In the main paper we consider eQTL previously identified in the original study, however it is also possible to test for persistent eQTL effects within the CellRegMap framework itself, using this function.
 
+The model is the same except background term.
+
+function: scan_association()
+
 ## Interaction test
 
-## estimation of effect sizes
+function: scan_interaction()
+
+## Estimation of effect sizes
+
+function: predict_interaction()
+
+The model is the same except background term.
+
+For more details on the functions above I will refer the reader to the Supplementary Methods available with the paper.
 
 ## Running the model (simple simulated data)
 
