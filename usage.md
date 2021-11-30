@@ -24,9 +24,9 @@ function: scan_interaction()
 
 function: predict_interaction()
 
-The model is the same except background term.
+The model is the same except the term <img src="https://render.githubusercontent.com/render/math?math=c"> is now modelled as fixed effects.
 
-For more details on the functions above I will refer the reader to the Supplementary Methods available with the paper.
+For more details on the functions above I will refer the reader to the Supplementary Methods available as part of the [paper's Supplementary Material](https://www.biorxiv.org/content/10.1101/2021.09.01.458524v1.supplementary-material).
 
 ## Running the model (simple simulated data)
 
