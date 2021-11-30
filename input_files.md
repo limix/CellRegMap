@@ -30,6 +30,8 @@ The following terms should be provided as input files:
 
 * **Cellular context matrix (<img src="https://render.githubusercontent.com/render/math?math=C">)** - cellular environments/context matrix. Rows are cells, colunms are values across the different cellular contexts. Columns of E can for example be principal components, or other latent factor representations of the data, or in alternative binary vector encoding assignment to different cellular groups such as cell types.
 
+* **Background matrices (<img src="https://render.githubusercontent.com/render/math?math=L_i's">)** - decomposition of covariance matrix
+
 * **Covariate matrix (<img src="https://render.githubusercontent.com/render/math?math=W">)** - any additional fixed effect terms to include in the model, such as sex or age. If not such terms are needed an intercept of ones should be provided.
 
 The following terms will be estimated by the model:
