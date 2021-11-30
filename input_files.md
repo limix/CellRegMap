@@ -34,7 +34,7 @@ The following terms should be provided as input files:
 
 * **Covariate matrix (<img src="https://render.githubusercontent.com/render/math?math=W">)** - any additional fixed effect terms to include in the model, such as sex or age. If not such terms are needed an intercept of ones should be provided.
 
-* An additional optional input can be a file containing known eQTL (i.e., gene-SNP pairs identified as statistical associations) or individual variants (e.g., GWAS hits) to be investigated. If such a set is not available, it is possible to map eQTL from scratch within the pipeline, see the association test described in the [usage page](https://limix.github.io/CellRegMap/usage.html).
+* An additional optional input can be a **filter file** containing known eQTL (i.e., gene-SNP pairs identified as statistical associations) or individual variants (e.g., GWAS hits) to be investigated. If such a set is not available, it is possible to map eQTL from scratch within the pipeline, see the association test described in the [usage page](https://limix.github.io/CellRegMap/usage.html).
 
 The following terms will be estimated by the model:
 
