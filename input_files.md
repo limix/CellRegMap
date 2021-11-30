@@ -10,11 +10,8 @@ In the [usage page](https://limix.github.io/CellRegMap/usage.html) the input fil
 
 The CellRegMap can be cast as:
 
-<img src="https://render.githubusercontent.com/render/math?math=e^{i \pi} = -1">
+<img src="https://render.githubusercontent.com/render/math?math=y = W\alpha + g\beta_G + g \odot \beta_{GxC} + c + u + \epsilon">
 
-<img src="https://render.githubusercontent.com/render/math?math=y = \exp\left( \sum_{i=1}^N w_n \log p_n \right), ~~~~ \text{where}~~ w_n = \frac{1}{n}">
-
-$ y = \exp\left( \sum_{i=1}^N w_n \log p_n \right), ~~~~ \text{where}~~ w_n = \frac{1}{n} $
 
 * **Phenotype file (y)** - in the linear mixed model, this is the outcome variable. In eQTL mapping, this represents expression level of a given gene of interest, across samples. The main application of CellRegMap is using scRNA-seq data, in which case this will be a column vector, with length corresponding to the number of cells considered.
 * **Genotype file (g)** - SNP vector. This represents the genotype of each sample at the genomic locus of interest, and is typically modelled as 0, 1 or 2, representing the number of minor alleles (however it can also be a continuous vector of dosages). Note that a genotype file is well defined at the level of donors, and needs to be appropriately expanded across cells.
