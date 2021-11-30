@@ -236,7 +236,7 @@ class CellRegMap:
 
         return E0 @ beta_gxe
 
-    def scan_assoc0(self, G):
+    def scan_association(self, G):
         info = {"rho1": [], "e2": [], "g2": [], "eps2": []}
 
         # NULL model
