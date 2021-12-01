@@ -30,17 +30,17 @@ The following terms should be provided as input files:
 
 * **Cellular context matrix (<img src="https://render.githubusercontent.com/render/math?math=C">)** - cellular environment/context matrix. Rows are cells, colunms are values across the different cellular contexts. Columns of E can for example be principal components, or other latent factor representations of the data, or in alternative binary vector encoding assignment to different cellular groups such as cell types. Best practice is to column-standardise this matrix.
 
-* **Background matrices (<img src="https://render.githubusercontent.com/render/math?math=L_i">'s)** - decomposition of the covariance matrix from the background term accounting for repeat samples. It can be shown that the covariance matrix <img src="https://render.githubusercontent.com/render/math?math=(CC^T \odot GG^T)"> can be reformulated as <img src="https://render.githubusercontent.com/render/math?math=\sum_i L_i @ L_i^T">, where <img src="https://render.githubusercontent.com/render/math?math=L_i = diag(\sqrt(\lambda_i) v_i) @ G">, with <img src="https://render.githubusercontent.com/render/math?math=\lambda_i, v_i"> being the eigenvalues and eigenvectors of <img src="https://render.githubusercontent.com/render/math?math=C @ C^T">.
+* **Background matrices (<img src="https://render.githubusercontent.com/render/math?math=L_i">'s)** - decomposition of the covariance matrix from the background term accounting for repeat samples. It can be shown that the covariance matrix <img src="https://render.githubusercontent.com/render/math?math=(CC^T \odot GG^T)"> can be reformulated as <img src="https://render.githubusercontent.com/render/math?math=\sum_i L_i @ L_i^T">, where <img src="https://render.githubusercontent.com/render/math?math=L_i = diag(\sqrt(\lambda_i) v_i) G">, with <img src="https://render.githubusercontent.com/render/math?math=\lambda_i, v_i"> being the eigenvalues and eigenvectors of <img src="https://render.githubusercontent.com/render/math?math=CC^T">.
 
 * **Covariate matrix (<img src="https://render.githubusercontent.com/render/math?math=W">)** - any additional fixed effect terms to include in the model, such as sex or age. If no such terms are needed an intercept of ones should be provided.
 
-* An additional optional input can be a **filter file** containing known eQTL (i.e., gene-SNP pairs identified as statistical associations) or individual variants (e.g., GWAS hits) to be investigated. If such a set is not available, it is possible to map eQTL from scratch within the pipeline, see the association test described in the [usage page](https://limix.github.io/CellRegMap/usage.html).
+* An additional optional input can be a **filter file** containing known eQTLs (i.e., gene-SNP pairs identified as statistical associations) or individual variants (e.g., GWAS hits) to be investigated. If such a set is not available, it is possible to map eQTL from scratch within the pipeline, see the association test described in the [usage page](https://limix.github.io/CellRegMap/usage.html).
 
 The following terms will be estimated by the model:
 
-* **SNP effect sizes**, both due to persistent effects (<img src="https://render.githubusercontent.com/render/math?math=\beta_G">) and to GxC interactions (<img src="https://render.githubusercontent.com/render/math?math=\beta_{GxC}">) can be estimated using the predict_interaction() function
+* **SNP effect sizes**, both due to persistent effects (<img src="https://render.githubusercontent.com/render/math?math=\beta_G">) and to GxC interactions (<img src="https://render.githubusercontent.com/render/math?math=\beta_{GxC}">) can be estimated using the predict_interaction() function, see [usage page](https://limix.github.io/CellRegMap/usage.html).
 
-* **other inferred parameters** (\alpha, \sigma^2 values) are estimated by the model but not returned as values.
+* **other inferred parameters** (<img src="https://render.githubusercontent.com/render/math?math=\alpha, \sigma^2"> values) are estimated by the model but not returned as values.
 
 <!-- ## Preparing input files (general guidelines) -->
 
