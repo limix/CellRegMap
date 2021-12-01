@@ -15,7 +15,7 @@ Nevertheless, the original StructLMM model can be run using CellRegMap, by simpl
     
 and then running the model similarly to what is described in the [usage page](https://limix.github.io/CellRegMap/usage.html), i.e.:
     
-    slmm=CellRegMap(y, W, E, Ls=None)
-    pv=slmm.scan_interaction(G)
+    slmm = CellRegMap(y, W, E, Ls=None)
+    pv = slmm.scan_interaction(G)[0]
     
 where we note that "E" is used here instead of "C" as typically this model will be applied in the context of population genetics to test for effects with environmental exposures, as opposed to the cellular contexts generally considered in applications of CellRegMap to scRNA-seq data.
