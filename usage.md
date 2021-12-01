@@ -9,7 +9,7 @@ There are three main functions that can be run within the CellRegMap package:
 * Interaction test
 * Estimation of effect sizes
 
-## Association test
+## Association test (persistent effects)
 The main functionality of CellRegMap is to investigate GxC interactions and identify context-specific effects (see **Interaction test** below). However, to improve scalability, we recommend running the main (and computationally more intensive) function only on a set of candidate eQTLs. In the main paper we consider eQTLs previously identified in the original study, however it is also possible to test for persistent eQTL effects within the CellRegMap framework itself, using this function. In this case, the model can be cast as:
 
 <img src="https://render.githubusercontent.com/render/math?math=y = W\alpha %2B g\beta_G %2B c %2B u %2B \epsilon">,
@@ -18,7 +18,7 @@ which is the main model except for the GxC term, which is missing. Here, we test
 
 CellRegMap function: scan_association()
 
-## Interaction test
+## Interaction test (GxC effects)
 This is the main test implemented in CellRegMap, where we test for GxC effects. In this case we consider the full model:
 
 <img src="https://render.githubusercontent.com/render/math?math=y = W\alpha %2B g\beta_G %2B g \odot \beta_{GxC} %2B c %2B u %2B \epsilon"> 
