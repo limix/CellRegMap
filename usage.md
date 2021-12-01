@@ -12,23 +12,30 @@ There are three main functions that can be run within the CellRegMap package:
 ## Association test
 The main functionality of CellRegMap is to investigate GxC interactions and identify context-specific effects (see **Interaction test** below). However, to improve scalability, we recommend running the main (and computationally more intensive) function only on a set of candidate eQTLs. In the main paper we consider eQTLs previously identified in the original study, however it is also possible to test for persistent eQTL effects within the CellRegMap framework itself, using this function. In this case, the model can be cast as:
 
+<img src="https://render.githubusercontent.com/render/math?math=y = W\alpha %2B g\beta_G %2B c %2B u %2B \epsilon">,
 
+which is the main model except for the GxC term, which is missing. Here, we test for a persistent effect only, i.e. <img src="https://render.githubusercontent.com/render/math?math=\beta_G \neq 0">.
 
-function: scan_association()
+CellRegMap function: scan_association()
 
 ## Interaction test
+This is the main test implemented in CellRegMap, where we test for GxC effects. In this case we consider the full model:
 
-function: scan_interaction()
+<img src="https://render.githubusercontent.com/render/math?math=y = W\alpha %2B g\beta_G %2B g \odot \beta_{GxC} %2B c %2B u %2B \epsilon"> 
+
+and test for <img src="https://render.githubusercontent.com/render/math?math=\beta_{GxC} \neq 0">.
+While in principal any SNP-gene pairs can be tested for GxC effects, we recommend running this test on a set of candidate eQTLs (either known a priori or identified using the **Association test** described above), or interesting variants to improve statistical power.
+
+CellRegMap function: scan_interaction()
 
 ## Estimation of effect sizes
+Finally, CellRegMap can be used to estimate cell-level effect sizes driven by GxC effects (<img src="https://render.githubusercontent.com/render/math?math=\beta_{GxC}">), thus predicting the cells where effects are detected. The model is the same except the term <img src="https://render.githubusercontent.com/render/math?math=c"> is now modelled as fixed effects in order to estimate the GxC term itself.
 
-function: predict_interaction()
+CellRegMap function: predict_interaction()
 
-The model is the same except the term <img src="https://render.githubusercontent.com/render/math?math=c"> is now modelled as fixed effects.
+For more details on the functions above I refer the reader to the Supplementary Methods available as part of the [paper's Supplementary Material](https://www.biorxiv.org/content/10.1101/2021.09.01.458524v1.supplementary-material).
 
-For more details on the functions above I will refer the reader to the Supplementary Methods available as part of the [paper's Supplementary Material](https://www.biorxiv.org/content/10.1101/2021.09.01.458524v1.supplementary-material).
-
-## Running the model (simple simulated data)
+## Simple usage example
 
     import numpy as np
     from numpy.random import RandomState
@@ -42,25 +49,31 @@ For more details on the functions above I will refer the reader to the Supplemen
     p = 5                                # number of individuals
     k = 4                                # number of contexts
     y = random.randn(n, 1)               # outcome vector (expression phenotype)
-    E = random.randn(n, k)               # context matrix  
+    C = random.randn(n, k)               # context matrix  
     W = ones((n, 1))                     # intercept (covariate matrix)
-    hK = random.randn(n, p)              # decomposition of kinship matrix (K= hK @ hK.T)
+    G = random.randn(n, p)               # decomposition of kinship matrix (K= G @ G.T)
     g = 1.0 * (random.rand(n, 1) < 0.2)  # SNP vector
     
     W = concatenate([W, g], axis=1)
-    # get eigendecomposition of EEt
-    [U, S, _] = economic_svd(E)
+    # get eigendecomposition of CCt
+    [U, S, _] = economic_svd(C)
     us = U * S
-    # get decomposition of K*EEt
-    Ls = [ddot(us[:,i], hK) for i in range(us.shape[1])]
+    # get decomposition of K \odot CCt
+    Ls = [ddot(us[:,i], G) for i in range(us.shape[1])]
     
     # fit null model
-    crm = CellRegMap(y, W, E, Ls)
-    # Interaction test
-    pv = crm.scan_interaction(g)
+    crm = CellRegMap(y, W, C, Ls)
     
-    print(pv)
-    0.6781100453132024
+    # Association test
+    pv = crm.scan_association(g)
+    
+    # Interaction test
+    pv = crm.scan_interaction(g)[0]
+    
+    # Effect sizes
+    betas = crm.predict_interaction(g, maf)
+    beta_G = betas[0]                         # persistent effect (scalar)
+    beta_GxC = betas[1][0]                    # GxC effects (vector)
 
 
 <!-- ## Downstream analysis (simple simulated data)
