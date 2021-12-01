@@ -41,6 +41,7 @@ For more details on the functions above I refer the reader to the Supplementary 
     from numpy.random import RandomState
     from numpy_sugar import ddot
     from numpy_sugar.linalg import economic_svd
+    import compute_maf
     
     from cellregmap import CellRegMap
     
@@ -51,13 +52,15 @@ For more details on the functions above I refer the reader to the Supplementary 
     y = random.randn(n, 1)               # outcome vector (expression phenotype)
     C = random.randn(n, k)               # context matrix  
     W = ones((n, 1))                     # intercept (covariate matrix)
-    G = random.randn(n, p)               # decomposition of kinship matrix (K= G @ G.T)
+    G = random.randn(n, p)               # decomposition of kinship matrix (K = G @ G.T)
     g = 1.0 * (random.rand(n, 1) < 0.2)  # SNP vector
     
     W = concatenate([W, g], axis=1)
+    
     # get eigendecomposition of CCt
     [U, S, _] = economic_svd(C)
     us = U * S
+    
     # get decomposition of K \odot CCt
     Ls = [ddot(us[:,i], G) for i in range(us.shape[1])]
     
@@ -71,6 +74,7 @@ For more details on the functions above I refer the reader to the Supplementary 
     pv = crm.scan_interaction(g)[0]
     
     # Effect sizes
+    maf = compute_maf(g)
     betas = crm.predict_interaction(g, maf)
     beta_G = betas[0]                         # persistent effect (scalar)
     beta_GxC = betas[1][0]                    # GxC effects (vector)
