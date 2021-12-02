@@ -268,6 +268,7 @@ class CellRegMap:
             alt_lmls.append(alt_lmm.lml())
 
         pvalues = lrt_pvalues(null_lmm.lml(), alt_lmls, dof=1)
+        return asarray(pvalues, float)
 
 
     def scan_interaction(
