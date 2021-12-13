@@ -243,7 +243,8 @@ class CellRegMap:
         best = {"lml": -inf, "rho1": 0}
         for rho1 in self._rho1:
             QS = self._Sigma_qs[rho1]
-            lmm = LMM(self._y, self._W, QS, restricted=True)
+            # LRT for fixed effects requires ML rather than REML estimation
+            lmm = LMM(self._y, self._W, QS, restricted=False)
             lmm.fit(verbose=False)
 
             if lmm.lml() > best["lml"]:
@@ -263,12 +264,14 @@ class CellRegMap:
             g = G[:, [i]]
             X = concatenate((self._W, g), axis=1)
             QS = self._Sigma_qs[best["rho1"]]
-            alt_lmm = LMM(self._y, X, QS, restricted=True)
+            alt_lmm = LMM(self._y, X, QS, restricted=False)
             alt_lmm.fit(verbose=False)
             alt_lmls.append(alt_lmm.lml())
 
         pvalues = lrt_pvalues(null_lmm.lml(), alt_lmls, dof=1)
-        return asarray(pvalues, float)
+
+        info = {key: asarray(v, float) for key, v in info.items()}
+        return asarray(pvalues, float), info
 
 
     def scan_interaction(
