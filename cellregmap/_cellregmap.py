@@ -58,7 +58,7 @@ class CellRegMap:
 
     """
 
-    def __init__(self, y, W, E, Ls=None, E0=None, E1=None, G=None):
+    def __init__(self, y, W, E, Ls=None, E0=None, E1=None, hK=None):
         self._y = asarray(y, float).flatten()
         self._W = asarray(W, float)
         Ls = [] if Ls is None else Ls
@@ -90,14 +90,15 @@ class CellRegMap:
         self._Sigma_qs = {}
         # TODO: remove it after debugging
         self._Sigma = {}
-
+        
+        # option to set different background (when Ls are defined, backgrouns is K*EEt + EEt)
         if len(Ls) == 0:
             # self._rho0 = [1.0]
-            if G is not None:
+            if hK is None:   # EEt only as background
                 self._rho1 = [1.0]
                 self._halfSigma[1.0] = self._E1
                 self._Sigma_qs[1.0] = economic_qs_linear(self._E1, return_q1=False)
-            else:
+            else:            # hK is decomposition of K, background in this case is K + EEt
                 self._rho1 = linspace(0, 1, 11)
                 for rho1 in self._rho1:
                     a = sqrt(rho1)
