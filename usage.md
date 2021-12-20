@@ -52,7 +52,7 @@ If the shape of a vector is (n,) please reshape to (n,1).
     n = 30                               # number of samples (cells)
     p = 5                                # number of individuals
     k = 4                                # number of contexts
-    y = random.randn(n, 1)               # outcome vector (expression phenotype)
+    y = random.randn(n, 1)               # outcome vector (expression phenotype, one gene only)
     C = random.randn(n, k)               # context matrix  
     W = ones((n, 1))                     # intercept (covariate matrix)
     hK = random.randn(n, p)              # decomposition of kinship matrix (K = hK @ hK.T)
