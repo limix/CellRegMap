@@ -37,6 +37,9 @@ For more details on the functions above I refer the reader to the Supplementary 
 
 ## Simple usage example
 
+All vectors and matrices should be provided as numpy arrays, and there should be no flat arrays. 
+If the shape of a vector is (n,) please reshape to (n,1).
+
     import numpy as np
     from numpy.random import RandomState
     from numpy_sugar import ddot
