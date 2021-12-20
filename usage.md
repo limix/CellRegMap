@@ -41,7 +41,7 @@ For more details on the functions above I refer the reader to the Supplementary 
     from numpy.random import RandomState
     from numpy_sugar import ddot
     from numpy_sugar.linalg import economic_svd
-    import compute_maf
+    from math import compute_maf  # TODO: add this function
     
     from cellregmap import CellRegMap
     
@@ -52,10 +52,17 @@ For more details on the functions above I refer the reader to the Supplementary 
     y = random.randn(n, 1)               # outcome vector (expression phenotype)
     C = random.randn(n, k)               # context matrix  
     W = ones((n, 1))                     # intercept (covariate matrix)
-    G = random.randn(n, p)               # decomposition of kinship matrix (K = G @ G.T)
+    hK = random.randn(n, p)              # decomposition of kinship matrix (K = hK @ hK.T)
     g = 1.0 * (random.rand(n, 1) < 0.2)  # SNP vector
     
     W = concatenate([W, g], axis=1)
+    
+    # fit null model (association test)
+    crm0 = CellRegMap(y, W, C, hK)
+
+    # Association test
+    pv0 = crm0.scan_association(g)
+    print(pv0)
     
     # get eigendecomposition of CCt
     [U, S, _] = economic_svd(C)
@@ -64,11 +71,8 @@ For more details on the functions above I refer the reader to the Supplementary 
     # get decomposition of K \odot CCt
     Ls = [ddot(us[:,i], G) for i in range(us.shape[1])]
     
-    # fit null model
+    # fit null model (interaction test)
     crm = CellRegMap(y, W, C, Ls)
-    
-    # Association test
-    pv = crm.scan_association(g)
     
     # Interaction test
     pv = crm.scan_interaction(g)[0]
