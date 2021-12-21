@@ -41,7 +41,7 @@ All vectors and matrices should be provided as numpy arrays, and there should be
 If the shape of a vector is (n,) please reshape to (n,1).
 
     import numpy as np
-    from numpy import ones, concatenate
+    from numpy import ones
     from numpy.random import RandomState
     from numpy_sugar import ddot
     from numpy_sugar.linalg import economic_svd
@@ -58,8 +58,6 @@ If the shape of a vector is (n,) please reshape to (n,1).
     W = ones((n, 1))                     # intercept (covariate matrix)
     hK = random.randn(n, p)              # decomposition of kinship matrix (K = hK @ hK.T)
     g = 1.0 * (random.rand(n, 1) < 0.2)  # SNP vector
-    
-    W = concatenate([W, g], axis=1)
     
     # fit null model (association test)
     crm0 = CellRegMap(y, W, C, hK)
