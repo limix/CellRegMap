@@ -103,7 +103,7 @@ class CellRegMap:
                 for rho1 in self._rho1:
                     a = sqrt(rho1)
                     b = sqrt(1 - rho1)
-                    hS = concatenate([a * self._E1] + [b * G], axis=1)
+                    hS = concatenate([a * self._E1] + [b * hK], axis=1)
                     self._halfSigma[rho1] = hS
                     self._Sigma_qs[rho1] = economic_qs_linear(
                         self._halfSigma[rho1], return_q1=False
