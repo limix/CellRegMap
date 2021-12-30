@@ -1,4 +1,4 @@
-from ._cellregmap import CellRegMap, run_association, run_interaction
+from ._cellregmap import CellRegMap, run_association, run_interaction, estimate_betas
 from ._simulate import create_variances, sample_phenotype, sample_phenotype_gxe
 from ._types import Term
 
