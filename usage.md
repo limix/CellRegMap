@@ -45,9 +45,8 @@ If the shape of a vector is (n,) please reshape to (n,1).
     from numpy.random import RandomState
     from numpy_sugar import ddot
     from numpy_sugar.linalg import economic_svd
-    from math import compute_maf  # TODO: add this function
     
-    from cellregmap import CellRegMap
+    from cellregmap import run_association, run_interaction, estimate_betas
     
     random = RandomState(1)
     n = 30                               # number of samples (cells)
@@ -59,32 +58,20 @@ If the shape of a vector is (n,) please reshape to (n,1).
     hK = random.randn(n, p)              # decomposition of kinship matrix (K = hK @ hK.T)
     g = 1.0 * (random.rand(n, 1) < 0.2)  # SNP vector
     
-    # fit null model (association test)
-    crm0 = CellRegMap(y, W, C, hK)
-
-    # Association test
-    pv0 = crm0.scan_association(g)
-    print(pv0)
+    ## Association test
+    pv0 = run_association(y, W, C, g, hK=hK)[0]
+    print(f'Association test p-value: {pv0}')
     
-    # get eigendecomposition of CCt
-    [U, S, _] = economic_svd(C)
-    us = U * S
-    
-    # get decomposition of K \odot CCt
-    Ls = [ddot(us[:,i], hK) for i in range(us.shape[1])]
-    
-    # fit null model (interaction test)
-    crm = CellRegMap(y, W, C, Ls)
-    
-    # Interaction test
-    pv = crm.scan_interaction(g)[0]
+    ## Interaction test
+    pv = run_interaction(y, W, C, g, hK=hK)[0]
+    print(f'Interaction test p-value: {pv}')
     
     # Effect sizes
-    maf = compute_maf(g)
-    betas = crm.predict_interaction(g, maf)
+    betas = estimate_betas(y, W, C, g, hK=hK)
     beta_G = betas[0]                         # persistent effect (scalar)
     beta_GxC = betas[1][0]                    # GxC effects (vector)
-
+    print(f'persistent genetic effect (betaG): {betaG}')
+    print(f'cell-level effect sizes due to GxC (betaGxC): {betaGxC}')
 
 <!-- ## Downstream analysis (simple simulated data)
 
