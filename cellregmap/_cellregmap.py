@@ -11,8 +11,9 @@ from numpy import (
     sqrt,
     stack,
 )
+from numpy.linalg import cholesky
 from numpy_sugar import ddot
-from numpy_sugar.linalg import economic_qs_linear
+from numpy_sugar.linalg import economic_qs_linear, economic_svd
 from tqdm import tqdm
 
 from ._math import PMat, QSCov, ScoreStatistic
@@ -429,3 +430,35 @@ def lrt_pvalues(null_lml, alt_lmls, dof=1):
     pv = chi2(df=dof).sf(lrs)
     return clip(pv, epsilon.super_tiny, 1 - epsilon.tiny)
 
+def run_association(y, W, E, G, K=None, hK=None):
+    if hK is None:
+        if K is None: hK = None
+        else:
+            hK = cholesky(K) 
+    crm = CellRegMap(y, W, E, hK=hK)
+    pv = crm.scan_association(G)
+    return pv
+
+def get_L_values(hK, E):
+    """
+    As the definition of Ls is not particulatly intuitive,
+    function to extract list of L values given kinship K and 
+    cellular environments E
+    """
+    # get eigendecomposition of EEt
+    [U, S, _] = economic_svd(E)
+    us = U * S
+
+    # get decomposition of K \odot EEt
+    Ls = [ddot(us[:,i], hK) for i in range(us.shape[1])]
+    return Ls
+
+def run_interaction(y, W, E, G, K=None, hK=None):
+    if hK is None:
+        if K is None: hK = None
+        else:
+            hK = cholesky(K) 
+    Ls = get_L_values(hK, E)
+    crm = CellRegMap(y, W, E, Ls=Ls)
+    pv = crm.scan_interaction(G)
+    return pv
