@@ -4,9 +4,7 @@ title: "Input Files"
 mathjax: true
 ---
 
-## Brief description
-
-In the [usage page](https://limix.github.io/CellRegMap/usage.html) the input files are listed, here we provide a brief description of their significance. 
+# The CellRegMap model
 
 The CellRegMap can be cast as:
 
@@ -22,6 +20,9 @@ where
 
 <img src="https://render.githubusercontent.com/render/math?math=\epsilon \sim \mathcal{N} (0, \sigma^2_n I)">.
 
+# Brief description of the model terms
+
+In the [usage page](https://limix.github.io/CellRegMap/usage.html) the input files are listed, here we provide a brief description of their significance. 
 The following terms should be provided as input files, where n is the total number of cells:
 
 * **Phenotype vector (<img src="https://render.githubusercontent.com/render/math?math=y">)** - in the linear mixed model, this is the outcome variable. In eQTL mapping, this represents expression level of a given gene of interest, across samples. The main application of CellRegMap is using scRNA-seq data, in which case this will be a column vector, with length corresponding to the number of cells considered. For optimal fit with the model (which assumes a Gaussian distribution) we recommend [quantile normalising](https://github.com/limix/limix/blob/master/limix/qc/_quant_gauss.py) this vector, or at least standardising it.
@@ -41,6 +42,16 @@ The following terms will be estimated by the model:
 * **SNP effect sizes**, both due to persistent effects (<img src="https://render.githubusercontent.com/render/math?math=\beta_G">) and to GxC interactions (<img src="https://render.githubusercontent.com/render/math?math=\beta_{GxC}">) can be estimated using the predict_interaction() function, see [usage page](https://limix.github.io/CellRegMap/usage.html).
 
 * **other inferred parameters** (<img src="https://render.githubusercontent.com/render/math?math=\alpha, \sigma^2"> values) are estimated by the model but not returned as values.
+
+# Dimensionality
+
+* **y**: n x 1
+* 
+<!-- 
+# Normalization
+# Pseudocells
+# Multiple testing correction -->
+
 
 <!-- ## Preparing input files (general guidelines) -->
 
