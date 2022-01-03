@@ -45,8 +45,16 @@ The following terms will be estimated by the model:
 
 # Dimensionality
 
-* **y**: n x 1
-* 
+Specified dimensionality for each of the terms, with n the total number of cells:
+
+* **y**: n x 1 (only one gene tested at a time)
+* **W**: n x c, where c is the number of fixed effect covariates (e.g., age, sex..)
+* **C**: n x k, where k is the number of contexts to test for interactions
+* **G**: n x s, where s is the number of SNPs to be tested for a given gene
+* **K**: n x n, or in alternative
+* **hK**, its decomposition: n x p, where p is the number of individuals
+
+
 <!-- 
 # Normalization
 # Pseudocells
