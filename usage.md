@@ -41,6 +41,9 @@ For more details on the tests above and underlyimh assumptions I refer the reade
 
 ## Simple usage example
 
+All vectors and matrices should be provided as numpy arrays, and there should be no flat arrays. 
+If the shape of a vector is (n,) please reshape to (n,1).
+
     import numpy as np
     from numpy import ones
     from numpy.random import RandomState
