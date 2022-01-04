@@ -21,9 +21,11 @@ To use the latest features of CellRegMap you can install the latest version from
     pip install -e .
 
 in your command line.
- 
-<!--## Running tests
+
+<!-- ## Installation using a Docker image -->
+
+<!-- ## Running tests
 
 From your command line, enter
 
-    python setup.py test--> 
+    python setup.py test --> 
