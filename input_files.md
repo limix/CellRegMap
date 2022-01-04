@@ -65,7 +65,10 @@ For an implementation of quantile-normalization see [here](https://github.com/li
 
 # Pseudocells
 
-If many cells + sparse, pseudocells / metacells may be preferable - add references.
+This approach refers to grouping together small numbers of similar cells into "pseudocells" to reduce issues due to sparsity and speed computations by reducing sample size.
+Exisiting implementations include [Metacell](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1812-2) and the [micro pooling approach](https://yoseflab.github.io/VISION/articles/micropooling.html) within the [Vision](https://www.nature.com/articles/s41467-019-12235-0) pipeline.
+
+<!-- If many cells + sparse, pseudocells / metacells may be preferable - add references. -->
 
 # Multiple testing correction
 
