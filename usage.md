@@ -10,16 +10,16 @@ There are three main functions that can be run within the CellRegMap package:
 * Estimation of effect sizes
 
 ## Association test (persistent effects)
-The main functionality of CellRegMap is to investigate GxC interactions and identify context-specific effects (see **Interaction test** below). However, to improve scalability, we recommend running the main (and computationally more intensive) function only on a set of candidate eQTLs. In the main paper we consider eQTLs previously identified in the original studies, however it is also possible to test for persistent eQTL effects within the CellRegMap framework itself, using this function. In this case, the model can be cast as:
+The main functionality of CellRegMap is to investigate GxC interactions and identify context-specific effects (see **Interaction test** below). However, to improve scalability, we recommend running the main (and computationally more intensive) function only on a set of candidate eQTLs. In the [original CellRegMap paper](https://www.biorxiv.org/content/10.1101/2021.09.01.458524v1) we consider eQTLs previously identified in the original studies, however it is also possible to test for persistent eQTL effects within the CellRegMap framework itself, using this function. In this case, the model can be cast as:
 
 <img src="https://render.githubusercontent.com/render/math?math=y = W\alpha %2B g\beta_G %2B c %2B u %2B \epsilon">,
 
-which is the main model except for the GxC term, which is missing. Here, we test for a persistent effect only, i.e. <img src="https://render.githubusercontent.com/render/math?math=\beta_G \neq 0">.
+which is similar to the main model except for the GxC term, which is missing. Here, we test for a persistent effect only, i.e., <img src="https://render.githubusercontent.com/render/math?math=\beta_G \neq 0">.
 
 CellRegMap function: run_association()
 
 ## Interaction test (GxC effects)
-This is the main test implemented in CellRegMap, where we test for GxC effects. In this case we consider the full model:
+This is the main test implemented in CellRegMap, where we test for GxC effects across cellular states and indivudal SNP variants. In this case we consider the full model:
 
 <img src="https://render.githubusercontent.com/render/math?math=y = W\alpha %2B g\beta_G %2B g \odot \beta_{GxC} %2B c %2B u %2B \epsilon"> 
 
@@ -29,11 +29,11 @@ While in principal any SNP-gene pairs can be tested for GxC effects, we recommen
 CellRegMap function: run_interaction()
 
 ## Estimation of effect sizes
-Finally, CellRegMap can be used to estimate cell-level effect sizes driven by GxC effects (<img src="https://render.githubusercontent.com/render/math?math=\beta_{GxC}">), thus predicting the cells where effects are detected. The model is the same except the term <img src="https://render.githubusercontent.com/render/math?math=c"> is now modelled as fixed effects in order to estimate the GxC term itself.
+Finally, CellRegMap can be used to estimate cell-level effect sizes driven by GxC effects (<img src="https://render.githubusercontent.com/render/math?math=\beta_{GxC}">), thus predicting the cells where effects are detected. The model is the same except for the term <img src="https://render.githubusercontent.com/render/math?math=c">, which is now modelled as fixed effects in order to estimate the GxC term itself.
 
 CellRegMap function: estimate_betas()
 
-For more details on the functions above I refer the reader to the Supplementary Methods available as part of the [paper's Supplementary Material](https://www.biorxiv.org/content/10.1101/2021.09.01.458524v1.supplementary-material).
+For more details on the tests above and underlyimh assumptions I refer the reader to the Supplementary Methods available as part of the [paper's Supplementary Material](https://www.biorxiv.org/content/10.1101/2021.09.01.458524v1.supplementary-material).
 
 ## Simple usage example
 
