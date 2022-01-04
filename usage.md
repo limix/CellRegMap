@@ -12,6 +12,7 @@ There are three main functions that can be run within the CellRegMap package:
 ## Association test (persistent effects)
 The main functionality of CellRegMap is to investigate GxC interactions in cohort-scale single-cell data and identify context-specific effects (see **Interaction test** below). 
 However, to improve scalability, we recommend running the (computationally more intensive) interaction-test function only on a set of candidate eQTLs. 
+
 In the [original CellRegMap paper](https://www.biorxiv.org/content/10.1101/2021.09.01.458524v1) we consider eQTLs previously identified in the original studies, however it is also possible to test for persistent eQTL effects within the CellRegMap framework itself, using the association-test function. 
 In this case, the model can be cast as:
 
