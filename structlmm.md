@@ -11,11 +11,13 @@ CellRegMap overcomes this by including an additional random effect term that mod
 
 Nevertheless, the original StructLMM model can be run using CellRegMap, by simply setting the repeatedness term to None, i.e.: 
 
-    Ls=None
+    hK=None
     
 and then running the model similarly to what is described in the [usage page](https://limix.github.io/CellRegMap/usage.html), i.e.:
     
-    slmm = CellRegMap(y, W, E, Ls=None)
-    pv = slmm.scan_interaction(G)[0]
+    from CellRegMap import run_interaction
+    
+    pv_slmm = run_interaction(y, W, E, g, hK=None)[0]
+    print(f'StructLMM interaction test p-value: {pv_slmm}')
     
 where we note that "E" is used here instead of "C" as typically this model will be applied in the context of population genetics to test for effects with environmental exposures, as opposed to the cellular contexts generally considered in applications of CellRegMap to scRNA-seq data.
