@@ -10,7 +10,7 @@ title: "Contact"
 /* Create two equal columns that floats next to each other */
 .column {
   float: left;
-  width: 50%;
+  width: 33%;
   padding: 10px;
 }
 /* Clear floats after the columns */
@@ -35,7 +35,7 @@ title: "Contact"
     <figcaption> <b>Danilo Horta</b> <br> Software Developer <br> EBI <br> <a href="mailto:horta@ebi.ac.uk">horta@ebi.ac.uk</a></figcaption>
     </figure>
   </div>
-<div class="row">
+<!-- <div class="row"> -->
   <div class="column">
     <figure align="center">
     <img src="images/Tobis_photo.jpeg" alt='missing' width="190" height="250"/>
