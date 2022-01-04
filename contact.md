@@ -38,7 +38,7 @@ title: "Contact"
 <div class="row">
   <div class="column">
     <figure align="center">
-    <img src="images/Tobis_photo.jpeg" alt='missing' width="250" height="250"/>
+    <img src="images/Tobis_photo.jpeg" alt='missing' width="200" height="250"/>
     <figcaption> <b>Tobias Heinen</b> <br> PhD Student <br> DKFZ <br> <a href="mailto:t.heinen@dkfz.de">t.heinen@dkfz.de</a> </figcaption>
     </figure>
   </div>
