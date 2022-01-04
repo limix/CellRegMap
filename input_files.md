@@ -20,11 +20,13 @@ where
 
 <img src="https://render.githubusercontent.com/render/math?math=\epsilon \sim \mathcal{N} (0, \sigma^2_n I)">.
 
-The following terms need to be provided as inputs: y, W, g, C, and K (or its decomposition hK, such that K = hK @ hK.T).
+## Inputs
+The following terms need to be provided as inputs: **y, W, g, C**, and **K** (or its decomposition **hK**, such that K = hK @ hK.T).
 If K (or hK) is not provided, CellRegMap becomes equivalent to StructLMM (see [StructLMM](https://limix.github.io/CellRegMap/structlmm.html)).
 All other terms need to be provided.
 If no covariates (W) are necessary, simply provide a vector of ones as an intercept term.
 
+## Each SNP-gene pair should be tested independently
 The test is run independently for each gene-SNP pair, thus in the model above, y and g are one-dimensional vectors, representing the expression of a single gene and the genotypes at a single SNP, respectively.
 
 The implementation does allow for multiple SNPs to be tested for a given gene, this can be achieved by providing a matrix G of which each column is a different SNP G=[g_1, .. g_n].
@@ -32,6 +34,7 @@ In this case, the model simply loops over each SNP and tests one at the time, th
 
 On the other hand, each gene needs to be tested separately, as CellRegMap cannot take the full expression matrix as input.
 
+## Covariates, cell contexts and repeatedness are fixed
 W, C, K (or hK) remain the same across all tests (i.e., across all SNP-gene pairs).
 
 # Brief description of the model terms
@@ -46,11 +49,12 @@ For optimal fit with the model (which assumes a Gaussian distribution) we recomm
 * **Genotype vector (<img src="https://render.githubusercontent.com/render/math?math=g">)** - SNP vector. 
 This represents the genotype of each sample at the genomic locus of interest, and is typically modelled as 0, 1 or 2, representing the number of minor alleles (however the model can also handle a continuous vector of dosages). 
 Note that a genotype file is well defined at the level of donors, and needs to be appropriately expanded across cells.
-As stated above, it is also possible to input a matrix whose colunmns represnt multiple SNPs to be tested for that gene.
+As stated above, it is also possible to input a matrix G whose colunmns represnt multiple SNPs (g's) to be tested for that gene.
 
 * **Cellular context matrix (<img src="https://render.githubusercontent.com/render/math?math=C">)** - cellular environment/context matrix. Rows are cells, columns are values across the different cellular contexts. Columns of E can for example be principal components, or other latent factor representations of the data, or in alternative binary vector encoding assignment to different cellular groups such as cell types. Best practice is to column-standardise this matrix.
 
 * **Kinship matrix (<img src="https://render.githubusercontent.com/render/math?math=K">)**, or its decomposition (<img src="https://render.githubusercontent.com/render/math?math=hK">, such that <img src="https://render.githubusercontent.com/render/math?math=K = hK @ hK^T">), a kinship or relatedness matrix, modelling the similarity across individuals, then expanded across cells.
+This can be..
 
 <!-- * **Background matrices (<img src="https://render.githubusercontent.com/render/math?math=L_i">'s)** - decomposition of the covariance matrix from the background term accounting for repeat samples. It can be shown that the covariance matrix <img src="https://render.githubusercontent.com/render/math?math=(CC^T \odot GG^T)"> can be reformulated as <img src="https://render.githubusercontent.com/render/math?math=\sum_i L_i @ L_i^T">, where <img src="https://render.githubusercontent.com/render/math?math=L_i = diag(\sqrt(\lambda_i) v_i) G">, with <img src="https://render.githubusercontent.com/render/math?math=\lambda_i, v_i"> being the eigenvalues and eigenvectors of <img src="https://render.githubusercontent.com/render/math?math=CC^T">. This decomposition allows us to never having to compute the full covariance matrices which can be extremely large, and work on their decomposed form only. A function that allows to directly compute the <img src="https://render.githubusercontent.com/render/math?math=L_i">'s values from <img src="https://render.githubusercontent.com/render/math?math=C"> and <img src="https://render.githubusercontent.com/render/math?math=G"> will be added soon. -->
 
