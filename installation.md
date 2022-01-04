@@ -21,10 +21,9 @@ To install CellRegMap in its most recent development mode, clone the directory a
     pip install -e .
 
 in your command line.
-<!-- 
-## Running tests
+ 
+<!--## Running tests
 
 From your command line, enter
 
-    python setup.py test 
--->
+    python setup.py test--> 
