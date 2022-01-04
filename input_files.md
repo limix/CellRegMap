@@ -69,8 +69,14 @@ If many cells + sparse, pseudocells / metacells may be preferable - add referenc
 
 # Multiple testing correction
 
-* Association test
-* Interaction test
+## Association test
+
+Run discovery, two-step multiple testing correction, 1) within gene across SNPs, 2) across genes.
+Mention lenient threshold prior to interaction test
+
+## Interaction test
+
+Only one SNP per gene, or at least independent. If one SNP per gene straight to step 2, if multiple but independent Bonferroni as step 1, then step 2.
 
 <!-- ## Preparing input files (general guidelines) -->
 
