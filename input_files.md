@@ -21,27 +21,32 @@ where
 <img src="https://render.githubusercontent.com/render/math?math=\epsilon \sim \mathcal{N} (0, \sigma^2_n I)">.
 
 The following terms need to be provided as inputs: y, W, g, C, and K (or its decomposition hK, such that K = hK @ hK.T).
-If K (or hK) is not provided, CellRegMap becomes equivalent to StructLMM (see https://limix.github.io/CellRegMap/structlmm.html).
+If K (or hK) is not provided, CellRegMap becomes equivalent to StructLMM (see [StructLMM](https://limix.github.io/CellRegMap/structlmm.html)).
 All other terms need to be provided.
 If no covariates (W) are necessary, simply provide a vector of ones as an intercept term.
 
-The test is run independently for each gene-SNP pair, thus in the model above, y and g are one dimensional vectors, representing the expression of a single gene and the genotypes at a single SNP, respectively.
+The test is run independently for each gene-SNP pair, thus in the model above, y and g are one-dimensional vectors, representing the expression of a single gene and the genotypes at a single SNP, respectively.
 
-The implementation does allow for multiple SNPs to be tested for a given gene, this can be achieved by providing a matrix G of which each column is a different SNP.
-In this case, the model simply loops over each SNP and tests one at the time, then returns a list of p-values, for each SNP tested.
+The implementation does allow for multiple SNPs to be tested for a given gene, this can be achieved by providing a matrix G of which each column is a different SNP G=[g_1, .. g_n].
+In this case, the model simply loops over each SNP and tests one at the time, then returns a list of p-values, one per SNP.
 
 On the other hand, each gene needs to be tested separately, as CellRegMap cannot take the full expression matrix as input.
 
-W, C, K (or hK) remain the same across all tests.
+W, C, K (or hK) remain the same across all tests (i.e., across all SNP-gene pairs).
 
 # Brief description of the model terms
 
 In the [usage page](https://limix.github.io/CellRegMap/usage.html) the input files are listed, here we provide a brief description of their significance. 
 The following terms should be provided as input files, where n is the total number of cells:
 
-* **Phenotype vector (<img src="https://render.githubusercontent.com/render/math?math=y">)** - in the linear mixed model, this is the outcome variable. In eQTL mapping, this represents expression level of a given gene of interest, across samples. The main application of CellRegMap is using scRNA-seq data, in which case this will be a column vector, with length corresponding to the number of cells considered. For optimal fit with the model (which assumes a Gaussian distribution) we recommend [quantile normalising](https://github.com/limix/limix/blob/master/limix/qc/_quant_gauss.py) this vector, or at least standardising it.
+* **Phenotype vector (<img src="https://render.githubusercontent.com/render/math?math=y">)** - in the linear mixed model, this is the outcome variable. 
+In eQTL mapping, this represents expression level of a given gene of interest, across samples. The main application of CellRegMap is using scRNA-seq data, in which case this will be a column vector, with length corresponding to the number of cells considered. 
+For optimal fit with the model (which assumes a Gaussian distribution) we recommend [quantile normalising](https://github.com/limix/limix/blob/master/limix/qc/_quant_gauss.py) this vector, or at least standardising it.
 
-* **Genotype vector (<img src="https://render.githubusercontent.com/render/math?math=g">)** - SNP vector. This represents the genotype of each sample at the genomic locus of interest, and is typically modelled as 0, 1 or 2, representing the number of minor alleles (however the model can also handle a continuous vector of dosages). Note that a genotype file is well defined at the level of donors, and needs to be appropriately expanded across cells.
+* **Genotype vector (<img src="https://render.githubusercontent.com/render/math?math=g">)** - SNP vector. 
+This represents the genotype of each sample at the genomic locus of interest, and is typically modelled as 0, 1 or 2, representing the number of minor alleles (however the model can also handle a continuous vector of dosages). 
+Note that a genotype file is well defined at the level of donors, and needs to be appropriately expanded across cells.
+As stated above, it is also possible to input a matrix whose colunmns represnt multiple SNPs to be tested for that gene.
 
 * **Cellular context matrix (<img src="https://render.githubusercontent.com/render/math?math=C">)** - cellular environment/context matrix. Rows are cells, columns are values across the different cellular contexts. Columns of E can for example be principal components, or other latent factor representations of the data, or in alternative binary vector encoding assignment to different cellular groups such as cell types. Best practice is to column-standardise this matrix.
 
