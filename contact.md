@@ -26,7 +26,7 @@ title: "Contact"
   <div class="column">
     <figure align="center">
     <img src='images/Cuomo_Anna.png' alt='missing' width="250" height="250" />
-    <figcaption><b>Anna Cuomo</b> <br> Postdoc Scientist <br>  Garvan Institute <br> <a href="mailto:a.cuomo@garvan.org.au">acuomo@ebi.ac.uk</a> </figcaption>
+    <figcaption><b>Anna Cuomo</b> <br> Postdoc Scientist <br>  Garvan Institute <br> <a href="mailto:a.cuomo@garvan.org.au">a.cuomo@garvan.org.au</a> </figcaption>
     </figure>
   </div>
   <div class="column">
