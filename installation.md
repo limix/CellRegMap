@@ -22,7 +22,20 @@ To use the latest features of CellRegMap you can install the latest version from
 
 in your command line.
 
-<!-- ## Installation using a Docker image -->
+<!-- ## Installation using a Docker image (now copied from MOFA, update)
+If you use Docker, you can build an image using the provided Dockerfile:
+
+docker build -t mofa2 .
+You will then be able to use R or Python from the container.
+
+docker run -ti --rm -v $DATA_DIRECTORY:/data mofa2 R
+#                   ^
+#                   |
+#                    use `-v` to map a folder on your machine to a container directory
+The command above will launch R with MOFA2 and its dependencies installed while mounting $DATA_DIRECTORY to the container.
+
+You can also pull the [pre-build image from dockerhub](https://hub.docker.com/r/gtca/mofa2).
+-->
 
 <!-- ## Running tests
 
