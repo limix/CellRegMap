@@ -56,6 +56,9 @@ Specified dimensionality for each of the terms, where n is the total number of c
 * **K**: n x n, or in alternative
 * **hK**, its decomposition: n x p, where p is the number of individuals
 
+All vectors and matrices should be provided as numpy arrays, and there should be no flat arrays. 
+If the shape of a vector is (n,) please reshape to (n,1).
+
 # Normalization
 
 For optimal model fit, we recommend standardizing or quantile normalizing (to a standard normal distribution) the phenotype vector **y** and column-standardizing the cellular contexts **C**.
