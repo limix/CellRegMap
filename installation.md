@@ -26,4 +26,5 @@ in your command line.
 
 From your command line, enter
 
-    python setup.py test -->
+    python setup.py test 
+-->
