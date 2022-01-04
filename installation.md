@@ -3,7 +3,7 @@ layout: default
 title: "Installation"
 ---
 
-## Install
+## Stable release (easiest)
 
 CellRegMap is implemented as a Python package.
 To install CellRegMap using the pip python installer, enter
@@ -12,9 +12,9 @@ To install CellRegMap using the pip python installer, enter
 
 in your command line.
 
-## Development
+## Developmental mode
 
-To install CellRegMap in its most recent development mode, clone the directory and install directly by entering
+To use the latest features of CellRegMap you can install the latest version from GitHub by entering
 
     git clone https://github.com/limix/CellRegMap.git
     cd CellRegMap
