@@ -47,7 +47,7 @@ The following terms will be estimated by the model:
 
 # Dimensionality
 
-Specified dimensionality for each of the terms, with n the total number of cells:
+Specified dimensionality for each of the terms, where n is the total number of cells:
 
 * **y**: n x 1 (only one gene tested at a time)
 * **W**: n x c, where c is the number of fixed effect covariates (e.g., age, sex..)
@@ -56,12 +56,21 @@ Specified dimensionality for each of the terms, with n the total number of cells
 * **K**: n x n, or in alternative
 * **hK**, its decomposition: n x p, where p is the number of individuals
 
-
-<!-- 
 # Normalization
-# Pseudocells
-# Multiple testing correction -->
 
+For optimal model fit, we recommend standardizing or quantile normalizing (to a standard normal distribution) the phenotype vector **y** and column-standardizing the cellular contexts **C**.
+Standardization refers to a transformation of a vector to have 0 mean and standard deviation 1. You can use [StandardScaler](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html) for this task.
+Quantile normalization is a rank-normalization which enforces a standard normal distribution of the vector provided.
+For an implementation of quantile-normalization see [here](https://github.com/limix/limix/blob/master/limix/qc/_quant_gauss.py).
+
+# Pseudocells
+
+If many cells + sparse, pseudocells / metacells may be preferable - add references.
+
+# Multiple testing correction
+
+* Association test
+* Interaction test
 
 <!-- ## Preparing input files (general guidelines) -->
 
