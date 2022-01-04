@@ -41,7 +41,7 @@ The following terms should be provided as input files, where n is the total numb
 
 The following terms will be estimated by the model:
 
-* **SNP effect sizes**, both due to persistent effects (<img src="https://render.githubusercontent.com/render/math?math=\beta_G">) and to GxC interactions (<img src="https://render.githubusercontent.com/render/math?math=\beta_{GxC}">) can be estimated using the predict_interaction() function, see [usage page](https://limix.github.io/CellRegMap/usage.html).
+* **SNP effect sizes**, both due to persistent effects (<img src="https://render.githubusercontent.com/render/math?math=\beta_G">) and to GxC interactions (<img src="https://render.githubusercontent.com/render/math?math=\beta_{GxC}">) can be estimated using the estimate_betas() function, see [usage page](https://limix.github.io/CellRegMap/usage.html).
 
 * **other inferred parameters** (<img src="https://render.githubusercontent.com/render/math?math=\alpha, \sigma^2"> values) are estimated by the model but not returned as values.
 
