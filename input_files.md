@@ -60,7 +60,8 @@ The following terms will be estimated by the model:
 # Notes
 
 ## Necessary inputs
-The following terms need to be provided as inputs: expression phenotype(**y**), covariates (**W**), genotypes (**g**), cellular contexts (**C**), and kinship matrix (**K**; or its decomposition **hK**, such that K = hK @ hK.T).
+The following terms need to be provided as inputs: expression phenotype (**y**), covariates (**W**), genotypes (**g**), cellular contexts (**C**), and kinship matrix (**K**; or its decomposition **hK**, such that K = hK @ hK.T).
+
 If K (or hK) is not provided, CellRegMap becomes equivalent to StructLMM (see [StructLMM](https://limix.github.io/CellRegMap/structlmm.html)).
 All other terms need to be provided.
 If no covariates (W) are necessary, simply provide a vector of ones as an intercept term.
