@@ -21,9 +21,9 @@ where
 <img src="https://render.githubusercontent.com/render/math?math=\epsilon \sim \mathcal{N} (0, \sigma^2_n I)">.
 
 
-# Brief description of the model terms
+## Brief description of the model terms
 
-In the [usage page](https://limix.github.io/CellRegMap/usage.html) the input files are listed, here we provide a brief description of their significance. 
+<!-- In the [usage page](https://limix.github.io/CellRegMap/usage.html) the input files are listed, here we provide a brief description of their significance.  -->
 The following terms should be provided as input files, where n is the total number of cells:
 
 * **Phenotype vector (<img src="https://render.githubusercontent.com/render/math?math=y">)** - in the linear mixed model, this is the outcome variable. 
@@ -31,20 +31,24 @@ In eQTL mapping, this represents expression level of a given gene of interest, a
 For optimal fit with the model (which assumes a Gaussian distribution) we recommend [quantile normalising](https://github.com/limix/limix/blob/master/limix/qc/_quant_gauss.py) this vector, or at least standardising it.
 
 * **Genotype vector (<img src="https://render.githubusercontent.com/render/math?math=g">)** - SNP vector. 
-This represents the genotype of each sample at the genomic locus of interest, and is typically modelled as 0, 1 or 2, representing the number of minor alleles (however the model can also handle a continuous vector of dosages). 
+This represents the genotype of each sample at the genomic locus of interest, and is typically modelled as 0, 1 or 2, representing the number of minor alleles (however, the model can also handle a continuous vector of dosages). 
 Note that a genotype file is well defined at the level of donors, and needs to be appropriately expanded across cells.
-As stated above, it is also possible to input a matrix G whose colunmns represnt multiple SNPs (g's) to be tested for that gene.
+It is also possible to input a matrix G whose columns represent multiple SNPs (<img src="https://render.githubusercontent.com/render/math?math=g">'s) to be tested for that gene (see "Notes" below).
 
-* **Cellular context matrix (<img src="https://render.githubusercontent.com/render/math?math=C">)** - cellular environment/context matrix. Rows are cells, columns are values across the different cellular contexts. Columns of E can for example be principal components, or other latent factor representations of the data, or in alternative binary vector encoding assignment to different cellular groups such as cell types. Best practice is to column-standardise this matrix.
+* **Cellular context matrix (<img src="https://render.githubusercontent.com/render/math?math=C">)** - cellular environment/context matrix. 
+Rows are cells, columns are values across the different cellular contexts. 
+Columns of C can for example be principal components, or other latent factor representations of the data, binary vector encoding assignment to different cellular groups such as cell types, or any other factor, including environmental exposures, or disease state. 
+Best practice is to column-standardise this matrix.
 
-* **Kinship matrix (<img src="https://render.githubusercontent.com/render/math?math=K">)**, or its decomposition (<img src="https://render.githubusercontent.com/render/math?math=hK">, such that <img src="https://render.githubusercontent.com/render/math?math=K = hK @ hK^T">), a kinship or relatedness matrix, modelling the similarity across individuals, then expanded across cells.
-This can be..
+* **Kinship matrix (<img src="https://render.githubusercontent.com/render/math?math=K">)**, or its decomposition (<img src="https://render.githubusercontent.com/render/math?math=hK">, such that <img src="https://render.githubusercontent.com/render/math?math=K = hK @ hK^T">), a sample covariance, often the so-called kinship (or genetic relationship matrix; GRM) matrix, appropriately across cells.
+<!-- This can be.. -->
 
 <!-- * **Background matrices (<img src="https://render.githubusercontent.com/render/math?math=L_i">'s)** - decomposition of the covariance matrix from the background term accounting for repeat samples. It can be shown that the covariance matrix <img src="https://render.githubusercontent.com/render/math?math=(CC^T \odot GG^T)"> can be reformulated as <img src="https://render.githubusercontent.com/render/math?math=\sum_i L_i @ L_i^T">, where <img src="https://render.githubusercontent.com/render/math?math=L_i = diag(\sqrt(\lambda_i) v_i) G">, with <img src="https://render.githubusercontent.com/render/math?math=\lambda_i, v_i"> being the eigenvalues and eigenvectors of <img src="https://render.githubusercontent.com/render/math?math=CC^T">. This decomposition allows us to never having to compute the full covariance matrices which can be extremely large, and work on their decomposed form only. A function that allows to directly compute the <img src="https://render.githubusercontent.com/render/math?math=L_i">'s values from <img src="https://render.githubusercontent.com/render/math?math=C"> and <img src="https://render.githubusercontent.com/render/math?math=G"> will be added soon. -->
 
-* **Covariate matrix (<img src="https://render.githubusercontent.com/render/math?math=W">)** - any additional fixed effect terms to include in the model, such as sex or age. If no such terms are needed an intercept of ones should be provided.
+* **Covariate matrix (<img src="https://render.githubusercontent.com/render/math?math=W">)** - any additional fixed effect terms to include in the model, such as sex or age. 
+If no such terms are needed an intercept of ones should be provided.
 
-* An additional optional input can be a **filter file** containing known eQTLs (i.e., gene-SNP pairs identified as statistical associations) or individual variants (e.g., GWAS hits) to be investigated. If such a set is not available, it is possible to map eQTL from scratch within the pipeline, see the association test described in the [usage page](https://limix.github.io/CellRegMap/usage.html).
+<!-- * An additional optional input can be a **filter file** containing known eQTLs (i.e., gene-SNP pairs identified as statistical associations) or individual variants (e.g., GWAS hits) to be investigated. If such a set is not available, it is possible to map eQTL from scratch within the pipeline, see the association test described in the [usage page](https://limix.github.io/CellRegMap/usage.html). -->
 
 The following terms will be estimated by the model:
 
@@ -52,11 +56,14 @@ The following terms will be estimated by the model:
 
 * **other inferred parameters** (<img src="https://render.githubusercontent.com/render/math?math=\alpha, \sigma^2"> values) are estimated by the model but not returned as values.
 
-## Inputs
-The following terms need to be provided as inputs: **y, W, g, C**, and **K** (or its decomposition **hK**, such that K = hK @ hK.T).
+# Notes
+
+## Necessary inputs
+The following terms need to be provided as inputs: expression phenotype(**y**), covariates (**W**), genotypes (**g**), cellular contexts (**C**), and kinship matrix (**K**; or its decomposition **hK**, such that K = hK @ hK.T).
 If K (or hK) is not provided, CellRegMap becomes equivalent to StructLMM (see [StructLMM](https://limix.github.io/CellRegMap/structlmm.html)).
 All other terms need to be provided.
 If no covariates (W) are necessary, simply provide a vector of ones as an intercept term.
+
 
 ## Each SNP-gene pair should be tested independently
 The test is run independently for each gene-SNP pair, thus in the model above, y and g are one-dimensional vectors, representing the expression of a single gene and the genotypes at a single SNP, respectively.
@@ -80,8 +87,8 @@ Specified dimensionality for each of the terms, where n is the total number of c
 * **K**: n x n, or in alternative
 * **hK**, its decomposition: n x p, where p is the number of individuals
 
-All vectors and matrices should be provided as numpy arrays, and there should be no flat arrays. 
-If the shape of a vector is (n,) please reshape to (n,1).
+<!-- All vectors and matrices should be provided as numpy arrays, and there should be no flat arrays. 
+If the shape of a vector is (n,) please reshape to (n,1). -->
 
 # Normalization
 
