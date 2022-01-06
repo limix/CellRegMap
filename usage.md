@@ -5,12 +5,12 @@ title: "Usage"
 
 There are three main functions that can be run within the CellRegMap package:
 
-* Association test (development mode only)
+* Association test 
 * Interaction test
 * Estimation of effect sizes
 
 ## Association test (persistent effects)
-The main functionality of CellRegMap is to investigate GxC interactions in cohort-scale single-cell data and identify context-specific effects (see **Interaction test** below). 
+The main functionality of CellRegMap is to investigate genotype-context (GxC) interactions and identify context-specific genetic effects on expression in cohort-scale single-cell data (see **Interaction test** below). 
 However, to improve scalability, we recommend running the (computationally more intensive) interaction-test function only on a set of candidate eQTLs. 
 In the [original CellRegMap paper](https://www.biorxiv.org/content/10.1101/2021.09.01.458524v1) we consider eQTLs previously identified in the original studies, but it is now also possible to test for persistent eQTL effects within the CellRegMap framework itself, using the association-test function. 
 In this case, the model can be cast as:
@@ -19,30 +19,32 @@ In this case, the model can be cast as:
 
 which is similar to the main model except for the GxC term, which is missing. Here, we test for a persistent effect only, i.e., <img src="https://render.githubusercontent.com/render/math?math=\beta_G \neq 0">.
 
-CellRegMap function: run_association()
+CellRegMap function: _run_association()_
 
 ## Interaction test (GxC effects)
-This is the main test implemented in CellRegMap, where we test for GxC effects across cellular states and individual SNP variants. In this case we consider the full model:
+This is the main test implemented in CellRegMap, where we test for GxC effects across cellular states and individual SNP variants. 
+In this case we consider the full model:
 
 <img src="https://render.githubusercontent.com/render/math?math=y = W\alpha %2B g\beta_G %2B g \odot \beta_{GxC} %2B c %2B u %2B \epsilon"> 
 
 and test for <img src="https://render.githubusercontent.com/render/math?math=\beta_{GxC} \neq 0">.
 While in principal any SNP-gene pairs can be tested for GxC effects, we recommend running this test on a set of candidate eQTLs (either known a priori or identified using the **Association test** described above), or interesting (e.g., disease-linked) variants to improve statistical power.
 
-CellRegMap function: run_interaction()
+CellRegMap function: _run_interaction()_
 
 ## Estimation of effect sizes
-Finally, CellRegMap can be used to estimate cell-level effect sizes driven by GxC effects (<img src="https://render.githubusercontent.com/render/math?math=\beta_{GxC}">), thus predicting the cells where effects are detected. 
+Finally, CellRegMap can be used to estimate cell-level effect sizes driven by GxC effects for individual eQTLs (<img src="https://render.githubusercontent.com/render/math?math=\beta_{GxC}">), thus predicting the cells where those effects are detected. 
 The model is the same except for the term <img src="https://render.githubusercontent.com/render/math?math=c">, which is now modelled as fixed effects in order to estimate the GxC term itself.
 
-CellRegMap function: estimate_betas()
+CellRegMap function: _estimate_betas()_
 
-For more details on the tests above and underlyimh assumptions I refer the reader to the Supplementary Methods available as part of the [paper's Supplementary Material](https://www.biorxiv.org/content/10.1101/2021.09.01.458524v1.supplementary-material).
+For more details on the tests above and underlying assumptions we refer the reader to the Supplementary Methods available as part of the [paper's Supplementary Material](https://www.biorxiv.org/content/10.1101/2021.09.01.458524v1.supplementary-material).
 
 ## Simple usage example
 
-All vectors and matrices should be provided as numpy arrays, and there should be no flat arrays. 
-If the shape of a vector is (n,) please reshape to (n,1).
+The model is implemented in [python](https://www.python.org).
+All vectors and matrices should be provided as [numpy arrays](https://numpy.org/doc/stable/reference/generated/numpy.array.html), and there should be no flat (one-dimensional) arrays. 
+If the shape of a vector is (n,) please [reshape](https://numpy.org/doc/stable/reference/generated/numpy.reshape.html) to (n,1).
 
     import numpy as np
     from numpy import ones
