@@ -71,7 +71,7 @@ Below, see a simple usage example with toy inputs:
     pv = run_interaction(y, W, C, g, hK=hK)[0]
     print(f'Interaction test p-value: {pv}')
     
-    # Effect sizes
+    # Effect sizes estimation
     betas = estimate_betas(y, W, C, g, hK=hK)
     beta_G = betas[0]                         # persistent effect (scalar)
     beta_GxC = betas[1][0]                    # GxC effects (vector)
