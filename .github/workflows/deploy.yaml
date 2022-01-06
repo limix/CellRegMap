@@ -44,6 +44,6 @@ jobs:
       # Build and deploy the docker
       - name: Build and publish to docker
         run: |
-          DOCKER_TAG=annacuomo/cellregmap:${GITHUB_REF##*/}
+          DOCKER_TAG=annasecuomo/cellregmap:${GITHUB_REF##*/}
           docker build -t $DOCKER_TAG .
           docker push $DOCKER_TAG
