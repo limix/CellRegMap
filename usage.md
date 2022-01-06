@@ -46,11 +46,10 @@ The model is implemented in [python](https://www.python.org).
 All vectors and matrices should be provided as [numpy arrays](https://numpy.org/doc/stable/reference/generated/numpy.array.html), and there should be no flat (one-dimensional) arrays. 
 If the shape of a vector is (n,) please [reshape](https://numpy.org/doc/stable/reference/generated/numpy.reshape.html) to (n,1).
 
-    import numpy as np
+Below, see a simple usage example with toy inputs:
+
     from numpy import ones
     from numpy.random import RandomState
-    from numpy_sugar import ddot
-    from numpy_sugar.linalg import economic_svd
     
     from cellregmap import run_association, run_interaction, estimate_betas
     
