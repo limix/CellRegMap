@@ -1,0 +1,49 @@
+name: Deploy CellRegMap
+
+on:
+  push:
+    tags:
+      - v*
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get tag name
+        run: |
+          echo ${GITHUB_REF##*/}
+
+      # clone the repo to the local directory
+      - uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.8"
+
+      # In the future, run the tests here
+      # - name: Test with pytest
+      #   run: |
+      #     python -m unittest test/
+
+      # Deploy to pypi
+      - name: Build and publish to pypi
+        env:
+          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
+          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+        run: |
+          pip install twine
+          python setup.py sdist bdist_wheel
+          twine upload dist/*
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      # Build and deploy the docker
+      - name: Build and publish to docker
+        run: |
+          DOCKER_TAG=annacuomo/cellregmap:${GITHUB_REF##*/}
+          docker build -t $DOCKER_TAG .
+          docker push $DOCKER_TAG
