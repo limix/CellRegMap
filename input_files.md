@@ -6,7 +6,7 @@ mathjax: true
 
 # The CellRegMap model
 
-The CellRegMap can be cast as:
+The CellRegMap model can be cast as:
 
 <img src="https://render.githubusercontent.com/render/math?math=y = W\alpha %2B g\beta_G %2B g \odot \beta_{GxC} %2B c %2B u %2B \epsilon">,
 
@@ -20,22 +20,6 @@ where
 
 <img src="https://render.githubusercontent.com/render/math?math=\epsilon \sim \mathcal{N} (0, \sigma^2_n I)">.
 
-## Inputs
-The following terms need to be provided as inputs: **y, W, g, C**, and **K** (or its decomposition **hK**, such that K = hK @ hK.T).
-If K (or hK) is not provided, CellRegMap becomes equivalent to StructLMM (see [StructLMM](https://limix.github.io/CellRegMap/structlmm.html)).
-All other terms need to be provided.
-If no covariates (W) are necessary, simply provide a vector of ones as an intercept term.
-
-## Each SNP-gene pair should be tested independently
-The test is run independently for each gene-SNP pair, thus in the model above, y and g are one-dimensional vectors, representing the expression of a single gene and the genotypes at a single SNP, respectively.
-
-The implementation does allow for multiple SNPs to be tested for a given gene, this can be achieved by providing a matrix G of which each column is a different SNP G=[g_1, .. g_n].
-In this case, the model simply loops over each SNP and tests one at the time, then returns a list of p-values, one per SNP.
-
-On the other hand, each gene needs to be tested separately, as CellRegMap cannot take the full expression matrix as input.
-
-## Covariates, cell contexts and repeatedness are fixed
-W, C, K (or hK) remain the same across all tests (i.e., across all SNP-gene pairs).
 
 # Brief description of the model terms
 
@@ -67,6 +51,23 @@ The following terms will be estimated by the model:
 * **SNP effect sizes**, both due to persistent effects (<img src="https://render.githubusercontent.com/render/math?math=\beta_G">) and to GxC interactions (<img src="https://render.githubusercontent.com/render/math?math=\beta_{GxC}">) can be estimated using the estimate_betas() function, see [usage page](https://limix.github.io/CellRegMap/usage.html).
 
 * **other inferred parameters** (<img src="https://render.githubusercontent.com/render/math?math=\alpha, \sigma^2"> values) are estimated by the model but not returned as values.
+
+## Inputs
+The following terms need to be provided as inputs: **y, W, g, C**, and **K** (or its decomposition **hK**, such that K = hK @ hK.T).
+If K (or hK) is not provided, CellRegMap becomes equivalent to StructLMM (see [StructLMM](https://limix.github.io/CellRegMap/structlmm.html)).
+All other terms need to be provided.
+If no covariates (W) are necessary, simply provide a vector of ones as an intercept term.
+
+## Each SNP-gene pair should be tested independently
+The test is run independently for each gene-SNP pair, thus in the model above, y and g are one-dimensional vectors, representing the expression of a single gene and the genotypes at a single SNP, respectively.
+
+The implementation does allow for multiple SNPs to be tested for a given gene, this can be achieved by providing a matrix G of which each column is a different SNP G=[g_1, .. g_n].
+In this case, the model simply loops over each SNP and tests one at the time, then returns a list of p-values, one per SNP.
+
+On the other hand, each gene needs to be tested separately, as CellRegMap cannot take the full expression matrix as input.
+
+## Covariates, cell contexts and repeatedness are fixed
+W, C, K (or hK) remain the same across all tests (i.e., across all SNP-gene pairs).
 
 # Dimensionality
 
