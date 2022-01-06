@@ -65,19 +65,19 @@ The model will not run if one of **y, W, g** or **C** is not provided as input.
 * The following terms are absolutely necessary: expression phenotypes (**y**), genotypes (**g**), and cellular contexts (**C**).
 
 * A kinship matrix (**K**; or its decomposition **hK**, such that K = hK @ hK.T) is highly recommended, to appropriately account for sample structure, especially the repeatedness across cells from the same individual.
-** if you do not have access to a GRM, consider providing a block diagonal sample covariance, with blocks corresponding to individuals.
-** If K (or hK) is not provided, CellRegMap becomes equivalent to StructLMM (see [StructLMM](https://limix.github.io/CellRegMap/structlmm.html)).
+ * if you do not have access to a GRM, consider providing a block diagonal sample covariance, with blocks corresponding to individuals.
+ * If K (or hK) is not provided, CellRegMap becomes equivalent to StructLMM (see [StructLMM](https://limix.github.io/CellRegMap/structlmm.html)).
 
 * If no covariates (W) are necessary, simply provide a vector of ones as an intercept term.
 
 
 ## Each SNP-gene pair should be tested independently
-The test is run independently for each gene-SNP pair, thus in the model above, y and g are one-dimensional vectors, representing the expression of a single gene and the genotypes at a single SNP, respectively.
+The test is run independently for each gene-SNP pair, thus in the model above, **y** and **g** are one-dimensional vectors, representing the expression of a single gene and the genotypes at a single SNP, respectively.
 
-The implementation does allow for multiple SNPs to be tested for a given gene, this can be achieved by providing a matrix G of which each column is a different SNP G=[g_1, .. g_n].
-In this case, the model simply loops over each SNP and tests one at the time, then returns a list of p-values, one per SNP.
+* The implementation does allow for multiple SNPs to be tested for a given gene, this can be achieved by providing a matrix G of which each column is a different SNP G=[g_1, .. g_n].
+In this case, the model **simply loops over each SNP and tests one at the time**, then returns a list of p-values, one per SNP.
 
-On the other hand, each gene needs to be tested separately, as CellRegMap cannot take the full expression matrix as input.
+* On the other hand, each gene needs to be tested separately, as CellRegMap cannot take the full expression matrix as input.
 
 As tests are independent, we recommend parallelising as much as possible, for example submitting independent jobs for each chromosome, gene, or even gene-SNP pair.
 
@@ -113,6 +113,8 @@ Exisiting implementations include [Metacell](https://genomebiology.biomedcentral
 <!-- If many cells + sparse, pseudocells / metacells may be preferable - add references. -->
 
 # Multiple testing correction
+
+Since thousands of tests are typically run, multiple testing correction of the test p-values is necessary
 
 ## Association test
 
