@@ -23,7 +23,7 @@ To use the latest features of CellRegMap you can install the latest version from
 in your command line.
 
 ## Installation using a Docker image 
-If you use Docker, you can also pull the [pre-build image from dockerhub](https://hub.docker.com/repository/docker/annasecuomo/cellregmap).
+If you use Docker, you can also pull the [pre-build image from dockerhub](https://hub.docker.com/r/annasecuomo/cellregmap).
 
 <!-- you can build an image using the provided Dockerfile:
 
