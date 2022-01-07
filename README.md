@@ -25,6 +25,9 @@ To install it in development mode, enter
 
 in your command line.
 
+## Installation using a Docker image 
+If you use Docker, you can also pull the [pre-build image from dockerhub](https://hub.docker.com/r/annasecuomo/cellregmap).
+
 ## Running tests
 
 From your command line, enter
