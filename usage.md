@@ -34,6 +34,7 @@ CellRegMap function: _run_interaction()_
 
 ## Estimation of effect sizes
 Finally, CellRegMap can be used to estimate cell-level effect sizes driven by GxC effects for individual eQTLs (<img src="https://render.githubusercontent.com/render/math?math=\beta_{GxC}">), thus predicting the cells where those effects are detected. 
+Generally, it makes sense to use this function to characterise eQTLs that show evidence of GxC effects, i.e., for which significant p-values were obtained when using the **Interaction test** above. 
 The model is the same except for the term <img src="https://render.githubusercontent.com/render/math?math=c">, which is now modelled as fixed effects in order to estimate the GxC term itself.
 
 CellRegMap function: _estimate_betas()_
