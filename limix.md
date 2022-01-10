@@ -9,8 +9,9 @@ While there are several fast implementations to map eQTL using correlation or li
 ## eQTL mapping using LIMIX
 Additionally, for a LIMIX wrapper specifically to map eQTL, see our [limix QTL pipeline](https://github.com/single-cell-genetics/limix_qtl) which we used in our recent [Genome Biology Publication](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-021-02407-x).
 
-# FAQs
-__When should CellRegMap be used as opposed to more traditional "pseudobulk" methods ?__
-For standard eQTL mapping within a homogeneous population of single cells, pseudo-bulk and bulk-like approaches as described in the GB paper can be used.
+The pipeline provides an easy wrapper to map eQTLs using various methods, automatically re-ordering, subselecting and expanding files to match with each other.
+See the wiki pages for [installation](https://github.com/single-cell-genetics/limix_qtl/wiki/Installation) and [input files](https://github.com/single-cell-genetics/limix_qtl/wiki/Inputs), and an example [snakemake]().
+
+<!-- For standard eQTL mapping within a homogeneous population of single cells, pseudo-bulk and bulk-like approaches as described in the GB paper can be used.
 We recommend using CellRegMap in the presence of more continuous cellular states, or rarer cell types.
-In those scenarios, modelling the full transcriptome across donors and states can improve power.
+In those scenarios, modelling the full transcriptome across donors and states can improve power. -->
