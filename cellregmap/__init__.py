@@ -4,6 +4,7 @@ from ._types import Term
 
 __version__ = "0.0.3"
 
+# these will be imported when adding ``from cellregmap import *``
 __all__ = [
     "__version__",
     "CellRegMap",
