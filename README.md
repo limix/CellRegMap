@@ -28,11 +28,11 @@ in your command line.
 ## Installation using a Docker image 
 If you use Docker, you can also pull the [pre-build image from dockerhub](https://hub.docker.com/r/annasecuomo/cellregmap).
 
-## Running tests
+<!-- ## Running tests
 
 From your command line, enter
 
-    python3 setup.py test
+    python3 setup.py test -->
 <!-- 
 ## Project layout
 
