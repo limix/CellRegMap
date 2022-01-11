@@ -1,6 +1,6 @@
-**************
-CellRegMap API
-**************
+**********
+CellRegMap
+**********
 
 .. currentmodule:: cellregmap
 
@@ -12,4 +12,4 @@ CellRegMap API
   run_association
   run_interaction
   estimate_betas
-  lrt_pvalues
+  # lrt_pvalues

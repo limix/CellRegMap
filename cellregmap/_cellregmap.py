@@ -431,6 +431,14 @@ def lrt_pvalues(null_lml, alt_lmls, dof=1):
     return clip(pv, epsilon.super_tiny, 1 - epsilon.tiny)
 
 def run_association(y, W, E, G, K=None, hK=None):
+    """
+    Brief summary.
+    
+    Parameters
+    ----------
+    y : array
+        Bla bla.
+    """
     if hK is None:
         if K is None: hK = None
         else:
