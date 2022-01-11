@@ -1,4 +1,4 @@
-from ._cellregmap import CellRegMap, run_association, run_interaction, estimate_betas
+from ._cellregmap import CellRegMap, run_association, run_interaction, estimate_betas, lrt_pvalues
 # from ._simulate import create_variances, sample_phenotype, sample_phenotype_gxe
 from ._types import Term
 
@@ -11,6 +11,7 @@ __all__ = [
     "run_association",
     "run_interaction",
     "estimate_betas",
+    "lrt_pvalues",
     # "sample_phenotype",
     # "create_variances",
     # "sample_phenotype_gxe",

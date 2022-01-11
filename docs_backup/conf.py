@@ -17,8 +17,8 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'CellRegMap'
-copyright = '2022, Anna Cuomo'
+project = 'scStructLMM'
+copyright = '2020, Anna Cuomo'
 author = 'Anna Cuomo'
 
 
@@ -28,15 +28,7 @@ author = 'Anna Cuomo'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    "sphinx.ext.autodoc",
-    "sphinx.ext.autosummary",
-    "sphinx.ext.napoleon",
-    "sphinx.ext.viewcode",
 ]
-
-autodoc_default_flags = ["members"]
-autosummary_generate = True
-napoleon_numpy_docstring = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -52,8 +44,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-pygments_style = "default"
-html_theme = "sphinx_rtd_theme"
+html_theme = 'alabaster'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
