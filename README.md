@@ -5,7 +5,7 @@ It is related to the previously proposed [StructLMM](https://www.nature.com/arti
 
 The CellRegMap model and its applications to both real and simulated data are described in the [CellRegMap manuscript](https://www.biorxiv.org/content/10.1101/2021.09.01.458524v1).
 
-We are working on more instructions and tutorials to facilitate usage of the package at [this link](https://limix.github.io/CellRegMap/)!
+For more instructions and tutorials to facilitate usage of the package visit [our website](https://limix.github.io/CellRegMap/)!
 
 ## Install
 
