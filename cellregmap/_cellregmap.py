@@ -34,7 +34,7 @@ class CellRegMap:
         𝐮 ~ 𝓝(𝟎, 𝓋₁(1-ρ₁)𝙺⊙𝙴₂𝙴₂ᵀ), and
         𝛆 ~ 𝓝(𝟎, 𝓋₂𝙸).
 
-    𝐠⊙𝛃 is a randome effect term which models the GxE effect.
+    𝐠⊙𝛃 is a random effect term which models the GxC effect.
     Additionally, W𝛂 models additive covariates and 𝐠𝛽₁ models persistent genetic effects.
     Both are modelled as fixed effects.
     On the other hand, 𝐞, 𝐮 and 𝛆 are modelled as random effects
@@ -48,7 +48,7 @@ class CellRegMap:
 
         𝐲 ~ 𝓝(W𝛂 + 𝐠𝛽₁, 𝓋₃𝙳𝙴₀𝙴₀ᵀ𝙳 + 𝓋₁(ρ₁𝙴₁𝙴₁ᵀ + (1-ρ₁)𝙺⊙𝙴₂𝙴₂ᵀ) + 𝓋₂𝙸).
 
-    sc-StructLMM method is used to perform an interaction test:
+    The CellRegMap method is used to perform an interaction test:
 
     The interaction test compares the following hypotheses (from Eq. 1):
 
@@ -61,7 +61,7 @@ class CellRegMap:
 
     def __init__(self, y, W, E, Ls=None, E0=None, E1=None, hK=None):
         self._y = asarray(y, float).flatten()
-        self._W = asarray(W, float)
+        self._W = asarray(W, float) # add option to have W=None
         Ls = [] if Ls is None else Ls
 
         if E is None:
@@ -92,7 +92,7 @@ class CellRegMap:
         # TODO: remove it after debugging
         self._Sigma = {}
         
-        # option to set different background (when Ls are defined, backgrouns is K*EEt + EEt)
+        # option to set different background (when Ls are defined, background is K*EEt + EEt)
         if len(Ls) == 0:
             # self._rho0 = [1.0]
             if hK is None:   # EEt only as background
@@ -131,7 +131,7 @@ class CellRegMap:
 
     def predict_interaction(self, G, MAF):
         """
-        Share screen.
+        Estimate effect sizes for a given set of SNPs
         """
         # breakpoint()
         G = asarray(G, float)
@@ -430,7 +430,7 @@ def lrt_pvalues(null_lml, alt_lmls, dof=1):
     pv = chi2(df=dof).sf(lrs)
     return clip(pv, epsilon.super_tiny, 1 - epsilon.tiny)
 
-def run_association(y, W, E, G, K=None, hK=None):
+def run_association(y, W, E, G, hK=None):
     """
     Association test.
     
@@ -449,17 +449,14 @@ def run_association(y, W, E, G, K=None, hK=None):
     G : array
 	Genotypes (expanded)
     hK : array
-	 decomposit of kinship matrix (expanded)
+	 decompositon of kinship matrix (expanded)
     
     Returns
     -------
     pvalues : ndarray
         P-values.
     """
-    if hK is None:
-        if K is None: hK = None
-        else:
-            hK = cholesky(K) 
+    if hK is None: hK = None 
     crm = CellRegMap(y, W, E, hK=hK)
     pv = crm.scan_association(G)
     return pv
@@ -478,12 +475,34 @@ def get_L_values(hK, E):
     Ls = [ddot(us[:,i], hK) for i in range(us.shape[1])]
     return Ls
 
-def run_interaction(y, W, E, G, K=None, hK=None):
-    if hK is None:
-        if K is None: hK = None
-        else:
-            hK = cholesky(K) 
-    Ls = get_L_values(hK, E)
+def run_interaction(y, W, E, G, hK=None):
+    """
+    Interaction test.
+
+    Test for cell-level genetic effects due to GxC interactions.
+
+    Compute p-values using a score test.
+
+    Parameters
+    ----------
+    y : array
+        Phenotype
+    W : array
+        Fixed effect covariates
+    E : array
+        Cellular contexts
+    G : array
+        Genotypes (expanded)
+    hK : array
+         decompositon of kinship matrix (expanded)
+
+    Returns
+    -------
+    pvalues : ndarray
+        P-values.
+    """
+    if hK is None: Ls = None 
+    else: Ls = get_L_values(hK, E)
     crm = CellRegMap(y, W, E, Ls=Ls)
     pv = crm.scan_interaction(G)
     return pv
@@ -539,12 +558,35 @@ def compute_maf(X):
         maf.name = "maf"
     return maf
 
-def estimate_betas(y, W, E, G, maf=None, K=None, hK=None):
-    if hK is None:
-        if K is None: hK = None
-        else:
-            hK = cholesky(K) 
-    Ls = get_L_values(hK, E)
+def estimate_betas(y, W, E, G, maf=None, hK=None):
+    """
+    Effect sizes estimator
+
+    Estimates cell-level genetic effects due to GxC 
+    as well as persistent genetic effects across all cells.
+
+    Parameters
+    ----------
+    y : array
+        Phenotype
+    W : array
+        Fixed effect covariates
+    E : array
+        Cellular contexts
+    G : array
+        Genotypes (expanded)
+    maf: array
+	Minor allele frequencies (MAFs) for the SNPs in G
+    hK : array
+         decompositon of kinship matrix (expanded)
+
+    Returns
+    -------
+    betas : ndarray
+        estimated effect sizes, both persistent and due to GxC.
+    """
+    if hK is None: Ls=None
+    else: Ls = get_L_values(hK, E)
     crm = CellRegMap(y, W, E, Ls=Ls)
     if maf is None:
         maf = compute_maf(G)
