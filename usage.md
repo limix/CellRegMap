@@ -3,7 +3,7 @@ layout: default
 title: "Usage"
 ---
 
-There are three main functions that can be run within the CellRegMap package:
+There are three main functions that can be run within the CellRegMap package (detailed in our [docs](https://cellregmap.readthedocs.io/)):
 
 * Association test 
 * Interaction test
