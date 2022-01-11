@@ -432,12 +432,29 @@ def lrt_pvalues(null_lml, alt_lmls, dof=1):
 
 def run_association(y, W, E, G, K=None, hK=None):
     """
-    Brief summary.
+    Association test.
+    
+    Test for persistent genetic effects.
+
+    Compute p-values using a likelihood ratio test.
     
     Parameters
     ----------
     y : array
-        Bla bla.
+        Phenotype
+    W : array
+	Fixed effect covariates
+    E : array
+	Cellular contexts
+    G : array
+	Genotypes (expanded)
+    hK : array
+	 decomposit of kinship matrix (expanded)
+    
+    Returns
+    -------
+    pvalues : ndarray
+        P-values.
     """
     if hK is None:
         if K is None: hK = None

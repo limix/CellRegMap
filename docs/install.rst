@@ -1,9 +1,18 @@
-*******
-Install
-*******
+******************
+Install CellRegMap
+******************
+
+Stable version
+--------------
+
+``cellregmap`` can be installed `from PyPI <https://pypi.org/project/cellregmap>`_ with ``pip``:
+::
+	pip install cellregmap
 
 
-Bla bla bla
+Development version
+-------------------
 
+Docker installation
+-------------------
 
-change
