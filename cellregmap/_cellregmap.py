@@ -274,6 +274,39 @@ class CellRegMap:
 
         info = {key: asarray(v, float) for key, v in info.items()}
         return asarray(pvalues, float), info
+    
+    
+    def scan_association0(self, G):
+        info = {"rho1": [], "e2": [], "g2": [], "eps2": []}
+
+        # NULL model
+        best = {"lml": -inf, "rho1": 0}
+        for rho1 in self._rho1:
+            QS = self._Sigma_qs[rho1]
+            # LRT for fixed effects requires ML rather than REML estimation
+            lmm = LMM(self._y, self._W, QS, restricted=False)
+            lmm.fit(verbose=False)
+
+            if lmm.lml() > best["lml"]:
+                best["lml"] = lmm.lml()
+                best["rho1"] = rho1
+                best["lmm"] = lmm
+
+        null_lmm = best["lmm"]
+        info["rho1"].append(best["rho1"])
+        info["e2"].append(null_lmm.v0 * best["rho1"])
+        info["g2"].append(null_lmm.v0 * (1 - best["rho1"]))
+        info["eps2"].append(null_lmm.v1)
+        
+        QS = self._Sigma_qs[best["rho1"]]
+        lmm = LMM(self._y, self._W, QS, restricted=False)
+        flmm = lmm.get_fast_scanner()
+        alt_lmls, effsizes = flmm.fast_scan(G, verbose=False)
+
+        pvalues = lrt_pvalues(null_lmm.lml(), alt_lmls, dof=1)
+
+        info = {key: asarray(v, float) for key, v in info.items()}
+        return asarray(pvalues, float), info
 
 
     def scan_interaction(
@@ -459,6 +492,37 @@ def run_association(y, W, E, G, hK=None):
     if hK is None: hK = None 
     crm = CellRegMap(y, W, E, hK=hK)
     pv = crm.scan_association(G)
+    return pv
+
+def run_association0(y, W, E, G, hK=None):
+    """
+    Association test.
+
+    Test for persistent genetic effects.
+
+    Compute p-values using a likelihood ratio test.
+
+    Parameters
+    ----------
+    y : array
+        Phenotype
+    W : array
+    Fixed effect covariates
+    E : array
+    Cellular contexts
+    G : array
+    Genotypes (expanded)
+    hK : array
+     decompositon of kinship matrix (expanded)
+
+    Returns
+    -------
+    pvalues : ndarray
+        P-values.
+    """
+    if hK is None: hK = None
+    crm = CellRegMap(y, W, E, hK=hK)
+    pv = crm.scan_association0(G)
     return pv
 
 def get_L_values(hK, E):
