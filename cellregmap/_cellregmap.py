@@ -299,8 +299,7 @@ class CellRegMap:
         info["eps2"].append(null_lmm.v1)
         
         # Alternative model 
-        QS = self._Sigma_qs[best["rho1"]]
-        lmm = LMM(self._y, self._W, QS, restricted=False)
+        lmm = null_lmm
         flmm = lmm.get_fast_scanner()
         alt_lmls = flmm.fast_scan(G, verbose=False)['lml']
 
