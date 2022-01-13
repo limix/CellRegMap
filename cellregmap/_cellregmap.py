@@ -298,10 +298,11 @@ class CellRegMap:
         info["g2"].append(null_lmm.v0 * (1 - best["rho1"]))
         info["eps2"].append(null_lmm.v1)
         
+        # Alternative model 
         QS = self._Sigma_qs[best["rho1"]]
         lmm = LMM(self._y, self._W, QS, restricted=False)
         flmm = lmm.get_fast_scanner()
-        alt_lmls, effsizes = flmm.fast_scan(G, verbose=False)
+        alt_lmls = flmm.fast_scan(G, verbose=False)['lml']
 
         pvalues = lrt_pvalues(null_lmm.lml(), alt_lmls, dof=1)
 
@@ -513,7 +514,7 @@ def run_association0(y, W, E, G, hK=None):
     G : array
     Genotypes (expanded)
     hK : array
-     decompositon of kinship matrix (expanded)
+    decompositon of kinship matrix (expanded)
 
     Returns
     -------
