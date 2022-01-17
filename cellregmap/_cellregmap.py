@@ -654,6 +654,6 @@ def estimate_betas(y, W, E, G, maf=None, hK=None):
     crm = CellRegMap(y, W, E, Ls=Ls)
     if maf is None:
         maf = compute_maf(G)
-    print(maf)
+    print("MAFs: {}".format(maf.values))
     betas = crm.predict_interaction(G, maf)
     return betas
