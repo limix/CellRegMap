@@ -8,6 +8,7 @@ from numpy import (
     concatenate,
     inf,
     linspace,
+    ones,
     sqrt,
     stack,
 )
@@ -59,19 +60,22 @@ class CellRegMap:
 
     """
 
-    def __init__(self, y, W, E, Ls=None, E0=None, E1=None, hK=None):
+    def __init__(self, y, E, W=None, Ls=None, E1=None, hK=None):
         self._y = asarray(y, float).flatten()
-        self._W = asarray(W, float) # add option to have W=None
+        self._E0 = asarray(E, float)
         Ls = [] if Ls is None else Ls
 
-        if E is None:
-            assert E0 is not None
-            assert E1 is not None
-            self._E0 = asarray(E0, float)
+        if W is not None:
+            self._W = asarray(W, float) 
+        else:
+            self._W = ones((self._y.shape[0], 1))
+
+        if E1 is not None:
             self._E1 = asarray(E1, float)
         else:
-            self._E0 = asarray(E, float)
             self._E1 = asarray(E, float)
+
+
         self._Ls = list(asarray(L, float) for L in Ls)
 
         assert self._W.ndim == 2
@@ -81,6 +85,7 @@ class CellRegMap:
         assert self._y.shape[0] == self._W.shape[0]
         assert self._y.shape[0] == self._E0.shape[0]
         assert self._y.shape[0] == self._E1.shape[0]
+
         for L in Ls:
             assert self._y.shape[0] == L.shape[0]
             assert L.ndim == 2
@@ -276,7 +281,7 @@ class CellRegMap:
         return asarray(pvalues, float), info
     
     
-    def scan_association0(self, G):
+    def scan_association_fast(self, G):
         info = {"rho1": [], "e2": [], "g2": [], "eps2": []}
 
         # NULL model
@@ -494,7 +499,7 @@ def run_association(y, W, E, G, hK=None):
     pv = crm.scan_association(G)
     return pv
 
-def run_association0(y, W, E, G, hK=None):
+def run_association_fast(y, W, E, G, hK=None):
     """
     Association test.
 
@@ -522,7 +527,7 @@ def run_association0(y, W, E, G, hK=None):
     """
     if hK is None: hK = None
     crm = CellRegMap(y, W, E, hK=hK)
-    pv = crm.scan_association0(G)
+    pv = crm.scan_association_fast(G)
     return pv
 
 def get_L_values(hK, E):
@@ -539,7 +544,7 @@ def get_L_values(hK, E):
     Ls = [ddot(us[:,i], hK) for i in range(us.shape[1])]
     return Ls
 
-def run_interaction(y, W, E, G, hK=None):
+def run_interaction(y, E, G, W=None, E1=None, E2=None, hK=None):
     """
     Interaction test.
 
@@ -551,23 +556,31 @@ def run_interaction(y, W, E, G, hK=None):
     ----------
     y : array
         Phenotype
-    W : array
-        Fixed effect covariates
     E : array
-        Cellular contexts
+        Cellular contexts (GxC component)
     G : array
         Genotypes (expanded)
+    W : array
+        Fixed effect covariates
     hK : array
          decompositon of kinship matrix (expanded)
+    E1 : array
+        Cellular contexts (C component)
+    E2 : array
+        Cellular contexts (K*C component)
 
     Returns
     -------
     pvalues : ndarray
         P-values.
     """
+    if E1 is None: E1 = E
+    else: E1 = E1
+    if E2 is None: E2 = E
+    else: E2 = E2
     if hK is None: Ls = None 
-    else: Ls = get_L_values(hK, E)
-    crm = CellRegMap(y, W, E, Ls=Ls)
+    else: Ls = get_L_values(hK, E2)
+    crm = CellRegMap(y=y, E=E, W=W, E1=E1, Ls=Ls)
     pv = crm.scan_interaction(G)
     return pv
 
