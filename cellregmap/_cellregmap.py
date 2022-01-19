@@ -635,7 +635,7 @@ def compute_maf(X):
         maf.name = "maf"
     return maf
 
-def estimate_betas(y, W, E, G, maf=None, hK=None):
+def estimate_betas(y, W, E, G, maf=None, E1=None, E2=None, hK=None):
     """
     Effect sizes estimator
 
@@ -653,20 +653,28 @@ def estimate_betas(y, W, E, G, maf=None, hK=None):
     G : array
         Genotypes (expanded)
     maf: array
-	Minor allele frequencies (MAFs) for the SNPs in G
+	    Minor allele frequencies (MAFs) for the SNPs in G
     hK : array
          decompositon of kinship matrix (expanded)
+    E1 : array
+        Cellular contexts (C component)
+    E2 : array
+        Cellular contexts (K*C component)
 
     Returns
     -------
     betas : ndarray
         estimated effect sizes, both persistent and due to GxC.
     """
-    if hK is None: Ls=None
-    else: Ls = get_L_values(hK, E)
-    crm = CellRegMap(y, W, E, Ls=Ls)
+    if E1 is None: E1 = E
+    else: E1 = E1
+    if E2 is None: E2 = E
+    else: E2 = E2
+    if hK is None: Ls = None 
+    else: Ls = get_L_values(hK, E2)
+    crm = CellRegMap(y=y, E=E, W=W, E1=E1, Ls=Ls)
     if maf is None:
         maf = compute_maf(G)
-    print("MAFs: {}".format(maf.values))
+    # print("MAFs: {}".format(maf))
     betas = crm.predict_interaction(G, maf)
     return betas
