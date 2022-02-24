@@ -386,7 +386,7 @@ class CellRegMap:
             # qscov = QSCov(self._Sigma_qs[best["rho1"]], lmm.C0[0, 0], lmm.C1[0, 0])
             # print(f"Elapsed: {time() - start}")
             # X = concatenate((self._E, g), axis=1)
-            X = concatenate((self._W, g), axis=1)
+            # X = concatenate((self._W, g), axis=1)
 
             # Let P₀ = K₀⁻¹ - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹.
             P = PMat(qscov, X)
