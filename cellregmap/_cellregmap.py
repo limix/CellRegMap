@@ -386,7 +386,7 @@ class CellRegMap:
             # qscov = QSCov(self._Sigma_qs[best["rho1"]], lmm.C0[0, 0], lmm.C1[0, 0])
             # print(f"Elapsed: {time() - start}")
             # X = concatenate((self._E, g), axis=1)
-            X = concatenate((self._W, g), axis=1)
+            # X = concatenate((self._W, g), axis=1)
 
             # Let P₀ = K₀⁻¹ - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹.
             P = PMat(qscov, X)
@@ -544,7 +544,7 @@ def get_L_values(hK, E):
     Ls = [ddot(us[:,i], hK) for i in range(us.shape[1])]
     return Ls
 
-def run_interaction(y, E, G, W=None, E1=None, E2=None, hK=None):
+def run_interaction(y, E, G, W=None, E1=None, E2=None, hK=None, idx_G=None):
     """
     Interaction test.
 
@@ -568,6 +568,8 @@ def run_interaction(y, E, G, W=None, E1=None, E2=None, hK=None):
         Cellular contexts (C component)
     E2 : array
         Cellular contexts (K*C component)
+    idx_G : array
+        Permuted genotype index
 
     Returns
     -------
@@ -581,7 +583,7 @@ def run_interaction(y, E, G, W=None, E1=None, E2=None, hK=None):
     if hK is None: Ls = None 
     else: Ls = get_L_values(hK, E2)
     crm = CellRegMap(y=y, E=E, W=W, E1=E1, Ls=Ls)
-    pv = crm.scan_interaction(G)
+    pv = crm.scan_interaction(G, idx_G)
     return pv
 
 def compute_maf(X):
