@@ -83,6 +83,7 @@ Below, see a simple usage example with toy inputs:
 ## References
 
 [1] Cuomo*, Seaton*, McCarthy* et al, Nature Communications, 2020
+
 [2] Jerber*, Seaton*, Cuomo* et al, Nature Genetics, 2021
 
 <!-- ## Downstream analysis (simple simulated data)
