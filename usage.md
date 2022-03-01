@@ -59,7 +59,7 @@ Below, see a simple usage example with toy inputs:
     p = 5                                # number of individuals
     k = 4                                # number of contexts
     y = random.randn(n, 1)               # outcome vector (expression phenotype, one gene only)
-    C = random.randn(n, k)               # context matrix  
+    C = random.randn(n, k)               # context matrix (cells by contexts/factors)
     W = ones((n, 1))                     # intercept (covariate matrix)
     hK = random.randn(n, p)              # decomposition of kinship matrix (K = hK @ hK.T)
     g = 1.0 * (random.rand(n, 1) < 0.2)  # SNP vector
@@ -76,9 +76,12 @@ Below, see a simple usage example with toy inputs:
     betas = estimate_betas(y, W, C, g, hK=hK)
     beta_G = betas[0]                         # persistent effect (scalar)
     beta_GxC = betas[1][0]                    # GxC effects (vector)
+    
     print(f'persistent genetic effect (betaG): {betaG}')
     print(f'cell-level effect sizes due to GxC (betaGxC): {betaGxC}')
     
+
+For more guidelines and instructions on how to construct input files from real data, please visit the [Input Files page](https://limix.github.io/CellRegMap/input_files.html).
 
 ## References
 
