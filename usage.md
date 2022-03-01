@@ -12,7 +12,7 @@ There are three main functions that can be run within the CellRegMap package (de
 ## Association test (persistent effects)
 The main functionality of CellRegMap is to investigate genotype-context (GxC) interactions and identify context-specific genetic effects on expression in cohort-scale single-cell data (see **Interaction test** below). 
 However, to improve scalability, we recommend running the (computationally more intensive) interaction-test function only on a set of candidate eQTLs. 
-In the [original CellRegMap paper](https://www.biorxiv.org/content/10.1101/2021.09.01.458524v1) we consider eQTLs previously identified in the original studies, but it is now also possible to test for persistent eQTL effects within the CellRegMap framework itself, using the association-test function. 
+In the [original CellRegMap paper](https://www.biorxiv.org/content/10.1101/2021.09.01.458524v1) we consider eQTLs previously identified in the original studies[1,2], but it is now also possible to test for persistent eQTL effects within the CellRegMap framework itself, using the association-test function. 
 In this case, the model can be cast as:
 
 <img src="https://render.githubusercontent.com/render/math?math=y = W\alpha %2B g\beta_G %2B c %2B u %2B \epsilon">,
@@ -78,6 +78,12 @@ Below, see a simple usage example with toy inputs:
     beta_GxC = betas[1][0]                    # GxC effects (vector)
     print(f'persistent genetic effect (betaG): {betaG}')
     print(f'cell-level effect sizes due to GxC (betaGxC): {betaGxC}')
+    
+
+## References
+
+[1] Cuomo*, Seaton*, McCarthy* et al, Nature Communications, 2020
+[2] Jerber*, Seaton*, Cuomo* et al, Nature Genetics, 2021
 
 <!-- ## Downstream analysis (simple simulated data)
 
