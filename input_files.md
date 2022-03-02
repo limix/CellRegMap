@@ -133,11 +133,11 @@ Only one SNP per gene, or at least independent. If one SNP per gene straight to 
 
 # References
 
-[1] Argelaguet\*, Velten\* et al., Molecular Systems Biology, 2018 (MOFA: multi-omics factor analysis)
+[1] Argelaguet\*, Velten\* et al., Molecular Systems Biology, 2018 (MOFA: multi-omics factor analysis) [link](https://www.embopress.org/doi/full/10.15252/msb.20178124)
 
-[2] Risso et al, Nature Communications, 2018 (ZINB-WaVE: zero-inflated negative binomial-based Wanted Variation Eztraction) 
+[2] Risso et al, Nature Communications, 2018 (ZINB-WaVE: zero-inflated negative binomial-based Wanted Variation Extraction) [link](https://www.nature.com/articles/s41467-017-02554-5)
 
-[3] Svensson et al, Bioinformatics, 2020 (LDVAE: linearly decoded variational autoencoder)
+[3] Svensson et al, Bioinformatics, 2020 (LDVAE: linearly decoded variational autoencoder) [link](https://academic.oup.com/bioinformatics/article/36/11/3418/5807606)
 
 
 
