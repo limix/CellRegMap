@@ -9,7 +9,7 @@ Welcome to CellRegMap's documentation!
 What is CellRegMap
 ------------------
 
-The cellular regulatory map (`cellregmap``) is a statistical framework to map context-specific effects of genetic variants on single-cell gene expression.
+The cellular regulatory map (``cellregmap``) is a statistical framework to map context-specific effects of genetic variants on single-cell gene expression.
 It builds on a linear mixed model and is implemented in Python.
 
 What do you need to run CellRegMap
