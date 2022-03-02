@@ -92,8 +92,8 @@ Specified dimensionality for each of the terms, where n is the total number of c
 * **W**: n x c, where c is the number of fixed effect covariates (e.g., age, sex..)
 * **C**: n x k, where k is the number of contexts to test for interactions
 * **G**: n x s, where s is the number of SNPs to be tested for a given gene
-<!-- * **K**: n x n, or in alternative -->
 * **hK**: n x p, where p is the number of individuals, decomposition of the n x n kinship matrix K
+* <!-- * **K**: n x n, or in alternative -->
 
 <!-- All vectors and matrices should be provided as numpy arrays, and there should be no flat arrays. 
 If the shape of a vector is (n,) please reshape to (n,1). -->
