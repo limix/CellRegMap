@@ -25,13 +25,13 @@ title: "Contact"
 <div class="row">
   <div class="column">
     <figure align="center">
-    <img src='images/Cuomo_Anna.png' alt='missing' width="290" height="220" />
+    <img src='images/Cuomo_Anna.png' alt='missing' width="320" height="250" />
     <figcaption><b>Anna Cuomo</b> <br> Postdoc Scientist <br>  Garvan Institute <br> <a href="mailto:a.cuomo@garvan.org.au">a.cuomo@garvan.org.au</a> </figcaption>
     </figure>
   </div>
   <div class="column">
     <figure align="center">
-    <img src="images/Horta_Danilo.jpeg" alt='missing' width="290" height="220"/>
+    <img src="images/Horta_Danilo.jpeg" alt='missing' width="320" height="250"/>
     <figcaption> <b>Danilo Horta</b> <br> Software Developer <br> EBI <br> <a href="mailto:horta@ebi.ac.uk">horta@ebi.ac.uk</a></figcaption>
     </figure>
   </div>
