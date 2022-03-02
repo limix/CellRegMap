@@ -29,7 +29,7 @@ The following terms should be provided as input files:
 * **Phenotype vector (<img src="https://render.githubusercontent.com/render/math?math=y">)** - in the linear mixed model, this is the outcome variable. 
 In eQTL mapping, this represents expression level of a given gene of interest, across samples. 
 The main application of CellRegMap is using scRNA-seq data, in which case this will be a column vector, with length corresponding to the number of cells considered. 
-For optimal fit with the model (which assumes a Gaussian distribution) we recommend [quantile normalising](https://github.com/limix/limix/blob/master/limix/qc/_quant_gauss.py) this vector, or at least standardising it.
+For optimal fit with the model (which assumes a Gaussian distribution) we recommend [quantile normalising](https://github.com/limix/limix/blob/master/limix/qc/_quant_gauss.py) this vector, or at least [standardising](https://github.com/limix/limix/blob/master/limix/qc/_mean_std.py) it.
 
 * **Genotype vector (<img src="https://render.githubusercontent.com/render/math?math=g">)** - SNP vector. 
 This represents the genotype of each sample at the genomic locus of interest, and is typically modelled as 0, 1 or 2, representing the number of minor alleles (however, the model can also handle a continuous vector of dosages). 
@@ -38,7 +38,7 @@ It is also possible to input a matrix G whose columns represent multiple SNPs (<
 
 * **Cellular context matrix (<img src="https://render.githubusercontent.com/render/math?math=C">)** - cellular environment/context matrix. 
 Rows are cells, columns are values across the different cellular contexts. 
-Columns of C can for example be principal components, or other latent factor representations of the data, binary vector encoding assignment to different cellular groups such as cell types, or any other factor, including environmental exposures, or disease state. 
+Columns of C can for example be principal components, or other latent factor representations of the data (e.g., using MOFA [1], ZINB-WaVE [2] or LDVAE [3]), binary vector encoding assignment to different cellular groups such as cell types, or any other factor, including environmental exposures, or disease state. 
 Best practice is to column-standardise this matrix.
 
 * **Kinship matrix (<img src="https://render.githubusercontent.com/render/math?math=K">)**, or its decomposition (<img src="https://render.githubusercontent.com/render/math?math=hK">, such that <img src="https://render.githubusercontent.com/render/math?math=K = hK @ hK^T">), a sample covariance, often the so-called [kinship](https://www.cog-genomics.org/plink/1.9/distance) (or genetic relationship matrix; GRM) matrix, appropriately [expanded](https://github.com/annacuomo/CellRegMap_analyses/blob/main/endodiff/preprocessing/Expand_genotypes_kinship.ipynb) across cells.
@@ -65,14 +65,14 @@ The model will not run if one of **y, W, g** or **C** is not provided as input.
 * The following terms are absolutely necessary: expression phenotypes (**y**), genotypes (**g**), and cellular contexts (**C**).
 
 * A kinship matrix (**K**; or its decomposition **hK**, such that K = hK @ hK.T) is highly recommended, to appropriately account for sample structure, especially the repeatedness across cells from the same individual.
- * if you do not have access to a GRM, consider providing a block diagonal sample covariance, with blocks corresponding to individuals.
- * If K (or hK) is not provided, CellRegMap becomes equivalent to StructLMM (see [StructLMM](https://limix.github.io/CellRegMap/structlmm.html)).
+  * if you do not have access to a GRM, consider providing a block diagonal sample covariance, with blocks corresponding to individuals.
+  * If K (or hK) is not provided, CellRegMap becomes equivalent to [StructLMM](https://limix.github.io/CellRegMap/structlmm.html).
 
-* If no covariates (W) are necessary, simply provide a vector of ones as an intercept term.
+* If no covariates (W) are necessary, simply provide a vector of [ones](https://numpy.org/doc/stable/reference/generated/numpy.ones.html) as an intercept term.
 
 
 ## Each SNP-gene pair should be tested independently
-The test is run independently for each gene-SNP pair, thus in the model above, **y** and **g** are one-dimensional vectors, representing the expression of a single gene and the genotypes at a single SNP, respectively.
+The test is run independently for each gene-SNP pair, thus in the model above, **y** and **g** are one-dimensional vectors, representing i) the expression of a single gene and ii) the genotypes at a single SNP, respectively.
 
 * The implementation does allow for multiple SNPs to be tested for a given gene, this can be achieved by providing a matrix G of which each column is a different SNP G=[g_1, .. g_n].
 In this case, the model **simply loops over each SNP and tests one at the time**, then returns a list of p-values, one per SNP.
@@ -82,7 +82,7 @@ In this case, the model **simply loops over each SNP and tests one at the time**
 As tests are independent, we recommend parallelising as much as possible, for example submitting independent jobs for each chromosome, gene, or even gene-SNP pair.
 
 ## Covariates, cell contexts and repeatedness are fixed
-W, C, K (or hK) remain the same across all tests (i.e., across all SNP-gene pairs).
+W, C, hK (and thus K) remain the same across all tests (i.e., across all SNP-gene pairs).
 
 # Dimensionality
 
@@ -92,8 +92,8 @@ Specified dimensionality for each of the terms, where n is the total number of c
 * **W**: n x c, where c is the number of fixed effect covariates (e.g., age, sex..)
 * **C**: n x k, where k is the number of contexts to test for interactions
 * **G**: n x s, where s is the number of SNPs to be tested for a given gene
-* **K**: n x n, or in alternative
-* **hK**, its decomposition: n x p, where p is the number of individuals
+<!-- * **K**: n x n, or in alternative -->
+* **hK**: n x p, where p is the number of individuals, decomposition of the n x n kinship matrix K
 
 <!-- All vectors and matrices should be provided as numpy arrays, and there should be no flat arrays. 
 If the shape of a vector is (n,) please reshape to (n,1). -->
@@ -105,10 +105,15 @@ Standardization refers to a transformation of a vector to have 0 mean and standa
 Quantile normalization is a rank-normalization which enforces a standard normal distribution of the vector provided.
 For an implementation of quantile-normalization see [here](https://github.com/limix/limix/blob/master/limix/qc/_quant_gauss.py).
 
+<!-- # Genotype format -->
+
 # Pseudocells
 
-This approach refers to grouping together small numbers of similar cells into "pseudocells" to reduce issues due to sparsity and speed computations by reducing sample size.
-Exisiting implementations include [Metacell](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1812-2) and the [micro pooling approach](https://yoseflab.github.io/VISION/articles/micropooling.html) within the [Vision](https://www.nature.com/articles/s41467-019-12235-0) pipeline.
+This approach refers to the action of grouping together small numbers of similar cells into "pseudocells" to reduce issues due to sparsity and speed up computations by reducing sample size.
+Existing implementations include [Metacell](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1812-2) and the [micro pooling approach](https://yoseflab.github.io/VISION/articles/micropooling.html) within the [Vision](https://www.nature.com/articles/s41467-019-12235-0) pipeline.
+Those approaches do ont directly take into account the presence of several genetically distinct donors, which is important here.
+To address this, we recommend using one of these approaches for each donor separately.
+For an implementation of how we computed meta-cells in the CellRegMap manuscript, see [here](https://github.com/annacuomo/CellRegMap_analyses/blob/main/neuroseq/preprocessing/create_metacells.py).
 
 <!-- If many cells + sparse, pseudocells / metacells may be preferable - add references. -->
 
@@ -124,6 +129,14 @@ Mention lenient threshold prior to interaction test
 ## Interaction test
 
 Only one SNP per gene, or at least independent. If one SNP per gene straight to step 2, if multiple but independent Bonferroni as step 1, then step 2.
+
+# References
+
+[1] Argelaguet\*, Velten\* et al., Molecular Systems Biology, 2018 (MOFA: multi-omics factor analysis)
+
+[2] Risso et al, Nature Communications, 2018 (ZINB-WaVE: zero-inflated negative binomial-based Wanted Variation Eztraction) 
+
+[3] Svensson et al, Bioinformatics, 2020 (LDVAE: linearly decoded variational autoencoder)
 
 <!-- ## Preparing input files (general guidelines) -->
 
