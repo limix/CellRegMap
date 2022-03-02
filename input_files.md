@@ -111,15 +111,16 @@ For an implementation of quantile-normalization see [here](https://github.com/li
 
 This approach refers to the action of grouping together small numbers of similar cells into "pseudocells" to reduce issues due to sparsity and speed up computations by reducing sample size.
 Existing implementations include [Metacell](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1812-2) and the [micro pooling approach](https://yoseflab.github.io/VISION/articles/micropooling.html) within the [Vision](https://www.nature.com/articles/s41467-019-12235-0) pipeline.
-Those approaches do ont directly take into account the presence of several genetically distinct donors, which is important here.
+Those approaches do not directly take into account the presence of several genetically distinct donors, which is important here.
 To address this, we recommend using one of these approaches for each donor separately.
 For an implementation of how we computed meta-cells in the CellRegMap manuscript, see [here](https://github.com/annacuomo/CellRegMap_analyses/blob/main/neuroseq/preprocessing/create_metacells.py).
 
-<!-- If many cells + sparse, pseudocells / metacells may be preferable - add references. -->
 
 # Multiple testing correction
 
-Since thousands of tests are typically run, multiple testing correction of the test p-values is necessary
+Since thousands of tests are typically run, [multiple testing correction](https://en.wikipedia.org/wiki/Multiple_comparisons_problem) of the test p-values is necessary.
+Below, we provide guidelines for how to correct for multiple testing for the two main tests implemented in CellRegMap.
+Also refer to workflow [here](https://github.com/annacuomo/CellRegMap_analyses/blob/main/endodiff/usage/README.md)
 
 ## Association test
 
@@ -138,7 +139,6 @@ Only one SNP per gene, or at least independent. If one SNP per gene straight to 
 
 [3] Svensson et al, Bioinformatics, 2020 (LDVAE: linearly decoded variational autoencoder)
 
-<!-- ## Preparing input files (general guidelines) -->
 
 
 
