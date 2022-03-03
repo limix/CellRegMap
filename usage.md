@@ -85,9 +85,9 @@ For more guidelines and instructions on how to construct input files from real d
 
 ## References
 
-[1] Cuomo\*, Seaton\*, McCarthy\* et al, Nature Communications, 2020
+[1] Cuomo\*, Seaton\*, McCarthy\* et al, Nature Communications, 2020 - [link](https://www.nature.com/articles/s41467-020-14457-z)
 
-[2] Jerber\*, Seaton\*, Cuomo\* et al, Nature Genetics, 2021
+[2] Jerber\*, Seaton\*, Cuomo\* et al, Nature Genetics, 2021 - [link](https://www.nature.com/articles/s41588-021-00801-6)
 
 <!-- ## Downstream analysis (simple simulated data)
 
