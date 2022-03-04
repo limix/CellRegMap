@@ -1,2 +1,3 @@
 sphinx>=2.1.2
-cellregmap
+# cellregmap
+git+https://github.com/limix/CellRegMap.git
