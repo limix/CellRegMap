@@ -8,7 +8,6 @@ CellRegMap
   :toctree: _autosummary
   :template: class.rst
 
-.. autofunction:: cellregmap.run_association
   CellRegMap
   run_association
   run_interaction
