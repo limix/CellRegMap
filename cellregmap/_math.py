@@ -2,10 +2,8 @@
 Mathematical definitions
 ------------------------
 
-This module defines some core mathematical concepts on which
-StructLMM2 depends on.
-The implementations provided here are meant to help understand
-those concepts and to provide test cases.
+This module defines some core mathematical concepts which CellRegMap depends on.
+The implementations provided here are meant to help understand those concepts and to provide test cases.
 
 We assume the definition
 
