@@ -124,12 +124,13 @@ Also refer to workflow [here](https://github.com/annacuomo/CellRegMap_analyses/b
 
 ## Association test
 
-Run discovery, two-step multiple testing correction, 1) within gene across SNPs, 2) across genes.
-Mention lenient threshold prior to interaction test
+Run discovery, two-step multiple testing correction, 1) within gene across SNPs (FWER), 2) across genes (FDR).
+<!-- Mention lenient threshold prior to interaction test -->
 
 ## Interaction test
 
-Only one SNP per gene, or at least independent. If one SNP per gene straight to step 2, if multiple but independent Bonferroni as step 1, then step 2.
+Only one SNP per gene, or at least independent. 
+If one SNP per gene straight to step 2 (FDR), if multiple but independent Bonferroni as step 1, then step 2.
 
 # References
 
