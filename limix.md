@@ -4,7 +4,7 @@ CellRegMap's linear mixed model (LMM) uses the FaST-LMM implementation described
 
 ### Linear Mixed Model implementation using LIMIX
 LIMIX is described in [this preprint](https://www.biorxiv.org/content/10.1101/003905v2) and documentation can be found [here](https://limix-tempdoc.readthedocs.io/en/latest/).
-While there are several fast implementations to map eQTL using correlation or linear regression-based approaches (e.g., [tensorQTL](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1836-7), [matrix eQTL](https://academic.oup.com/bioinformatics/article/28/10/1353/213326?login=true)), to our knowledge LIMIX is the fastest software out there for genetic analyses using **linear mixed models**.
+While there are several fast implementations to map eQTLs using correlation or linear regression-based approaches (e.g., [tensorQTL](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1836-7), [matrix eQTL](https://academic.oup.com/bioinformatics/article/28/10/1353/213326?login=true)), to our knowledge LIMIX is the fastest software out there for genetic analyses using **linear mixed models** (which allow to better model population stratification and cryptic relatedness, which are prevalent in human genetic data - see for example thread [here](https://twitter.com/shaicarmi/status/1508298704796663808?s=21&t=6xaF5BmozHil3VbXotlGhQ)).
 
 ### eQTL mapping using LIMIX
 Additionally, for a LIMIX wrapper specifically to map eQTL, see our [limix QTL pipeline](https://github.com/single-cell-genetics/limix_qtl) which we most recently used in our [Genome Biology Publication](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-021-02407-x).
