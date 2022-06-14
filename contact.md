@@ -31,14 +31,14 @@ title: "Contact"
   </div>
   <div class="column">
     <figure align="center">
-    <img src="images/Horta_Danilo.jpeg" alt='missing' width="380" height="200"/>
+    <img src="images/Horta_Danilo.jpeg" alt='missing' width="400" height="200"/>
     <figcaption> <b>Danilo Horta</b> <br> Software Developer <br> EBI <br> <a href="mailto:horta@ebi.ac.uk">horta@ebi.ac.uk</a></figcaption>
     </figure>
   </div>
 <!-- <div class="row"> -->
   <div class="column">
     <figure align="center">
-    <img src="images/Tobis_photo.jpeg" alt='missing' width="200" height="200"/>
+    <img src="images/Tobis_photo.jpeg" alt='missing' width="150" height="200"/>
     <figcaption> <b>Tobias Heinen</b> <br> PhD Student <br> DKFZ <br> <a href="mailto:t.heinen@dkfz.de">t.heinen@dkfz.de</a> </figcaption>
     </figure>
   </div>
