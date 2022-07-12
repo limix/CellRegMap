@@ -7,10 +7,10 @@ LIMIX is described in [this preprint](https://www.biorxiv.org/content/10.1101/00
 While there are several fast implementations to map eQTLs using correlation or linear regression-based approaches (e.g., [tensorQTL](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1836-7), [matrix eQTL](https://academic.oup.com/bioinformatics/article/28/10/1353/213326?login=true)), to our knowledge LIMIX is the fastest software out there for genetic analyses using **linear mixed models** (which allow to better model population stratification and cryptic relatedness, which are prevalent in human genetic data - see for example thread [here](https://twitter.com/shaicarmi/status/1508298704796663808?s=21&t=6xaF5BmozHil3VbXotlGhQ)).
 
 ### eQTL mapping using LIMIX
-Additionally, for a LIMIX wrapper specifically to map eQTL, see our [limix QTL pipeline](https://github.com/single-cell-genetics/limix_qtl) which we most recently used in our [Genome Biology Publication](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-021-02407-x).
+Additionally, for a LIMIX wrapper specifically to map eQTLs, see the [limix QTL pipeline](https://github.com/single-cell-genetics/limix_qtl) developed in our lab, which we most recently used in our [Genome Biology Publication](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-021-02407-x).
 
 The pipeline provides an easy wrapper to map eQTLs using various methods, automatically re-ordering, subselecting and expanding files to match with each other.
-See the wiki pages for [installation](https://github.com/single-cell-genetics/limix_qtl/wiki/Installation) and [input files](https://github.com/single-cell-genetics/limix_qtl/wiki/Inputs), and an example [snakemake for standard eQTL mapping]().
+See the wiki pages for [installation](https://github.com/single-cell-genetics/limix_qtl/wiki/Installation) and [input files](https://github.com/single-cell-genetics/limix_qtl/wiki/Inputs), and an example [snakemake for standard eQTL mapping](https://github.com/single-cell-genetics/limix_qtl/wiki/QTL-mapping-on-small-chunks-using-snakemake).
 
 ### Coming Soon
 With [Marc Jan Bonder](https://twitter.com/mjbonder), we are in the process of implementing CellRegMap runners compatible with this pipeline.
