@@ -83,6 +83,8 @@ Below, see a simple usage example with toy inputs:
 
 For more guidelines and instructions on how to construct input files from real data, please visit the [Input Files page](https://limix.github.io/CellRegMap/input_files.html).
 
+For a workflow description language ([WDL](https://openwdl.org/)) pipeline to run CellRegMap across thousands of genes check the pipeline's [Github page](https://github.com/populationgenomics/cellregmap-pipeline) and [Dockerhub repo](https://hub.docker.com/r/annasecuomo/cellregmap_pipeline).
+
 ## References
 
 [1] Cuomo\*, Seaton\*, McCarthy\* et al, Nature Communications, 2020 - [link](https://www.nature.com/articles/s41467-020-14457-z)
