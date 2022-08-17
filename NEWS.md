@@ -2,9 +2,9 @@
 layout: default
 title: NEWS
 ---
-<!-- 
+
 **`CellRegMap paper out in MSB!`**:  
-- the CellRegMap is out in Molecular Systems Biology check out [the paper](https://www.embopress.org/doi/full/10.15252/msb.202110663) and see here for a [Twitter thread]()! -->
+- the CellRegMap is out in Molecular Systems Biology check out [the paper](https://www.embopress.org/doi/full/10.15252/msb.202110663) and see here for a [Twitter thread]()! 
 
 **`CellRegMap pipeline`**:  
 - We have developed a [WDL pipeline](https://github.com/populationgenomics/CellRegMap_pipeline) to facilitate running CellRegMap
