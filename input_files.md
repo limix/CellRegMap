@@ -68,6 +68,7 @@ The model will not run if one of **y, W, g** or **C** is not provided as input.
   * if you do not have access to a GRM, consider providing a block diagonal sample covariance, with blocks corresponding to individuals.
   * If K (or hK) is not provided, CellRegMap becomes equivalent to [StructLMM](https://limix.github.io/CellRegMap/structlmm.html).
 
+
 * If no covariates (W) are necessary, simply provide a vector of [ones](https://numpy.org/doc/stable/reference/generated/numpy.ones.html) as an intercept term.
 
 
@@ -82,14 +83,14 @@ In this case, the model **simply loops over each SNP and tests one at the time**
 As tests are independent, we recommend parallelising as much as possible, for example submitting independent jobs for each chromosome, gene, or even gene-SNP pair.
 
 ## Covariates, cell contexts and repeatedness are fixed
-W, C, hK (and thus K) remain the same across all tests (i.e., across all SNP-gene pairs).
+W, C, hK (and thus K) remain the same across all tests (_i.e._, across all SNP-gene pairs).
 
 # Dimensionality
 
 Specified dimensionality for each of the terms, where n is the total number of cells:
 
 * **y**: n x 1 (only one gene tested at a time)
-* **W**: n x c, where c is the number of fixed effect covariates (e.g., age, sex..)
+* **W**: n x c, where c is the number of fixed effect covariates (_e.g._, age, sex..)
 * **C**: n x k, where k is the number of contexts to test for interactions
 * **G**: n x s, where s is the number of SNPs to be tested for a given gene
 * **hK**: n x p, where p is the number of individuals, decomposition of the n x n kinship matrix K
@@ -113,7 +114,7 @@ This approach refers to the action of grouping together small numbers of similar
 Existing implementations include [Metacell](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1812-2) and the [micro pooling approach](https://yoseflab.github.io/VISION/articles/micropooling.html) within the [Vision](https://www.nature.com/articles/s41467-019-12235-0) pipeline.
 Those approaches do not directly take into account the presence of several genetically distinct donors, which is important here.
 To address this, we recommend using one of these approaches for each donor separately.
-For an implementation of how we computed meta-cells in the CellRegMap manuscript, see [here](https://github.com/annacuomo/CellRegMap_analyses/blob/main/neuroseq/preprocessing/create_metacells.py).
+For an implementation of how we computed meta-cells in the CellRegMap manuscript (for the neuronal differentiation data analysis), see [here](https://github.com/annacuomo/CellRegMap_analyses/blob/main/neuroseq/preprocessing/create_metacells.py).
 
 
 # Multiple testing correction
