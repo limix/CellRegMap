@@ -11,4 +11,4 @@ CellRegMap builds on the previously proposed [StructLMM](https://www.nature.com/
 
 ![Fig1](https://user-images.githubusercontent.com/25035866/132485517-0e111014-1b80-42f1-bd8b-b9ca0750bd23.png)
 
-For more details on the CellRegMap model and its applications to both real and simulated data, see our [paper]([https://www.biorxiv.org/content/10.1101/2021.09.01.458524v1](https://www.embopress.org/doi/full/10.15252/msb.202110663)).  
+For more details on the CellRegMap model and its applications to both real and simulated data, see our [paper](https://www.embopress.org/doi/full/10.15252/msb.202110663).  
