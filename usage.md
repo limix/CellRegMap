@@ -87,9 +87,9 @@ For a workflow description language ([WDL](https://openwdl.org/)) pipeline to ru
 
 ## References
 
-[1] Cuomo\*, Seaton\*, McCarthy\* et al, Nature Communications, 2020 - [link](https://www.nature.com/articles/s41467-020-14457-z)
+[1] Cuomo\*, Seaton\*, McCarthy\* et al, Nature Communications, 2020 - [Single-cell RNA-sequencing of differentiating iPS cells reveals dynamic genetic effects on gene expression](https://www.nature.com/articles/s41467-020-14457-z)
 
-[2] Jerber\*, Seaton\*, Cuomo\* et al, Nature Genetics, 2021 - [link](https://www.nature.com/articles/s41588-021-00801-6)
+[2] Jerber\*, Seaton\*, Cuomo\* et al, Nature Genetics, 2021 - [Population-scale single-cell RNA-seq profiling across dopaminergic neuron differentiation](https://www.nature.com/articles/s41588-021-00801-6)
 
 <!-- ## Downstream analysis (simple simulated data)
 
