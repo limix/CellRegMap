@@ -65,15 +65,15 @@ Below, see a simple usage example with toy inputs:
     g = 1.0 * (random.rand(n, 1) < 0.2)  # SNP vector
     
     ## Association test
-    pv0 = run_association(y, W, C, g, hK=hK)[0]
+    pv0 = run_association(y=y, G=g, W=W, E=C, hK=hK)[0]
     print(f'Association test p-value: {pv0}')
     
     ## Interaction test
-    pv = run_interaction(y, W, C, g, hK=hK)[0]
+    pv = run_interaction(y=y, G=g, W=W, E=C, hK=hK)[0]
     print(f'Interaction test p-value: {pv}')
     
     # Effect sizes estimation
-    betas = estimate_betas(y, W, C, g, hK=hK)
+    betas = estimate_betas(y=y, G=g, W=W, E=C, hK=hK)
     beta_G = betas[0]                         # persistent effect (scalar)
     beta_GxC = betas[1][0]                    # GxC effects (vector)
     
