@@ -39,7 +39,7 @@ The model is the same except for the term <img src="https://render.githubusercon
 
 CellRegMap function: _estimate_betas()_
 
-For more details on the tests above and underlying assumptions we refer the reader to the Supplementary Methods available as part of the [paper's Supplementary Material](https://www.biorxiv.org/content/10.1101/2021.09.01.458524v1.supplementary-material).
+For more details on the tests above and underlying assumptions we refer the reader to the Supplementary Methods available as part of the [paper's Appendix](https://www.embopress.org/action/downloadSupplement?doi=10.15252%2Fmsb.202110663&file=msb202110663-sup-0001-Appendix.pdf).
 
 ## Simple usage example
 
