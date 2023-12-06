@@ -19,6 +19,10 @@ from tqdm import tqdm
 
 from ._math import PMat, QSCov, ScoreStatistic
 
+import dask.array as da
+import xarray as xr
+from pandas import DataFrame
+from numpy import isnan, logical_not, minimum, nansum
 
 class CellRegMap:
     """
@@ -610,10 +614,7 @@ def compute_maf(X):
         >>> print(compute_maf(X)) # doctest: +FLOAT_CMP
         [0.49  0.49  0.445 0.495 0.5   0.45  0.48  0.48  0.47  0.435]
     """
-    import dask.array as da
-    import xarray as xr
-    from pandas import DataFrame
-    from numpy import isnan, logical_not, minimum, nansum
+    
     if isinstance(X, da.Array):
         s0 = da.nansum(X, axis=0).compute()
         denom = 2 * (X.shape[0] - da.isnan(X).sum(axis=0)).compute()
