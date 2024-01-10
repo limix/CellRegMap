@@ -23,6 +23,8 @@ import dask.array as da
 import xarray as xr
 from pandas import DataFrame
 from numpy import isnan, logical_not, minimum, nansum
+from joblib import Parallel, delayed
+import numpy as np
 
 class CellRegMap:
     """
@@ -270,18 +272,15 @@ class CellRegMap:
         info["eps2"].append(null_lmm.v1)
 
         n_snps = G.shape[1]
-        alt_lmls = []
-        for i in tqdm(range(n_snps)):
-            g = G[:, [i]]
-            X = concatenate((self._W, g), axis=1)
-            QS = self._Sigma_qs[best["rho1"]]
-            alt_lmm = LMM(self._y, X, QS, restricted=False)
-            alt_lmm.fit(verbose=False)
-            alt_lmls.append(alt_lmm.lml())
+        # QS calculated once before the loop
+        QS = self._Sigma_qs[best["rho1"]]
+
+        # Parallel processing for SNP loop
+        alt_lmls = Parallel(n_jobs=-1)(delayed(process_snp)(i, G, self._W, self._y, QS) for i in range(n_snps))
 
         pvalues = lrt_pvalues(null_lmm.lml(), alt_lmls, dof=1)
 
-        info = {key: asarray(v, float) for key, v in info.items()}
+        info = {key: np.asarray(v, float) for key, v in info.items()}
         return asarray(pvalues, float), info
     
     
@@ -443,6 +442,12 @@ class CellRegMap:
         info = {key: asarray(v, float) for key, v in info.items()}
         return asarray(pvalues, float), info
 
+def process_snp(i, G, W, y, QS):
+    g = G[:, [i]]
+    X = np.concatenate((W, g), axis=1)
+    alt_lmm = LMM(y, X, QS, restricted=False)
+    alt_lmm.fit(verbose=False)
+    return alt_lmm.lml()
 
 def lrt_pvalues(null_lml, alt_lmls, dof=1):
     """
