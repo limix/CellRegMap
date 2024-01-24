@@ -625,11 +625,20 @@ def get_L_values(hK, E):
     cellular environments E
     """
     # get eigendecomposition of EEt
-    [U, S, _] = economic_svd(E)
-    us = U * S
+    U, S, _ = economic_svd(E)
+    
+    # Compute US product (element-wise multiplication with broadcasting)
+    # Assuming economic_svd returns S as a 1D array of singular values
+    us = U * S[np.newaxis, :]
 
-    # get decomposition of K \odot EEt
-    Ls = [ddot(us[:,i], hK) for i in range(us.shape[1])]
+    # Initialize Ls as an empty list to store the result
+    Ls = []
+
+    # Compute Ls using ddot for dot product operations
+    # Loop through each column of us and compute the dot product with hK
+    for i in range(us.shape[1]):
+        Ls.append(ddot(us[:, i], hK))
+    
     return Ls
 
 def run_interaction(y, E, G, W=None, E1=None, E2=None, hK=None, idx_G=None):
@@ -697,26 +706,27 @@ def compute_maf(X):
     """
     
     if isinstance(X, da.Array):
-        s0 = da.nansum(X, axis=0).compute()
-        denom = 2 * (X.shape[0] - da.isnan(X).sum(axis=0)).compute()
+        non_missing_count = (X.shape[0] - da.isnan(X).sum(axis=0)).compute()
+        allele_sum = da.nansum(X, axis=0).compute()
     elif isinstance(X, DataFrame):
-        s0 = X.sum(axis=0, skipna=True)
-        denom = 2 * logical_not(X.isna()).sum(axis=0)
+        non_missing_count = logical_not(X.isna()).sum(axis=0)
+        allele_sum = X.sum(axis=0, skipna=True)
     elif isinstance(X, xr.DataArray):
-        if "sample" in X.dims:
-            kwargs = {"dim": "sample"}
-        else:
-            kwargs = {"axis": 0}
-        s0 = X.sum(skipna=True, **kwargs)
-        denom = 2 * logical_not(isnan(X)).sum(**kwargs)
+        kwargs = {"dim": "sample"} if "sample" in X.dims else {"axis": 0}
+        non_missing_count = logical_not(isnan(X)).sum(**kwargs)
+        allele_sum = X.sum(skipna=True, **kwargs)
     else:
-        s0 = nansum(X, axis=0)
-        denom = 2 * logical_not(isnan(X)).sum(axis=0)
-    s0 = s0 / denom
-    s1 = 1 - s0
-    maf = minimum(s0, s1)
+        non_missing_count = logical_not(isnan(X)).sum(axis=0)
+        allele_sum = nansum(X, axis=0)
+
+    # Calculate allele frequency
+    freq = allele_sum / (2 * non_missing_count)
+    maf = minimum(freq, 1 - freq)
+    
+    # Set name attribute if present
     if hasattr(maf, "name"):
         maf.name = "maf"
+
     return maf
 
 def estimate_betas(y, W, E, G, maf=None, E1=None, E2=None, hK=None):
