@@ -27,6 +27,9 @@ from joblib import Parallel, delayed
 import joblib as joblib
 import numpy as np
 from chiscore import davies_pvalue
+from numpy import clip
+from numpy_sugar import epsilon
+from scipy.stats import chi2
 
 class CellRegMap:
     """
@@ -336,123 +339,6 @@ class CellRegMap:
         """
         # TODO: make sure G is nxp
 
-        # G = asarray(G, float)
-        # n_snps = G.shape[1]
-        # pvalues = []
-        # info = {"rho1": [], "e2": [], "g2": [], "eps2": []}
-
-        # # Precompute self._E0 if it is not dependent on idx_E or idx_G
-        # default_E0 = self._E0 if idx_E is None else None
-        # # Move repeated computation out of the loop
-        # # X = concatenate((self._W, None), axis=1)  # Pre-allocate space for genotype column
-        # n_samples = self._W.shape[0]  # Assuming self._W has shape (n_samples, n_features)
-    
-        # # Initialize W_extended with self._W and an additional column of zeros
-        # X = np.hstack((self._W, np.zeros((n_samples, 1))))
-
-        # for i in tqdm(range(n_snps)):
-        #     g = G[:, [i]]
-        #     X[:, -1] = g.ravel()
-        #     best = {"lml": -inf, "rho1": 0}
-        #     # Null model fitting: find best (𝛂, 𝛽₁, 𝓋₁, 𝓋₂, ρ₁)
-        #     for rho1 in self._rho1:
-        #         # QS = self._Sigma_qs[rho1]
-        #         # halfSigma = self._halfSigma[rho1]
-        #         # Σ = ρ₁𝙴𝙴ᵀ + (1-ρ₁)𝙺⊙E
-        #         # cov(y₀) = 𝓋₁Σ + 𝓋₂I
-        #         QS = self._Sigma_qs[rho1]
-        #         lmm = LMM(self._y, X, QS, restricted=True)
-        #         lmm.fit(verbose=False)
-
-        #         if lmm.lml() > best["lml"]:
-        #             best.update({"lml": lmm.lml(), "rho1": rho1, "lmm": lmm})
-
-        #     lmm = best["lmm"]
-        #     # H1 via score test
-        #     # Let K₀ = e²𝙴𝙴ᵀ + g²𝙺⊙E + 𝜀²I
-        #     # e²=𝓋₁ρ₁
-        #     # g²=𝓋₁(1-ρ₁)
-        #     # 𝜀²=𝓋₂
-        #     # with optimal values 𝓋₁ and 𝓋₂ found above.
-        #     info["rho1"].append(best["rho1"])
-        #     info["e2"].append(lmm.v0 * best["rho1"])
-        #     info["g2"].append(lmm.v0 * (1 - best["rho1"]))
-        #     info["eps2"].append(lmm.v1)
-        #     # QS = economic_decomp( Σ(ρ₁) )
-        #     # Q0 = self._Sigma_qs[best["rho1"]][0][0]
-        #     # S0 = self._Sigma_qs[best["rho1"]][1]
-        #     (Q0,), S0 = self._Sigma_qs[best["rho1"]]
-        #     # e2 = best["lmm"].v0 * best["rho1"]
-        #     # g2 = best["lmm"].v0 * (1 - best["rho1"])
-        #     # eps2 = best["lmm"].v1
-        #     # EE = self._E @ self._E.T
-        #     # K = self._G @ self._G.T
-        #     # K0 = e2 * EE + g2 * K + eps2 * eye(K.shape[0])
-        #     qscov = QSCov(
-        #         Q0,
-        #         S0,
-        #         lmm.v0,  # 𝓋₁
-        #         lmm.v1,  # 𝓋₂
-        #     )
-        #     # start = time()
-        #     # qscov = QSCov(self._Sigma_qs[best["rho1"]], lmm.C0[0, 0], lmm.C1[0, 0])
-        #     # print(f"Elapsed: {time() - start}")
-        #     # X = concatenate((self._E, g), axis=1)
-        #     # X = concatenate((self._W, g), axis=1)
-
-        #     # Let P₀ = K₀⁻¹ - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹.
-        #     P = PMat(qscov, X)
-        #     # P0 = inv(K0) - inv(K0) @ X @ inv(X.T @ inv(K0) @ X) @ X.T @ inv(K0)
-
-        #     # P₀𝐲 = K₀⁻¹𝐲 - K₀⁻¹X(XᵀK₀⁻¹X)⁻¹XᵀK₀⁻¹𝐲.
-
-        #     # # Useful for permutation
-        #     # if idx_E is None:
-        #     #     E0 = self._E0
-        #     # else:
-        #     #     E0 = self._E0[idx_E, :]
-
-        #     # # The covariance matrix of H1 is K = K₀ + 𝓋₃diag(𝐠)⋅𝙴𝙴ᵀ⋅diag(𝐠)
-        #     # # We have ∂K/∂𝓋₃ = diag(𝐠)⋅𝙴𝙴ᵀ⋅diag(𝐠)
-        #     # # The score test statistics is given by
-        #     # # Q = ½𝐲ᵀP₀⋅∂K⋅P₀𝐲
-        #     # # start = time()
-
-        #     # # Useful for permutation
-        #     # if idx_G is None:
-        #     #     gtest = g.ravel()
-        #     # else:
-        #     #     gtest = g.ravel()[idx_G]
-        #      # Use precomputed self._E0 if possible
-        #     E0 = default_E0 if idx_E is None else self._E0[idx_E, :]
-        #     gtest = g.ravel() if idx_G is None else g.ravel()[idx_G]
-
-
-        #     ss = ScoreStatistic(P, qscov, ddot(gtest, E0))
-        #     Q = ss.statistic(self._y)
-        #     # import numpy as np
-
-        #     # deltaK = np.diag(gtest) @ EE @ np.diag(gtest)
-        #     # Q_ = 0.5 * self._y.T @ P0 @ deltaK @ P0 @ self._y
-        #     # print(f"Elapsed: {time() - start}")
-        #     # Q is the score statistic for our interaction test and follows a linear
-        #     # combination
-        #     # of chi-squared (df=1) distributions:
-        #     # Q ∼ ∑λχ², where λᵢ are the non-zero eigenvalues of ½√P₀⋅∂K⋅√P₀.
-        #     # Since eigenvals(𝙰𝙰ᵀ) = eigenvals(𝙰ᵀ𝙰) (TODO: find citation),
-        #     # we can compute ½(√∂K)P₀(√∂K) instead.
-        #     # start = time()
-        #     # import scipy as sp
-        #     # sqrtm = sp.linalg.sqrtm
-        #     # np.linalg.eigvalsh(0.5 * sqrtm(P0) @ deltaK @ sqrtm(P0))
-        #     # np.linalg.eigvalsh(0.5 * sqrtm(deltaK) @ P0 @ sqrtm(deltaK))
-        #     # TODO: compare with Liu approximation, maybe try a computational intensive
-        #     # method
-        #     pval, pinfo = davies_pvalue(Q, ss.matrix_for_dist_weights(), True)
-        #     pvalues.append(pval)
-        #     # print(f"Elapsed: {time() - start}")
-
-        # info = {key: asarray(v, float) for key, v in info.items()}
         G = asarray(G, float)
         n_snps = G.shape[1]
         n_samples = self._W.shape[0]  # Assuming self._W has shape (n_samples, n_features)
@@ -483,6 +369,7 @@ class CellRegMap:
         }
         return pvalues, info
 
+# Helper functions for parallel processing, batch processing (for scan_interaction), and pre-computing null LMMs 
 def process_snp(i, G, W, y, QS):
     g = G[:, [i]]
     X = np.concatenate((W, g), axis=1)
@@ -548,9 +435,6 @@ def lrt_pvalues(null_lml, alt_lmls, dof=1):
     pvalues : ndarray
         P-values.
     """
-    from numpy import clip
-    from numpy_sugar import epsilon
-    from scipy.stats import chi2
 
     lrs = clip(-2 * null_lml + 2 * asarray(alt_lmls, float), epsilon.super_tiny, inf)
     pv = chi2(df=dof).sf(lrs)
