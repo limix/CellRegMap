@@ -381,6 +381,7 @@ def process_snp_batch(snp_indices, G, W, E0, rho1_values, Sigma_qs, y):
     pvalues_batch = []
     info_batch = {"rho1": [], "e2": [], "g2": [], "eps2": []}
 
+    ########## Section needs to be further optimized ##########
     for i in snp_indices:
         g = G[:, [i]].reshape(-1, 1)
         X = np.hstack((W, g))
@@ -414,6 +415,7 @@ def process_snp_batch(snp_indices, G, W, E0, rho1_values, Sigma_qs, y):
         info_batch["eps2"].append(lmm.v1)
     
     return pvalues_batch, info_batch
+    ################### Section ends #######################
 
 def lrt_pvalues(null_lml, alt_lmls, dof=1):
     """
