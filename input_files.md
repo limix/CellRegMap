@@ -68,7 +68,7 @@ The following terms will be estimated by the model:
 
 * **SNP effect sizes**, both due to persistent effects ($\beta_G$) and to GxC interactions ($\beta_{GxC}$) can be estimated using the estimate_betas() function, see [usage page](https://limix.github.io/CellRegMap/usage.html).
 
-* **other inferred parameters** (<img src="https://render.githubusercontent.com/render/math?math=\alpha, \sigma^2"> values) are estimated by the model but not returned as values.
+* **other inferred parameters** ($\alpha$, $\sigma^2$ values) are estimated by the model but not returned as values.
 
 # Notes
 
