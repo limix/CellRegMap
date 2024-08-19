@@ -20,9 +20,10 @@ $u \sim \mathcal{N} (0, \sigma^2_{KC}(CC^T \odot K))$ and
 
 $\epsilon \sim \mathcal{N} (0, \sigma^2_n I)$
 
-<!--- 
-<img src="https://render.githubusercontent.com/render/math?math=y = W\alpha %2B g\beta_G %2B g \odot \beta_{GxC} %2B c %2B u %2B \epsilon">,
 
+\displaystyle <img src="https://render.githubusercontent.com/render/math?math=y = W\alpha %2B g\beta_G %2B g \odot \beta_{GxC} %2B c %2B u %2B \epsilon">,
+
+<!--- 
 where 
 
 <img src="https://render.githubusercontent.com/render/math?math=\beta_{GxC} \sim \mathcal{N} (0, \sigma^2_{GxC}CC^T)">,
