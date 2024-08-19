@@ -16,7 +16,9 @@ $\beta_{GxC} \sim \mathcal{N} (0, \sigma^2_{GxC}CC^T)$,
 
 $c \sim \mathcal{N} (0, \sigma^2_{C}CC^T)$,
 
+$u \sim \mathcal{N} (0, \sigma^2_{KC}(CC^T \odot K))$ and
 
+\epsilon \sim \mathcal{N} (0, \sigma^2_n I)
 
 <!--- 
 <img src="https://render.githubusercontent.com/render/math?math=y = W\alpha %2B g\beta_G %2B g \odot \beta_{GxC} %2B c %2B u %2B \epsilon">,
@@ -37,7 +39,7 @@ where
 <!-- In the [usage page](https://limix.github.io/CellRegMap/usage.html) the input files are listed, here we provide a brief description of their significance.  -->
 The following terms should be provided as input files:
 
-* **Phenotype vector (<img src="https://render.githubusercontent.com/render/math?math=y">)** - in the linear mixed model, this is the outcome variable. 
+* **Phenotype vector (<img src="https://render.githubusercontent.com/render/math?math=y"> $y$)** - in the linear mixed model, this is the outcome variable. 
 In eQTL mapping, this represents expression level of a given gene of interest, across samples. 
 The main application of CellRegMap is using scRNA-seq data, in which case this will be a column vector, with length corresponding to the number of cells considered. 
 For optimal fit with the model (which assumes a Gaussian distribution) we recommend [quantile normalising](https://github.com/limix/limix/blob/master/limix/qc/_quant_gauss.py) this vector, or at least [standardising](https://github.com/limix/limix/blob/master/limix/qc/_mean_std.py) it.
