@@ -22,6 +22,13 @@ $u \sim \mathcal{N} (0, \sigma^2_{KC}(CC^T \odot K))$ and
 \epsilon \sim \mathcal{N} (0, \sigma^2_n I)
 ```
 
+$$ \begin{bmatrix} 
+   a & b & c \\
+   c & e & f \\
+   g & h & i \\
+   \end{bmatrix} $$
+
+
 <!--- 
 <img src="https://render.githubusercontent.com/render/math?math=\displaystyle y = W\alpha %2B g\beta_G %2B g \odot \beta_{GxC} %2B c %2B u %2B \epsilon">,
 
