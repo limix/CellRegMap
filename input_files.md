@@ -8,7 +8,7 @@ mathjax: true
 
 The CellRegMap model can be cast as:
 
-$y = W\alpha + g\beta_G + g \odot \beta_{GxC} + c + u + \epsilon$,
+$y = W\alpha + g\beta_G + g \odot \math_bf{\beta_{GxC}} + c + u + \epsilon$,
 
 where
 
