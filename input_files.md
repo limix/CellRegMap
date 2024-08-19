@@ -8,6 +8,8 @@ mathjax: true
 
 The CellRegMap model can be cast as:
 
+$y = W\alpha %2B g\beta_G %2B g \odot \beta_{GxC} %2B c %2B u %2B \epsilon$
+
 <img src="https://render.githubusercontent.com/render/math?math=y = W\alpha %2B g\beta_G %2B g \odot \beta_{GxC} %2B c %2B u %2B \epsilon">,
 
 where 
