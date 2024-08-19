@@ -47,7 +47,7 @@ For optimal fit with the model (which assumes a Gaussian distribution) we recomm
 * **Genotype vector ($g$)** - SNP vector. 
 This represents the genotype of each sample at the genomic locus of interest, and is typically modelled as 0, 1 or 2, representing the number of minor alleles (however, the model can also handle a continuous vector of dosages). 
 Note that a genotype file is well defined at the level of donors, and needs to be appropriately [expanded](https://github.com/annacuomo/CellRegMap_analyses/blob/main/endodiff/preprocessing/Expand_genotypes_kinship.ipynb) across cells.
-It is also possible to input a matrix G whose columns represent multiple SNPs (<img src="https://render.githubusercontent.com/render/math?math=g">'s) to be tested for that gene (see "Notes" below).
+It is also possible to input a matrix $G$ whose columns represent multiple SNPs ($g$'s) to be tested for that gene (see "Notes" below).
 
 * **Cellular context matrix ($C$)** - cellular environment/context matrix. 
 Rows are cells, columns are values across the different cellular contexts. 
@@ -59,14 +59,14 @@ Best practice is to column-standardise this matrix.
 
 <!-- * **Background matrices (<img src="https://render.githubusercontent.com/render/math?math=L_i">'s)** - decomposition of the covariance matrix from the background term accounting for repeat samples. It can be shown that the covariance matrix <img src="https://render.githubusercontent.com/render/math?math=(CC^T \odot GG^T)"> can be reformulated as <img src="https://render.githubusercontent.com/render/math?math=\sum_i L_i @ L_i^T">, where <img src="https://render.githubusercontent.com/render/math?math=L_i = diag(\sqrt(\lambda_i) v_i) G">, with <img src="https://render.githubusercontent.com/render/math?math=\lambda_i, v_i"> being the eigenvalues and eigenvectors of <img src="https://render.githubusercontent.com/render/math?math=CC^T">. This decomposition allows us to never having to compute the full covariance matrices which can be extremely large, and work on their decomposed form only. A function that allows to directly compute the <img src="https://render.githubusercontent.com/render/math?math=L_i">'s values from <img src="https://render.githubusercontent.com/render/math?math=C"> and <img src="https://render.githubusercontent.com/render/math?math=G"> will be added soon. -->
 
-* **Covariate matrix (<img src="https://render.githubusercontent.com/render/math?math=W">)** - any additional fixed effect terms to include in the model, such as sex or age. 
+* **Covariate matrix ($W$)** - any additional fixed effect terms to include in the model, such as sex or age. 
 If no such terms are needed an intercept of ones should be provided.
 
 <!-- * An additional optional input can be a **filter file** containing known eQTLs (i.e., gene-SNP pairs identified as statistical associations) or individual variants (e.g., GWAS hits) to be investigated. If such a set is not available, it is possible to map eQTL from scratch within the pipeline, see the association test described in the [usage page](https://limix.github.io/CellRegMap/usage.html). -->
 
 The following terms will be estimated by the model:
 
-* **SNP effect sizes**, both due to persistent effects (<img src="https://render.githubusercontent.com/render/math?math=\beta_G">) and to GxC interactions (<img src="https://render.githubusercontent.com/render/math?math=\beta_{GxC}">) can be estimated using the estimate_betas() function, see [usage page](https://limix.github.io/CellRegMap/usage.html).
+* **SNP effect sizes**, both due to persistent effects ($\beta_G$) and to GxC interactions ($\beta_{GxC}$) can be estimated using the estimate_betas() function, see [usage page](https://limix.github.io/CellRegMap/usage.html).
 
 * **other inferred parameters** (<img src="https://render.githubusercontent.com/render/math?math=\alpha, \sigma^2"> values) are estimated by the model but not returned as values.
 
