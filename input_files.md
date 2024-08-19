@@ -18,7 +18,7 @@ $c \sim \mathcal{N} (0, \sigma^2_{C}CC^T)$,
 
 $u \sim \mathcal{N} (0, \sigma^2_{KC}(CC^T \odot K))$ and
 
-\epsilon \sim \mathcal{N} (0, \sigma^2_n I)
+$\epsilon \sim \mathcal{N} (0, \sigma^2_n I)$
 
 <!--- 
 <img src="https://render.githubusercontent.com/render/math?math=y = W\alpha %2B g\beta_G %2B g \odot \beta_{GxC} %2B c %2B u %2B \epsilon">,
@@ -39,22 +39,22 @@ where
 <!-- In the [usage page](https://limix.github.io/CellRegMap/usage.html) the input files are listed, here we provide a brief description of their significance.  -->
 The following terms should be provided as input files:
 
-* **Phenotype vector (<img src="https://render.githubusercontent.com/render/math?math=y"> $y$)** - in the linear mixed model, this is the outcome variable. 
+* **Phenotype vector ($y$)** - in the linear mixed model, this is the outcome variable. 
 In eQTL mapping, this represents expression level of a given gene of interest, across samples. 
 The main application of CellRegMap is using scRNA-seq data, in which case this will be a column vector, with length corresponding to the number of cells considered. 
 For optimal fit with the model (which assumes a Gaussian distribution) we recommend [quantile normalising](https://github.com/limix/limix/blob/master/limix/qc/_quant_gauss.py) this vector, or at least [standardising](https://github.com/limix/limix/blob/master/limix/qc/_mean_std.py) it.
 
-* **Genotype vector (<img src="https://render.githubusercontent.com/render/math?math=g">)** - SNP vector. 
+* **Genotype vector ($g$)** - SNP vector. 
 This represents the genotype of each sample at the genomic locus of interest, and is typically modelled as 0, 1 or 2, representing the number of minor alleles (however, the model can also handle a continuous vector of dosages). 
 Note that a genotype file is well defined at the level of donors, and needs to be appropriately [expanded](https://github.com/annacuomo/CellRegMap_analyses/blob/main/endodiff/preprocessing/Expand_genotypes_kinship.ipynb) across cells.
 It is also possible to input a matrix G whose columns represent multiple SNPs (<img src="https://render.githubusercontent.com/render/math?math=g">'s) to be tested for that gene (see "Notes" below).
 
-* **Cellular context matrix (<img src="https://render.githubusercontent.com/render/math?math=C">)** - cellular environment/context matrix. 
+* **Cellular context matrix ($C$)** - cellular environment/context matrix. 
 Rows are cells, columns are values across the different cellular contexts. 
 Columns of C can for example be principal components, or other latent factor representations of the data (e.g., using MOFA [1], ZINB-WaVE [2] or LDVAE [3]), binary vector encoding assignment to different cellular groups such as cell types, or any other factor, including environmental exposures, or disease state. 
 Best practice is to column-standardise this matrix.
 
-* **Kinship matrix (<img src="https://render.githubusercontent.com/render/math?math=K">)**, or its decomposition (<img src="https://render.githubusercontent.com/render/math?math=hK">, such that <img src="https://render.githubusercontent.com/render/math?math=K = hK @ hK^T">), a sample covariance, often the so-called [kinship](https://www.cog-genomics.org/plink/1.9/distance) (or genetic relationship matrix; GRM) matrix, appropriately [expanded](https://github.com/annacuomo/CellRegMap_analyses/blob/main/endodiff/preprocessing/Expand_genotypes_kinship.ipynb) across cells.
+* **Kinship matrix ($K$)**, or its decomposition (<img src="https://render.githubusercontent.com/render/math?math=hK">, such that <img src="https://render.githubusercontent.com/render/math?math=K = hK @ hK^T">), a sample covariance, often the so-called [kinship](https://www.cog-genomics.org/plink/1.9/distance) (or genetic relationship matrix; GRM) matrix, appropriately [expanded](https://github.com/annacuomo/CellRegMap_analyses/blob/main/endodiff/preprocessing/Expand_genotypes_kinship.ipynb) across cells.
 <!-- This can be.. -->
 
 <!-- * **Background matrices (<img src="https://render.githubusercontent.com/render/math?math=L_i">'s)** - decomposition of the covariance matrix from the background term accounting for repeat samples. It can be shown that the covariance matrix <img src="https://render.githubusercontent.com/render/math?math=(CC^T \odot GG^T)"> can be reformulated as <img src="https://render.githubusercontent.com/render/math?math=\sum_i L_i @ L_i^T">, where <img src="https://render.githubusercontent.com/render/math?math=L_i = diag(\sqrt(\lambda_i) v_i) G">, with <img src="https://render.githubusercontent.com/render/math?math=\lambda_i, v_i"> being the eigenvalues and eigenvectors of <img src="https://render.githubusercontent.com/render/math?math=CC^T">. This decomposition allows us to never having to compute the full covariance matrices which can be extremely large, and work on their decomposed form only. A function that allows to directly compute the <img src="https://render.githubusercontent.com/render/math?math=L_i">'s values from <img src="https://render.githubusercontent.com/render/math?math=C"> and <img src="https://render.githubusercontent.com/render/math?math=G"> will be added soon. -->
