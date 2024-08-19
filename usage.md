@@ -15,9 +15,9 @@ However, to improve scalability, we recommend running the (computationally more 
 In the [original CellRegMap paper](https://www.biorxiv.org/content/10.1101/2021.09.01.458524v1) we consider eQTLs previously identified in the original studies[1,2], but it is now also possible to test for persistent eQTL effects within the CellRegMap framework itself, using the association-test function. 
 In this case, the model can be cast as:
 
-<img src="https://render.githubusercontent.com/render/math?math=y = W\alpha %2B g\beta_G %2B c %2B u %2B \epsilon">,
+$y = W\alpha + g\beta_G + c + u + \epsilon$,
 
-which is similar to the main model except for the GxC term, which is missing. Here, we test for a persistent effect only, i.e., <img src="https://render.githubusercontent.com/render/math?math=\beta_G \neq 0">.
+which is similar to the main model except for the GxC term, which is missing. Here, we test for a persistent effect only, i.e., $\beta_G \neq 0$.
 
 CellRegMap function: _run_association()_
 
