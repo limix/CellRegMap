@@ -27,7 +27,7 @@ CellRegMap function: _run_association()_
 This is the main test implemented in CellRegMap, where we test for GxC effects across cellular states and individual SNP variants. 
 In this case we consider the full model:
 
-$y = W\alpha %2B g\beta_G %2B g \odot \beta_{GxC} %2B c %2B u %2B \epsilon"> 
+$y = W\alpha + g\beta_G + g \odot \beta_{GxC} + c + u + \epsilon$ 
 
 and test for $\beta_{GxC} \neq 0$.
 While in principal any SNP-gene pairs can be tested for GxC effects, we recommend running this test on a set of candidate eQTLs (either known a priori or identified using the **Association test** described above), or interesting (e.g., disease-linked) variants to improve statistical power.
