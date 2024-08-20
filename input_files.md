@@ -23,8 +23,10 @@ c \sim \mathcal{N} (0, \sigma^2_{C}CC^T),
 ```
 
 ```math
-u \sim \mathcal{N} (0, \sigma^2_{KC}(CC^T \odot K)) and
+u \sim \mathcal{N} (0, \sigma^2_{KC}(CC^T \odot K))
 ```
+
+and 
 
 ```math
 \epsilon \sim \mathcal{N} (0, \sigma^2_n I)
